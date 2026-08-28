@@ -44,9 +44,11 @@
 
         /* 首页 */
         .home-header {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            background: linear-gradient(135deg, #FFB6C1 0%, #DDA0DD 50%, #E6E6FA 100%);
             padding: 20px;
             color: white;
+            position: relative;
+            box-shadow: 0 4px 20px rgba(255,182,193,0.3);
         }
 
         .welcome-text {
@@ -104,6 +106,55 @@
             border-radius: 4px;
         }
 
+        /* 星星收集显示 */
+        .star-collection {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: rgba(255,255,255,0.3);
+            padding: 8px 16px;
+            border-radius: 20px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .star-icon {
+            font-size: 24px;
+        }
+
+        .star-count {
+            font-size: 18px;
+            font-weight: bold;
+        }
+
+        /* 音效控制按钮 */
+        .sound-control {
+            position: absolute;
+            top: 80px;
+            right: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 20px;
+            cursor: pointer;
+            transition: all 0.3s;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .sound-control:hover {
+            background: rgba(255,255,255,0.5);
+            transform: scale(1.1);
+        }
+
+        .sound-control:active {
+            transform: scale(0.95);
+        }
+
         /* 快捷操作 */
         .quick-actions {
             display: flex;
@@ -113,27 +164,164 @@
 
         .quick-action {
             flex: 1;
-            background: #f0f4ff;
-            border-radius: 16px;
+            background: linear-gradient(135deg, #FFE4E1 0%, #FFB6C1 100%);
+            border-radius: 24px;
             padding: 20px 10px;
             text-align: center;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 4px 12px rgba(255,182,193,0.3);
         }
 
         .quick-action:active {
             transform: scale(0.95);
+            box-shadow: 0 2px 8px rgba(255,182,193,0.4);
         }
 
         .quick-action-icon {
-            font-size: 32px;
+            font-size: 36px;
             margin-bottom: 8px;
+            animation: iconBounce 2s ease-in-out infinite;
         }
 
         .quick-action-label {
             font-size: 14px;
+            font-weight: 600;
+        }
+
+        /* 每日任务卡片 */
+        .daily-tasks-card {
+            margin: 16px;
+            background: white;
+            border-radius: 16px;
+            padding: 16px;
+            box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+        }
+
+        .daily-tasks-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 12px;
+        }
+
+        .daily-tasks-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .daily-tasks-progress {
+            font-size: 14px;
+            color: #FF9500;
+            font-weight: bold;
+        }
+
+        .daily-tasks-list {
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+
+        .daily-task-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 10px;
+            background: #F8F8F8;
+            border-radius: 10px;
+            transition: all 0.2s;
+        }
+
+        .daily-task-item.completed {
+            background: linear-gradient(135deg, #E5FFF0 0%, #F0FFF5 100%);
+        }
+
+        .task-check {
+            font-size: 20px;
+        }
+
+        .task-content {
+            flex: 1;
+        }
+
+        .task-name {
+            font-size: 14px;
+            color: #333;
             font-weight: 500;
-            color: #667eea;
+        }
+
+        .task-reward {
+            font-size: 12px;
+            color: #FF9500;
+            margin-top: 2px;
+        }
+
+        /* 学习提醒卡片 */
+        .learning-reminder-card {
+            margin: 16px;
+            background: linear-gradient(135deg, #FFE5F0 0%, #FFF0F5 100%);
+            border-radius: 16px;
+            padding: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 12px rgba(255, 107, 107, 0.15);
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .learning-reminder-card:active {
+            transform: scale(0.98);
+        }
+
+        .reminder-icon {
+            font-size: 36px;
+        }
+
+        .reminder-content {
+            flex: 1;
+        }
+
+        .reminder-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .reminder-desc {
+            font-size: 13px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .reminder-progress {
+            height: 6px;
+            background: rgba(255, 255, 255, 0.5);
+            border-radius: 3px;
+            overflow: hidden;
+            margin-top: 8px;
+        }
+
+        .reminder-progress-bar {
+            height: 100%;
+            background: linear-gradient(90deg, #FF6B6B, #FF8585);
+            border-radius: 3px;
+            transition: width 0.3s;
+        }
+
+        .reminder-arrow {
+            font-size: 24px;
+            color: #FF6B6B;
+        }
+
+        @keyframes iconBounce {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(-5px);
+            }
         }
 
         /* 课程列表 */
@@ -157,24 +345,27 @@
 
         .course-card {
             background: white;
-            border-radius: 12px;
+            border-radius: 20px;
             padding: 16px;
             margin: 0 16px 12px;
-            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            box-shadow: 0 4px 12px rgba(255,182,193,0.2);
             display: flex;
             align-items: center;
             cursor: pointer;
-            transition: transform 0.2s;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            border: 2px solid transparent;
         }
 
         .course-card:active {
             transform: scale(0.98);
+            border-color: #FFB6C1;
+            box-shadow: 0 2px 8px rgba(255,182,193,0.4);
         }
 
         .course-number {
             width: 60px;
             height: 60px;
-            border-radius: 12px;
+            border-radius: 16px;
             display: flex;
             align-items: center;
             justify-content: center;
@@ -182,6 +373,7 @@
             font-weight: bold;
             color: white;
             margin-right: 16px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
         }
 
         .course-info {
@@ -218,6 +410,393 @@
             font-size: 20px;
             font-weight: bold;
             text-align: center;
+        }
+
+        /* 学习引导卡片 */
+        .learning-guide {
+            margin: 16px;
+            padding: 16px;
+            background: linear-gradient(135deg, #FFE5F0 0%, #FFF0F5 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            box-shadow: 0 2px 8px rgba(255, 107, 107, 0.1);
+        }
+
+        .guide-icon {
+            font-size: 32px;
+        }
+
+        .guide-content {
+            flex: 1;
+        }
+
+        .guide-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .guide-desc {
+            font-size: 13px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        /* 课程卡片状态 */
+        .course-card.completed {
+            opacity: 0.8;
+        }
+
+        .course-card.current {
+            border: 2px solid #FF9500;
+            box-shadow: 0 4px 12px rgba(255, 149, 0, 0.2);
+        }
+
+        .course-card.locked {
+            opacity: 0.6;
+            background: #f8f8f8;
+        }
+
+        .course-status {
+            font-size: 20px;
+            margin-right: 8px;
+        }
+
+        .course-reward {
+            font-size: 12px;
+            color: #FF9500;
+            margin-top: 4px;
+        }
+
+        /* 学习环节卡片 */
+        .learning-stage-card {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border-radius: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+            transition: transform 0.2s;
+        }
+
+        .learning-stage-card:active {
+            transform: scale(0.98);
+        }
+
+        .stage-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-right: 12px;
+            color: white;
+        }
+
+        .stage-content {
+            flex: 1;
+        }
+
+        .stage-title {
+            font-size: 16px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .stage-desc {
+            font-size: 13px;
+            color: #666;
+            margin-top: 4px;
+        }
+
+        .stage-progress {
+            font-size: 12px;
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
+        }
+
+        .stage-status {
+            font-size: 24px;
+            margin-left: 8px;
+        }
+
+        /* 单词展示卡片 */
+        .word-display-card {
+            background: white;
+            border-radius: 20px;
+            padding: 32px 24px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            text-align: center;
+            transition: transform 0.3s;
+        }
+
+        .word-display-card:active {
+            transform: scale(0.98);
+        }
+
+        .word-number {
+            font-size: 64px;
+            font-weight: bold;
+            color: #FF6B6B;
+            margin-bottom: 16px;
+        }
+
+        .word-english {
+            font-size: 36px;
+            font-weight: bold;
+            color: #333;
+            margin-bottom: 8px;
+        }
+
+        .word-chinese {
+            font-size: 20px;
+            color: #666;
+            margin-bottom: 16px;
+        }
+
+        .word-emoji {
+            font-size: 48px;
+            margin: 16px 0;
+        }
+
+        .word-action-btn {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 4px;
+            padding: 12px 20px;
+            border-radius: 12px;
+            border: none;
+            background: linear-gradient(135deg, #4A90E2 0%, #5BA3F5 100%);
+            color: white;
+            font-size: 12px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .word-action-btn:active {
+            transform: scale(0.95);
+        }
+
+        .word-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #ddd;
+            transition: all 0.3s;
+        }
+
+        .word-dot.active {
+            width: 24px;
+            border-radius: 4px;
+            background: #FF6B6B;
+        }
+
+        /* 语音练习卡片 */
+        .voice-practice-card {
+            background: white;
+            border-radius: 20px;
+            padding: 32px 24px;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.08);
+            text-align: center;
+        }
+
+        .practice-word {
+            font-size: 48px;
+            font-weight: bold;
+            color: #4A90E2;
+            margin-bottom: 8px;
+        }
+
+        .practice-phonetic {
+            font-size: 18px;
+            color: #999;
+            margin-bottom: 8px;
+        }
+
+        .practice-translation {
+            font-size: 20px;
+            color: #666;
+            margin-bottom: 24px;
+        }
+
+        .voice-wave-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            gap: 4px;
+            height: 60px;
+            margin: 24px 0;
+        }
+
+        .voice-wave-bar {
+            width: 4px;
+            height: 20px;
+            background: linear-gradient(180deg, #4A90E2 0%, #5BA3F5 100%);
+            border-radius: 2px;
+            animation: wave 1s ease-in-out infinite;
+        }
+
+        .voice-wave-bar:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .voice-wave-bar:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+
+        .voice-wave-bar:nth-child(4) {
+            animation-delay: 0.3s;
+        }
+
+        .voice-wave-bar:nth-child(5) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes wave {
+            0%, 100% {
+                height: 20px;
+            }
+            50% {
+                height: 40px;
+            }
+        }
+
+        .voice-record-btn {
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            border: none;
+            background: linear-gradient(135deg, #FF6B6B 0%, #FF8585 100%);
+            color: white;
+            font-size: 14px;
+            cursor: pointer;
+            box-shadow: 0 4px 16px rgba(255, 107, 107, 0.3);
+            transition: transform 0.2s;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+        }
+
+        .voice-record-btn:active {
+            transform: scale(0.95);
+        }
+
+        .voice-record-btn.recording {
+            animation: pulse 1s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.05);
+            }
+        }
+
+        .record-icon {
+            font-size: 32px;
+            margin-bottom: 4px;
+        }
+
+        .record-text {
+            font-size: 12px;
+        }
+
+        .voice-result {
+            margin-top: 24px;
+            padding: 16px;
+            background: linear-gradient(135deg, #E5FFF0 0%, #F0FFF5 100%);
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .result-icon {
+            font-size: 24px;
+        }
+
+        .result-text {
+            font-size: 16px;
+            color: #50C878;
+            font-weight: bold;
+        }
+
+        .practice-dot {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #ddd;
+            transition: all 0.3s;
+        }
+
+        .practice-dot.active {
+            background: #4A90E2;
+            transform: scale(1.2);
+        }
+
+        .practice-dot.completed {
+            background: #50C878;
+        }
+
+        /* 游戏卡片 */
+        .game-board {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 12px;
+            margin: 20px 0;
+        }
+
+        .game-card {
+            aspect-ratio: 1;
+            background: white;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+            cursor: pointer;
+            transition: all 0.3s;
+        }
+
+        .game-card:active {
+            transform: scale(0.95);
+        }
+
+        .game-card.selected {
+            border: 3px solid #FF9500;
+            transform: scale(1.05);
+        }
+
+        .game-card.matched {
+            background: linear-gradient(135deg, #E5FFF0 0%, #F0FFF5 100%);
+            border: 3px solid #50C878;
+            opacity: 0.7;
+        }
+
+        .number-card {
+            background: linear-gradient(135deg, #FFE5E5 0%, #FFF0F0 100%);
+        }
+
+        .word-card {
+            background: linear-gradient(135deg, #E5F5FF 0%, #F0FAFF 100%);
+        }
+
+        .card-content {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
         }
 
         /* 课程详情页 */
@@ -355,21 +934,103 @@
         }
 
         .pet-3d-model {
-            width: 150px;
-            height: 150px;
+            width: 200px;
+            height: 240px;
             position: relative;
             transform-style: preserve-3d;
-            animation: petFloat 3s ease-in-out infinite;
+            animation: petFloat 4s ease-in-out infinite, petBreathe 3s ease-in-out infinite;
             cursor: pointer;
             transition: transform 0.3s;
         }
 
         .pet-3d-model:hover {
-            transform: scale(1.1);
+            transform: scale(1.05);
         }
 
         .pet-3d-model.bounce {
             animation: petBounce 0.6s ease-in-out;
+        }
+
+        .pet-3d-model.happy {
+            animation: petHappy 0.8s ease-in-out;
+        }
+
+        .pet-3d-model.dance {
+            animation: petDance 1.5s ease-in-out;
+        }
+
+        .pet-3d-model.wave {
+            animation: petWave 1s ease-in-out;
+        }
+
+        .pet-3d-model.spin {
+            animation: petSpin 1s ease-in-out;
+        }
+
+        .pet-3d-model.nod {
+            animation: petNod 0.8s ease-in-out;
+        }
+
+        /* 呼吸动画 */
+        @keyframes petBreathe {
+            0%, 100% {
+                transform: translateY(0) scale(1);
+            }
+            50% {
+                transform: translateY(-5px) scale(1.02);
+            }
+        }
+
+        /* 跳舞动画 */
+        @keyframes petDance {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            25% {
+                transform: translateY(-20px) rotate(-10deg);
+            }
+            50% {
+                transform: translateY(-10px) rotate(0deg);
+            }
+            75% {
+                transform: translateY(-20px) rotate(10deg);
+            }
+        }
+
+        /* 挥手动画 */
+        @keyframes petWave {
+            0%, 100% {
+                transform: rotate(0deg);
+            }
+            25% {
+                transform: rotate(-15deg);
+            }
+            75% {
+                transform: rotate(15deg);
+            }
+        }
+
+        /* 旋转动画 */
+        @keyframes petSpin {
+            0% {
+                transform: rotate(0deg) scale(1);
+            }
+            50% {
+                transform: rotate(180deg) scale(1.1);
+            }
+            100% {
+                transform: rotate(360deg) scale(1);
+            }
+        }
+
+        /* 点头动画 */
+        @keyframes petNod {
+            0%, 100% {
+                transform: translateY(0);
+            }
+            50% {
+                transform: translateY(10px);
+            }
         }
 
         .pet-3d-body {
@@ -379,84 +1040,285 @@
             transform-style: preserve-3d;
         }
 
+        /* 头部 - 更大的圆脸 */
         .pet-3d-head {
             position: absolute;
-            top: 20px;
+            top: 0;
             left: 50%;
             transform: translateX(-50%);
-            width: 80px;
-            height: 80px;
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            width: 140px;
+            height: 140px;
+            background: linear-gradient(135deg, #FFE4E1 0%, #FFB6C1 50%, #FF69B4 100%);
             border-radius: 50%;
             box-shadow: 
-                inset -10px -10px 20px rgba(0,0,0,0.1),
-                0 10px 30px rgba(0,0,0,0.2);
+                inset -15px -15px 30px rgba(255,105,180,0.3),
+                inset 10px 10px 20px rgba(255,255,255,0.5),
+                0 15px 40px rgba(255,105,180,0.4);
             transform-style: preserve-3d;
         }
 
+        /* 耳朵 */
+        .pet-3d-ear {
+            position: absolute;
+            top: -20px;
+            width: 40px;
+            height: 60px;
+            background: linear-gradient(135deg, #FFE4E1 0%, #FFB6C1 100%);
+            border-radius: 50% 50% 0 0;
+            box-shadow: inset -5px -5px 10px rgba(255,105,180,0.3);
+        }
+
+        .pet-3d-ear.left {
+            left: 15px;
+            transform: rotate(-20deg);
+        }
+
+        .pet-3d-ear.right {
+            right: 15px;
+            transform: rotate(20deg);
+        }
+
+        .pet-3d-ear::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 20px;
+            height: 35px;
+            background: linear-gradient(135deg, #FFB6C1 0%, #FF69B4 100%);
+            border-radius: 50%;
+        }
+
+        /* 大眼睛 - 迪士尼风格 */
         .pet-3d-eye {
             position: absolute;
-            top: 25px;
-            width: 15px;
-            height: 20px;
-            background: #333;
+            top: 45px;
+            width: 35px;
+            height: 40px;
+            background: radial-gradient(circle at 30% 30%, #4A90E2 0%, #2E5C8A 70%, #000 100%);
             border-radius: 50%;
             animation: blink 4s infinite;
+            box-shadow: 
+                inset 0 0 10px rgba(0,0,0,0.3),
+                0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .pet-3d-eye::before {
+            content: '';
+            position: absolute;
+            top: 8px;
+            left: 8px;
+            width: 12px;
+            height: 12px;
+            background: white;
+            border-radius: 50%;
+            box-shadow: 0 0 5px rgba(255,255,255,0.8);
+        }
+
+        .pet-3d-eye::after {
+            content: '';
+            position: absolute;
+            top: 20px;
+            left: 15px;
+            width: 6px;
+            height: 6px;
+            background: rgba(255,255,255,0.6);
+            border-radius: 50%;
         }
 
         .pet-3d-eye.left {
-            left: 20px;
+            left: 25px;
         }
 
         .pet-3d-eye.right {
-            right: 20px;
+            right: 25px;
         }
 
+        /* 睫毛 */
+        .pet-3d-eyelash {
+            position: absolute;
+            top: 40px;
+            width: 40px;
+            height: 5px;
+        }
+
+        .pet-3d-eyelash::before,
+        .pet-3d-eyelash::after {
+            content: '';
+            position: absolute;
+            width: 8px;
+            height: 2px;
+            background: #333;
+            border-radius: 2px;
+        }
+
+        .pet-3d-eyelash.left {
+            left: 22px;
+        }
+
+        .pet-3d-eyelash.right {
+            right: 22px;
+        }
+
+        .pet-3d-eyelash::before {
+            left: 5px;
+            transform: rotate(-30deg);
+        }
+
+        .pet-3d-eyelash::after {
+            right: 5px;
+            transform: rotate(30deg);
+        }
+
+        /* 腮红 */
+        .pet-3d-blush {
+            position: absolute;
+            top: 75px;
+            width: 25px;
+            height: 15px;
+            background: radial-gradient(ellipse, rgba(255,105,180,0.6) 0%, transparent 70%);
+            border-radius: 50%;
+        }
+
+        .pet-3d-blush.left {
+            left: 15px;
+        }
+
+        .pet-3d-blush.right {
+            right: 15px;
+        }
+
+        /* 嘴巴 */
         .pet-3d-mouth {
             position: absolute;
-            bottom: 20px;
+            bottom: 30px;
             left: 50%;
             transform: translateX(-50%);
-            width: 30px;
-            height: 15px;
-            border: 3px solid #333;
+            width: 20px;
+            height: 12px;
+            border: 3px solid #FF69B4;
             border-top: none;
-            border-radius: 0 0 30px 30px;
+            border-radius: 0 0 20px 20px;
+            background: rgba(255,105,180,0.2);
         }
 
+        .pet-3d-mouth.happy {
+            width: 30px;
+            height: 18px;
+        }
+
+        /* 蝴蝶结 */
+        .pet-3d-bow {
+            position: absolute;
+            top: -10px;
+            right: 20px;
+            width: 50px;
+            height: 30px;
+        }
+
+        .pet-3d-bow::before,
+        .pet-3d-bow::after {
+            content: '';
+            position: absolute;
+            width: 25px;
+            height: 25px;
+            background: linear-gradient(135deg, #FF1493 0%, #C71585 100%);
+            border-radius: 50%;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+        }
+
+        .pet-3d-bow::before {
+            left: 0;
+            transform: rotate(-20deg);
+        }
+
+        .pet-3d-bow::after {
+            right: 0;
+            transform: rotate(20deg);
+        }
+
+        .pet-3d-bow-center {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 12px;
+            height: 12px;
+            background: linear-gradient(135deg, #FF1493 0%, #C71585 100%);
+            border-radius: 50%;
+            z-index: 1;
+        }
+
+        /* 身体 */
         .pet-3d-body-main {
             position: absolute;
-            top: 90px;
+            top: 120px;
             left: 50%;
             transform: translateX(-50%);
-            width: 100px;
-            height: 80px;
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            border-radius: 50px;
+            width: 120px;
+            height: 100px;
+            background: linear-gradient(135deg, #FFE4E1 0%, #FFB6C1 50%, #FF69B4 100%);
+            border-radius: 60px 60px 50px 50px;
             box-shadow: 
-                inset -10px -10px 20px rgba(0,0,0,0.1),
-                0 10px 30px rgba(0,0,0,0.2);
+                inset -15px -15px 30px rgba(255,105,180,0.3),
+                inset 10px 10px 20px rgba(255,255,255,0.5),
+                0 15px 40px rgba(255,105,180,0.4);
         }
 
+        /* 裙子装饰 */
+        .pet-3d-dress {
+            position: absolute;
+            bottom: 0;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 140px;
+            height: 40px;
+            background: linear-gradient(180deg, transparent 0%, rgba(255,20,147,0.3) 100%);
+            border-radius: 0 0 70px 70px;
+        }
+
+        /* 手臂 */
         .pet-3d-arm {
             position: absolute;
-            top: 20px;
-            width: 25px;
-            height: 50px;
-            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-            border-radius: 25px;
-            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            top: 130px;
+            width: 30px;
+            height: 60px;
+            background: linear-gradient(135deg, #FFE4E1 0%, #FFB6C1 100%);
+            border-radius: 30px;
+            box-shadow: 
+                inset -5px -5px 10px rgba(255,105,180,0.3),
+                0 5px 15px rgba(255,105,180,0.3);
             transform-origin: top center;
         }
 
         .pet-3d-arm.left {
-            left: -15px;
-            animation: armWaveLeft 2s ease-in-out infinite;
+            left: 25px;
+            animation: armWaveLeft 2.5s ease-in-out infinite;
         }
 
         .pet-3d-arm.right {
-            right: -15px;
-            animation: armWaveRight 2s ease-in-out infinite;
+            right: 25px;
+            animation: armWaveRight 2.5s ease-in-out infinite;
+        }
+
+        /* 脚 */
+        .pet-3d-foot {
+            position: absolute;
+            bottom: -10px;
+            width: 35px;
+            height: 25px;
+            background: linear-gradient(135deg, #FFE4E1 0%, #FFB6C1 100%);
+            border-radius: 50%;
+            box-shadow: 0 5px 10px rgba(255,105,180,0.3);
+        }
+
+        .pet-3d-foot.left {
+            left: 35px;
+        }
+
+        .pet-3d-foot.right {
+            right: 35px;
         }
 
         .pet-3d-shadow {
@@ -469,12 +1331,40 @@
             background: rgba(0,0,0,0.2);
             border-radius: 50%;
             filter: blur(10px);
-            animation: shadowPulse 3s ease-in-out infinite;
+            animation: shadowPulse 4s ease-in-out infinite;
         }
 
         .pet-3d-info {
             text-align: center;
             margin-top: 16px;
+        }
+
+        /* 宠物说话气泡 */
+        .pet-speech-bubble {
+            position: absolute;
+            top: 20px;
+            right: 20px;
+            background: white;
+            padding: 12px 18px;
+            border-radius: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+            font-size: 16px;
+            font-weight: 500;
+            color: #FF69B4;
+            max-width: 200px;
+            animation: bubblePop 0.3s ease-out;
+        }
+
+        .pet-speech-bubble::after {
+            content: '';
+            position: absolute;
+            bottom: -8px;
+            left: 30px;
+            width: 0;
+            height: 0;
+            border-left: 8px solid transparent;
+            border-right: 8px solid transparent;
+            border-top: 8px solid white;
         }
 
         /* 语音按钮 */
@@ -628,6 +1518,290 @@
             50% {
                 transform: scaleY(1);
             }
+        }
+
+        @keyframes bubblePop {
+            0% {
+                transform: scale(0);
+                opacity: 0;
+            }
+            50% {
+                transform: scale(1.1);
+            }
+            100% {
+                transform: scale(1);
+                opacity: 1;
+            }
+        }
+
+        @keyframes petHappy {
+            0%, 100% {
+                transform: translateY(0) rotate(0deg);
+            }
+            25% {
+                transform: translateY(-20px) rotate(-10deg);
+            }
+            50% {
+                transform: translateY(0) rotate(0deg);
+            }
+            75% {
+                transform: translateY(-20px) rotate(10deg);
+            }
+        }
+
+        @keyframes sparkle {
+            0%, 100% {
+                opacity: 0;
+                transform: scale(0);
+            }
+            50% {
+                opacity: 1;
+                transform: scale(1);
+            }
+        }
+
+        /* 宠物表情状态 */
+        .pet-3d-model.sad .pet-3d-eye {
+            transform: scaleY(0.6);
+        }
+
+        .pet-3d-model.sad .pet-3d-mouth {
+            border-radius: 20px 20px 0 0;
+            border-bottom: 3px solid #FF69B4;
+            border-top: none;
+        }
+
+        .pet-3d-model.sleepy .pet-3d-eye {
+            height: 5px;
+            top: 55px;
+        }
+
+        .pet-3d-model.sleepy .pet-3d-mouth {
+            width: 15px;
+            height: 8px;
+        }
+
+        .pet-3d-model.excited .pet-3d-eye {
+            animation: excitedEyes 0.5s ease-in-out infinite;
+        }
+
+        .pet-3d-model.excited {
+            animation: excitedBounce 0.6s ease-in-out infinite;
+        }
+
+        @keyframes excitedEyes {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.2);
+            }
+        }
+
+        @keyframes excitedBounce {
+            0%, 100% {
+                transform: translateY(0) rotate(-5deg);
+            }
+            50% {
+                transform: translateY(-15px) rotate(5deg);
+            }
+        }
+
+        /* 星星奖励动画 */
+        .star-reward {
+            position: absolute;
+            font-size: 40px;
+            animation: starFloat 2s ease-out forwards;
+            pointer-events: none;
+            z-index: 100;
+        }
+
+        @keyframes starFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(0);
+            }
+            50% {
+                opacity: 1;
+                transform: translateY(-100px) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-200px) scale(0.8);
+            }
+        }
+
+        /* 爱心漂浮动画 */
+        .heart-float {
+            position: absolute;
+            font-size: 30px;
+            animation: heartFloat 1.5s ease-out forwards;
+            pointer-events: none;
+        }
+
+        @keyframes heartFloat {
+            0% {
+                opacity: 1;
+                transform: translateY(0) scale(0);
+            }
+            50% {
+                opacity: 1;
+                transform: translateY(-80px) scale(1.2);
+            }
+            100% {
+                opacity: 0;
+                transform: translateY(-150px) scale(0.5);
+            }
+        }
+
+        /* 宠物状态指示器 */
+        .pet-status-indicator {
+            position: absolute;
+            top: 10px;
+            left: 10px;
+            display: flex;
+            gap: 8px;
+        }
+
+        .status-icon {
+            width: 30px;
+            height: 30px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 16px;
+            background: white;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+
+        .status-icon.happy {
+            background: #FFE4E1;
+        }
+
+        .status-icon.hungry {
+            background: #FFF3E0;
+        }
+
+        .status-icon.sleepy {
+            background: #E3F2FD;
+        }
+
+        /* 成就页面样式 */
+        .star-stats {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            margin: 16px;
+            padding: 24px;
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            box-shadow: 0 4px 12px rgba(255,215,0,0.3);
+        }
+
+        .star-stats-icon {
+            font-size: 60px;
+            animation: starPulse 2s ease-in-out infinite;
+        }
+
+        .star-stats-info {
+            flex: 1;
+        }
+
+        .star-stats-count {
+            font-size: 48px;
+            font-weight: bold;
+            color: white;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2);
+        }
+
+        .star-stats-label {
+            font-size: 16px;
+            color: rgba(255,255,255,0.9);
+            margin-top: 4px;
+        }
+
+        @keyframes starPulse {
+            0%, 100% {
+                transform: scale(1);
+            }
+            50% {
+                transform: scale(1.1);
+            }
+        }
+
+        .achievement-section {
+            margin-bottom: 24px;
+        }
+
+        .achievement-card {
+            background: white;
+            margin: 0 16px 12px;
+            padding: 16px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            transition: transform 0.2s;
+        }
+
+        .achievement-card:active {
+            transform: scale(0.98);
+        }
+
+        .achievement-card.unlocked {
+            background: linear-gradient(135deg, #FFF9E6 0%, #FFF3CC 100%);
+            border: 2px solid #FFD700;
+        }
+
+        .achievement-icon {
+            font-size: 40px;
+            width: 60px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: #F5F5F5;
+            border-radius: 12px;
+        }
+
+        .achievement-card.unlocked .achievement-icon {
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+        }
+
+        .achievement-info {
+            flex: 1;
+        }
+
+        .achievement-name {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .achievement-desc {
+            font-size: 14px;
+            color: #666;
+            margin-bottom: 4px;
+        }
+
+        .achievement-progress {
+            font-size: 12px;
+            color: #999;
+        }
+
+        .achievement-reward {
+            font-size: 14px;
+            font-weight: bold;
+            color: #FFD700;
+            background: rgba(255,215,0,0.1);
+            padding: 4px 12px;
+            border-radius: 12px;
+        }
+
+        .achievement-card.unlocked .achievement-reward {
+            background: rgba(255,255,255,0.5);
         }
 
         .stat-card {
@@ -856,10 +2030,11 @@
             max-width: 414px;
             margin: 0 auto;
             background: white;
-            border-top: 1px solid #eee;
+            border-top: 1px solid #FFE4E1;
             display: flex;
             padding: 8px 0;
             z-index: 100;
+            box-shadow: 0 -4px 12px rgba(255,182,193,0.1);
         }
 
         .nav-item {
@@ -868,31 +2043,103 @@
             padding: 8px;
             cursor: pointer;
             color: #999;
-            transition: color 0.2s;
+            transition: all 0.3s;
         }
 
         .nav-item.active {
-            color: #667eea;
+            color: #FF69B4;
         }
 
         .nav-icon {
-            font-size: 24px;
+            font-size: 28px;
             margin-bottom: 4px;
+            transition: transform 0.3s;
+        }
+
+        .nav-item.active .nav-icon {
+            transform: scale(1.2);
+            animation: navIconBounce 0.5s ease-in-out;
+        }
+
+        @keyframes navIconBounce {
+            0%, 100% {
+                transform: scale(1.2);
+            }
+            50% {
+                transform: scale(1.4);
+            }
         }
 
         .nav-label {
             font-size: 12px;
+            font-weight: 600;
         }
 
-        /* 返回按钮 */
-        .back-btn {
-            position: absolute;
-            left: 16px;
-            top: 16px;
-            font-size: 24px;
+        /* 按钮样式 */
+        .btn {
+            border: none;
+            border-radius: 24px;
+            padding: 14px 28px;
+            font-size: 16px;
+            font-weight: 600;
             cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        }
+
+        .btn:active {
+            transform: scale(0.95);
+            box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #FF69B4 0%, #FF1493 100%);
             color: white;
-            z-index: 10;
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #FFE4E1 0%, #FFB6C1 100%);
+            color: #FF69B4;
+        }
+
+        /* 卡片样式 */
+        .card {
+            background: white;
+            border-radius: 20px;
+            padding: 20px;
+            margin: 12px 16px;
+            box-shadow: 0 4px 16px rgba(255,182,193,0.15);
+            border: 2px solid #FFE4E1;
+        }
+
+        .card-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 16px;
+        }
+
+        .card-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 16px;
+            background: linear-gradient(135deg, #FFE4E1 0%, #FFB6C1 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            margin-right: 12px;
+        }
+
+        .card-title {
+            font-size: 18px;
+            font-weight: 600;
+            color: #333;
+        }
+
+        .card-subtitle {
+            font-size: 14px;
+            color: #999;
+            margin-top: 4px;
         }
 
         /* 响应式 */
@@ -914,12 +2161,23 @@
                 <div class="pet-card" onclick="showPage('pet-page')">
                     <div class="pet-icon">🐶</div>
                     <div class="pet-info">
-                        <div class="pet-name">Buddy</div>
+                        <div class="pet-name">Bella</div>
                         <div class="pet-level">Lv. 3</div>
                         <div class="pet-progress">
                             <div class="pet-progress-bar"></div>
                         </div>
                     </div>
+                </div>
+                
+                <!-- 星星收集显示 -->
+                <div class="star-collection">
+                    <span class="star-icon">⭐</span>
+                    <span class="star-count" id="starCount">12</span>
+                </div>
+                
+                <!-- 音效控制按钮 -->
+                <div class="sound-control" id="soundControl" onclick="toggleSound()">
+                    <span id="soundIcon">🔊</span>
                 </div>
             </div>
 
@@ -936,45 +2194,86 @@
                     <div class="quick-action-icon">🐾</div>
                     <div class="quick-action-label">我的宠物</div>
                 </div>
+                <div class="quick-action" onclick="showPage('achievement-page')">
+                    <div class="quick-action-icon">🏆</div>
+                    <div class="quick-action-label">成就</div>
+                </div>
+            </div>
+
+            <!-- 每日任务卡片 -->
+            <div class="daily-tasks-card">
+                <div class="daily-tasks-header">
+                    <div class="daily-tasks-title">📋 今日任务</div>
+                    <div class="daily-tasks-progress">2/4</div>
+                </div>
+                <div class="daily-tasks-list">
+                    <div class="daily-task-item completed">
+                        <div class="task-check">✅</div>
+                        <div class="task-content">
+                            <div class="task-name">学习 5 个新单词</div>
+                            <div class="task-reward">+10 经验</div>
+                        </div>
+                    </div>
+                    <div class="daily-task-item completed">
+                        <div class="task-check">✅</div>
+                        <div class="task-content">
+                            <div class="task-name">完成 1 节课程</div>
+                            <div class="task-reward">+15 经验</div>
+                        </div>
+                    </div>
+                    <div class="daily-task-item">
+                        <div class="task-check">⭕</div>
+                        <div class="task-content">
+                            <div class="task-name">和 Bella 对话 3 次</div>
+                            <div class="task-reward">+20 经验</div>
+                        </div>
+                    </div>
+                    <div class="daily-task-item">
+                        <div class="task-check">⭕</div>
+                        <div class="task-content">
+                            <div class="task-name">复习昨天的单词</div>
+                            <div class="task-reward">+10 经验</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 学习提醒卡片 -->
+            <div class="learning-reminder-card" onclick="showPage('learning-page')">
+                <div class="reminder-icon">🎯</div>
+                <div class="reminder-content">
+                    <div class="reminder-title">继续学习</div>
+                    <div class="reminder-desc">Numbers 数字 - 第 3 课</div>
+                    <div class="reminder-progress">
+                        <div class="reminder-progress-bar" style="width: 60%"></div>
+                    </div>
+                </div>
+                <div class="reminder-arrow">›</div>
             </div>
 
             <div class="section-header">
-                <div class="section-title">课程列表</div>
+                <div class="section-title">推荐课程</div>
                 <div class="view-all" onclick="showPage('learning-page')">查看全部</div>
             </div>
 
-            <div class="course-card" onclick="showPage('lesson-page')">
-                <div class="course-number" style="background: #4A90E2;">1</div>
+            <div class="course-card current" onclick="showPage('lesson-page')">
+                <div class="course-status">🎯</div>
+                <div class="course-number" style="background: linear-gradient(135deg, #FF9500 0%, #FFB033 100%);">3</div>
                 <div class="course-info">
-                    <div class="course-title">Greetings</div>
-                    <div class="course-meta">4 个单词 · 2 个句子</div>
+                    <div class="course-title">Numbers 数字</div>
+                    <div class="course-meta">🔢 学习数数从1到10</div>
+                    <div class="course-reward">⭐ +5</div>
                 </div>
                 <div class="course-arrow">›</div>
             </div>
 
             <div class="course-card" onclick="showPage('lesson-page')">
-                <div class="course-number" style="background: #50C878;">2</div>
+                <div class="course-status">🔒</div>
+                <div class="course-number" style="background: linear-gradient(135deg, #AF52DE 0%, #C06EEF 100%);">4</div>
                 <div class="course-info">
-                    <div class="course-title">Colors</div>
-                    <div class="course-meta">6 个单词 · 3 个句子</div>
-                </div>
-                <div class="course-arrow">›</div>
-            </div>
-
-            <div class="course-card" onclick="showPage('lesson-page')">
-                <div class="course-number" style="background: #FF9500;">3</div>
-                <div class="course-info">
-                    <div class="course-title">Numbers</div>
-                    <div class="course-meta">10 个单词 · 3 个句子</div>
-                </div>
-                <div class="course-arrow">›</div>
-            </div>
-
-            <div class="course-card" onclick="showPage('lesson-page')">
-                <div class="course-number" style="background: #AF52DE;">4</div>
-                <div class="course-info">
-                    <div class="course-title">Animals</div>
-                    <div class="course-meta">6 个单词 · 4 个句子</div>
+                    <div class="course-title">Animals 动物</div>
+                    <div class="course-meta">🐶 认识可爱的小动物</div>
+                    <div class="course-reward">⭐ +5</div>
                 </div>
                 <div class="course-arrow">›</div>
             </div>
@@ -983,78 +2282,118 @@
         <!-- 学习页 -->
         <div class="page" id="learning-page">
             <div class="page-header">
-                <div class="page-title">课程学习</div>
+                <div class="page-title">📚 快乐学英语</div>
+                <div class="learning-progress">
+                    <div class="progress-text">今日进度</div>
+                    <div class="progress-bar">
+                        <div class="progress-fill" style="width: 30%"></div>
+                    </div>
+                    <div class="progress-info">已完成 2/8 个课程</div>
+                </div>
+            </div>
+
+            <!-- 学习引导卡片 -->
+            <div class="learning-guide">
+                <div class="guide-icon">🌟</div>
+                <div class="guide-content">
+                    <div class="guide-title">今天学什么？</div>
+                    <div class="guide-desc">从第一课开始，和 Bella 一起快乐学习吧！</div>
+                </div>
             </div>
 
             <div style="padding: 16px;">
-                <div class="course-card" onclick="showPage('lesson-page')">
-                    <div class="course-number" style="background: #4A90E2;">1</div>
+                <!-- 课程1 - 已完成 -->
+                <div class="course-card completed" onclick="showPage('lesson-page')">
+                    <div class="course-status">✅</div>
+                    <div class="course-number" style="background: linear-gradient(135deg, #4A90E2 0%, #5BA3F5 100%);">1</div>
                     <div class="course-info">
-                        <div class="course-title">Greetings</div>
-                        <div class="course-meta">4 个单词 · 2 个句子</div>
+                        <div class="course-title">Greetings 问候</div>
+                        <div class="course-meta">👋 学会打招呼和说再见</div>
+                        <div class="course-reward">⭐ +5</div>
                     </div>
                     <div class="course-arrow">›</div>
                 </div>
 
-                <div class="course-card" onclick="showPage('lesson-page')">
-                    <div class="course-number" style="background: #50C878;">2</div>
+                <!-- 课程2 - 已完成 -->
+                <div class="course-card completed" onclick="showPage('lesson-page')">
+                    <div class="course-status">✅</div>
+                    <div class="course-number" style="background: linear-gradient(135deg, #50C878 0%, #6BD98F 100%);">2</div>
                     <div class="course-info">
-                        <div class="course-title">Colors</div>
-                        <div class="course-meta">6 个单词 · 3 个句子</div>
+                        <div class="course-title">Colors 颜色</div>
+                        <div class="course-meta">🎨 认识五彩缤纷的颜色</div>
+                        <div class="course-reward">⭐ +5</div>
                     </div>
                     <div class="course-arrow">›</div>
                 </div>
 
-                <div class="course-card" onclick="showPage('lesson-page')">
-                    <div class="course-number" style="background: #FF9500;">3</div>
+                <!-- 课程3 - 当前推荐 -->
+                <div class="course-card current" onclick="showPage('lesson-page')">
+                    <div class="course-status">🎯</div>
+                    <div class="course-number" style="background: linear-gradient(135deg, #FF9500 0%, #FFB033 100%);">3</div>
                     <div class="course-info">
-                        <div class="course-title">Numbers</div>
-                        <div class="course-meta">10 个单词 · 3 个句子</div>
+                        <div class="course-title">Numbers 数字</div>
+                        <div class="course-meta">🔢 学习数数从1到10</div>
+                        <div class="course-reward">⭐ +5</div>
                     </div>
                     <div class="course-arrow">›</div>
                 </div>
 
-                <div class="course-card" onclick="showPage('lesson-page')">
-                    <div class="course-number" style="background: #AF52DE;">4</div>
+                <!-- 课程4 - 未解锁 -->
+                <div class="course-card locked">
+                    <div class="course-status">🔒</div>
+                    <div class="course-number" style="background: linear-gradient(135deg, #AF52DE 0%, #C06EEF 100%);">4</div>
                     <div class="course-info">
-                        <div class="course-title">Animals</div>
-                        <div class="course-meta">6 个单词 · 4 个句子</div>
+                        <div class="course-title">Animals 动物</div>
+                        <div class="course-meta">🐶 认识可爱的小动物</div>
+                        <div class="course-reward">⭐ +5</div>
                     </div>
                     <div class="course-arrow">›</div>
                 </div>
 
-                <div class="course-card" onclick="showPage('lesson-page')">
-                    <div class="course-number" style="background: #FF3B30;">5</div>
+                <!-- 课程5 -->
+                <div class="course-card locked" onclick="showPage('lesson-page')">
+                    <div class="course-status">🔒</div>
+                    <div class="course-number" style="background: linear-gradient(135deg, #FF3B30 0%, #FF5A4F 100%);">5</div>
                     <div class="course-info">
-                        <div class="course-title">Fruits</div>
-                        <div class="course-meta">6 个单词 · 4 个句子</div>
+                        <div class="course-title">Fruits 水果</div>
+                        <div class="course-meta">🍎 美味的水果世界</div>
+                        <div class="course-reward">⭐ +5</div>
                     </div>
                     <div class="course-arrow">›</div>
                 </div>
 
-                <div class="course-card" onclick="showPage('lesson-page')">
-                    <div class="course-number" style="background: #5AC8FA;">6</div>
+                <!-- 课程6 -->
+                <div class="course-card locked" onclick="showPage('lesson-page')">
+                    <div class="course-status">🔒</div>
+                    <div class="course-number" style="background: linear-gradient(135deg, #5AC8FA 0%, #70D5FF 100%);">6</div>
                     <div class="course-info">
-                        <div class="course-title">Family</div>
-                        <div class="course-meta">5 个单词 · 4 个句子</div>
+                        <div class="course-title">Family 家庭</div>
+                        <div class="course-meta">👨‍👩‍👧‍👦 我爱我的家人</div>
+                        <div class="course-reward">⭐ +5</div>
                     </div>
                     <div class="course-arrow">›</div>
                 </div>
 
-                <div class="course-card" onclick="showPage('lesson-page')">
-                    <div class="course-number" style="background: #FF2D55;">7</div>
+                <!-- 课程7 -->
+                <div class="course-card locked" onclick="showPage('lesson-page')">
+                    <div class="course-status">🔒</div>
+                    <div class="course-number" style="background: linear-gradient(135deg, #FF2D55 0%, #FF4D6F 100%);">7</div>
                     <div class="course-info">
-                        <div class="course-title">Body</div>
-                        <div class="course-meta">8 个单词 · 4 个句子</div>
+                        <div class="course-title">Body 身体</div>
+                        <div class="course-meta">🙋‍♀️ 认识身体的各个部位</div>
+                        <div class="course-reward">⭐ +5</div>
                     </div>
                     <div class="course-arrow">›</div>
                 </div>
 
-                <div class="course-card" onclick="showPage('lesson-page')">
-                    <div class="course-number" style="background: #8E8E93;">8</div>
+                <!-- 课程8 -->
+                <div class="course-card locked" onclick="showPage('lesson-page')">
+                    <div class="course-status">🔒</div>
+                    <div class="course-number" style="background: linear-gradient(135deg, #8E8E93 0%, #A8A8AD 100%);">8</div>
                     <div class="course-info">
-                        <div class="course-title">Actions</div>
-                        <div class="course-meta">6 个单词 · 4 个句子</div>
+                        <div class="course-title">Actions 动作</div>
+                        <div class="course-meta">🏃‍♀️ 学习各种有趣的动作</div>
+                        <div class="course-reward">⭐ +5</div>
                     </div>
                     <div class="course-arrow">›</div>
                 </div>
@@ -1063,6 +2402,259 @@
 
         <!-- 课程详情页 -->
         <div class="page" id="lesson-page">
+            <div class="lesson-header">
+                <div class="back-btn" onclick="showPage('learning-page')">‹</div>
+                <div class="lesson-title">Numbers 数字</div>
+                <div class="lesson-subtitle">Unit 3 · Grade 1</div>
+            </div>
+
+            <!-- 学习进度条 -->
+            <div style="padding: 16px; background: white;">
+                <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+                    <span style="font-size: 14px; color: #666;">学习进度</span>
+                    <span style="font-size: 14px; color: #FF9500; font-weight: bold;">0/4</span>
+                </div>
+                <div style="height: 8px; background: #F0F0F0; border-radius: 4px; overflow: hidden;">
+                    <div style="height: 100%; width: 0%; background: linear-gradient(90deg, #FF9500, #FFB033); transition: width 0.3s;"></div>
+                </div>
+            </div>
+
+            <!-- 学习环节卡片 -->
+            <div style="padding: 16px;">
+                <!-- 环节1: 单词认知 -->
+                <div class="learning-stage-card" onclick="showPage('word-learn-page')" style="background: linear-gradient(135deg, #FFE5E5 0%, #FFF0F0 100%); border: 2px solid #FF6B6B;">
+                    <div class="stage-icon" style="background: linear-gradient(135deg, #FF6B6B 0%, #FF8585 100%);">🎯</div>
+                    <div class="stage-content">
+                        <div class="stage-title">单词认知</div>
+                        <div class="stage-desc">学习数字 1-5 的英文表达</div>
+                        <div class="stage-progress">
+                            <span style="color: #FF6B6B;">开始学习</span>
+                            <span style="color: #999;">→</span>
+                        </div>
+                    </div>
+                    <div class="stage-status">⭕</div>
+                </div>
+
+                <!-- 环节2: 语音练习 -->
+                <div class="learning-stage-card" onclick="showPage('voice-practice-page')" style="background: linear-gradient(135deg, #E5F5FF 0%, #F0FAFF 100%); border: 2px solid #4A90E2;">
+                    <div class="stage-icon" style="background: linear-gradient(135deg, #4A90E2 0%, #5BA3F5 100%);">🎤</div>
+                    <div class="stage-content">
+                        <div class="stage-title">语音练习</div>
+                        <div class="stage-desc">跟读数字，练习发音</div>
+                        <div class="stage-progress">
+                            <span style="color: #4A90E2;">语音互动</span>
+                            <span style="color: #999;">→</span>
+                        </div>
+                    </div>
+                    <div class="stage-status">⭕</div>
+                </div>
+
+                <!-- 环节3: 趣味游戏 -->
+                <div class="learning-stage-card" onclick="showPage('game-page')" style="background: linear-gradient(135deg, #FFF5E5 0%, #FFFAF0 100%); border: 2px solid #FF9500;">
+                    <div class="stage-icon" style="background: linear-gradient(135deg, #FF9500 0%, #FFB033 100%);">🎮</div>
+                    <div class="stage-content">
+                        <div class="stage-title">趣味游戏</div>
+                        <div class="stage-desc">玩数字配对小游戏</div>
+                        <div class="stage-progress">
+                            <span style="color: #FF9500;">边玩边学</span>
+                            <span style="color: #999;">→</span>
+                        </div>
+                    </div>
+                    <div class="stage-status">⭕</div>
+                </div>
+
+                <!-- 环节4: 成就奖励 -->
+                <div class="learning-stage-card" style="background: linear-gradient(135deg, #F0E5FF 0%, #F8F0FF 100%); border: 2px solid #AF52DE;">
+                    <div class="stage-icon" style="background: linear-gradient(135deg, #AF52DE 0%, #C06EEF 100%);">🏆</div>
+                    <div class="stage-content">
+                        <div class="stage-title">成就奖励</div>
+                        <div class="stage-desc">获得星星和徽章</div>
+                        <div class="stage-progress">
+                            <span style="color: #AF52DE;">完成全部环节解锁</span>
+                        </div>
+                    </div>
+                    <div class="stage-status">🔒</div>
+                </div>
+            </div>
+
+            <!-- Bella 的鼓励 -->
+            <div style="margin: 16px; padding: 16px; background: linear-gradient(135deg, #FFE5F0 0%, #FFF0F5 100%); border-radius: 16px; display: flex; align-items: center; gap: 12px;">
+                <div style="font-size: 40px;">🐰</div>
+                <div>
+                    <div style="font-size: 14px; font-weight: bold; color: #333;">Bella 说：</div>
+                    <div style="font-size: 13px; color: #666; margin-top: 4px;">"加油！我们一起学习数字吧！"</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 单词学习页 -->
+        <div class="page" id="word-learn-page">
+            <div class="lesson-header" style="background: linear-gradient(135deg, #FF6B6B 0%, #FF8585 100%);">
+                <div class="back-btn" onclick="showPage('lesson-page')">‹</div>
+                <div class="lesson-title">单词认知</div>
+                <div class="lesson-subtitle">学习数字 1-5</div>
+            </div>
+
+            <!-- 单词卡片展示 -->
+            <div style="padding: 20px;">
+                <div class="word-display-card" id="wordCard" onclick="nextWord()">
+                    <div class="word-number">1</div>
+                    <div class="word-english">one</div>
+                    <div class="word-chinese">一</div>
+                    <div class="word-emoji">🍎</div>
+                    <div style="margin-top: 16px; display: flex; gap: 12px; justify-content: center;">
+                        <button class="word-action-btn" onclick="event.stopPropagation(); playWordSound()">
+                            <span>🔊</span>
+                            <span>听发音</span>
+                        </button>
+                        <button class="word-action-btn" onclick="event.stopPropagation(); startVoicePractice()">
+                            <span>🎤</span>
+                            <span>跟我读</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- 单词导航 -->
+                <div style="display: flex; justify-content: center; gap: 8px; margin-top: 20px;">
+                    <div class="word-dot active" id="dot1"></div>
+                    <div class="word-dot" id="dot2"></div>
+                    <div class="word-dot" id="dot3"></div>
+                    <div class="word-dot" id="dot4"></div>
+                    <div class="word-dot" id="dot5"></div>
+                </div>
+
+                <!-- 进度提示 -->
+                <div style="text-align: center; margin-top: 16px; color: #999; font-size: 14px;">
+                    <span id="wordProgress">1</span> / 5 个单词
+                </div>
+            </div>
+
+            <!-- Bella 的提示 -->
+            <div style="margin: 16px; padding: 16px; background: white; border-radius: 16px; box-shadow: 0 2px 8px rgba(0,0,0,0.05); display: flex; align-items: center; gap: 12px;">
+                <div style="font-size: 32px;">🐰</div>
+                <div style="flex: 1;">
+                    <div style="font-size: 14px; color: #333;" id="bellaTip">点击卡片学习下一个单词吧！</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 语音练习页 -->
+        <div class="page" id="voice-practice-page">
+            <div class="lesson-header" style="background: linear-gradient(135deg, #4A90E2 0%, #5BA3F5 100%);">
+                <div class="back-btn" onclick="showPage('lesson-page')">‹</div>
+                <div class="lesson-title">语音练习</div>
+                <div class="lesson-subtitle">跟读数字</div>
+            </div>
+
+            <div style="padding: 20px;">
+                <!-- 练习卡片 -->
+                <div class="voice-practice-card">
+                    <div class="practice-word">one</div>
+                    <div class="practice-phonetic">/wʌn/</div>
+                    <div class="practice-translation">一</div>
+                    
+                    <!-- 语音波形 -->
+                    <div class="voice-wave-container" id="voiceWave">
+                        <div class="voice-wave-bar"></div>
+                        <div class="voice-wave-bar"></div>
+                        <div class="voice-wave-bar"></div>
+                        <div class="voice-wave-bar"></div>
+                        <div class="voice-wave-bar"></div>
+                    </div>
+
+                    <!-- 录音按钮 -->
+                    <button class="voice-record-btn" id="voiceRecordBtn" onclick="toggleRecording()">
+                        <div class="record-icon">🎤</div>
+                        <div class="record-text">按住说话</div>
+                    </button>
+
+                    <!-- 识别结果 -->
+                    <div class="voice-result" id="voiceResult" style="display: none;">
+                        <div class="result-icon">✅</div>
+                        <div class="result-text">太棒了！发音很标准！</div>
+                    </div>
+                </div>
+
+                <!-- 进度指示 -->
+                <div style="display: flex; justify-content: center; gap: 8px; margin-top: 20px;">
+                    <div class="practice-dot completed"></div>
+                    <div class="practice-dot active"></div>
+                    <div class="practice-dot"></div>
+                    <div class="practice-dot"></div>
+                    <div class="practice-dot"></div>
+                </div>
+            </div>
+
+            <!-- Bella 的鼓励 -->
+            <div style="margin: 16px; padding: 16px; background: linear-gradient(135deg, #E5F5FF 0%, #F0FAFF 100%); border-radius: 16px; display: flex; align-items: center; gap: 12px;">
+                <div style="font-size: 40px;">🐰</div>
+                <div>
+                    <div style="font-size: 14px; font-weight: bold; color: #333;">Bella 说：</div>
+                    <div style="font-size: 13px; color: #666; margin-top: 4px;">"大声读出来，你真棒！"</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 游戏页 -->
+        <div class="page" id="game-page">
+            <div class="lesson-header" style="background: linear-gradient(135deg, #FF9500 0%, #FFB033 100%);">
+                <div class="back-btn" onclick="showPage('lesson-page')">‹</div>
+                <div class="lesson-title">趣味游戏</div>
+                <div class="lesson-subtitle">数字配对</div>
+            </div>
+
+            <div style="padding: 20px;">
+                <!-- 游戏说明 -->
+                <div style="text-align: center; margin-bottom: 20px;">
+                    <div style="font-size: 16px; font-weight: bold; color: #333;">把数字和英文配对吧！</div>
+                    <div style="font-size: 13px; color: #999; margin-top: 4px;">点击两个卡片进行配对</div>
+                </div>
+
+                <!-- 游戏区域 -->
+                <div class="game-board">
+                    <!-- 数字卡片 -->
+                    <div class="game-card number-card" onclick="selectCard(this, '1')">
+                        <div class="card-content">1</div>
+                    </div>
+                    <div class="game-card number-card" onclick="selectCard(this, '2')">
+                        <div class="card-content">2</div>
+                    </div>
+                    <div class="game-card number-card" onclick="selectCard(this, '3')">
+                        <div class="card-content">3</div>
+                    </div>
+
+                    <!-- 英文卡片 -->
+                    <div class="game-card word-card" onclick="selectCard(this, 'two')">
+                        <div class="card-content">two</div>
+                    </div>
+                    <div class="game-card word-card" onclick="selectCard(this, 'one')">
+                        <div class="card-content">one</div>
+                    </div>
+                    <div class="game-card word-card" onclick="selectCard(this, 'three')">
+                        <div class="card-content">three</div>
+                    </div>
+                </div>
+
+                <!-- 游戏状态 -->
+                <div style="text-align: center; margin-top: 20px;">
+                    <div style="font-size: 14px; color: #666;">
+                        已配对：<span id="matchCount" style="color: #FF9500; font-weight: bold;">0</span> / 3
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bella 的鼓励 -->
+            <div style="margin: 16px; padding: 16px; background: linear-gradient(135deg, #FFF5E5 0%, #FFFAF0 100%); border-radius: 16px; display: flex; align-items: center; gap: 12px;">
+                <div style="font-size: 40px;">🐰</div>
+                <div>
+                    <div style="font-size: 14px; font-weight: bold; color: #333;">Bella 说：</div>
+                    <div style="font-size: 13px; color: #666; margin-top: 4px;">"加油！你可以的！"</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 课程详情页（保留原内容作为备份） -->
+        <div class="page" id="lesson-detail-page">
             <div class="lesson-header">
                 <div class="back-btn" onclick="showPage('learning-page')">‹</div>
                 <div class="lesson-title">Greetings</div>
@@ -1161,25 +2753,54 @@
 
             <!-- 3D宠物展示区域 -->
             <div class="pet-3d-container">
+                <!-- 状态指示器 -->
+                <div class="pet-status-indicator">
+                    <div class="status-icon happy" id="statusHappy">😊</div>
+                    <div class="status-icon hungry" id="statusHungry" style="display:none;">🍖</div>
+                </div>
+                
                 <div class="pet-3d-scene">
                     <div class="pet-3d-model" id="pet3DModel">
                         <div class="pet-3d-body">
+                            <!-- 头部 -->
                             <div class="pet-3d-head">
+                                <!-- 耳朵 -->
+                                <div class="pet-3d-ear left"></div>
+                                <div class="pet-3d-ear right"></div>
+                                <!-- 蝴蝶结 -->
+                                <div class="pet-3d-bow">
+                                    <div class="pet-3d-bow-center"></div>
+                                </div>
+                                <!-- 眼睛 -->
+                                <div class="pet-3d-eyelash left"></div>
+                                <div class="pet-3d-eyelash right"></div>
                                 <div class="pet-3d-eye left"></div>
                                 <div class="pet-3d-eye right"></div>
-                                <div class="pet-3d-mouth"></div>
+                                <!-- 腮红 -->
+                                <div class="pet-3d-blush left"></div>
+                                <div class="pet-3d-blush right"></div>
+                                <!-- 嘴巴 -->
+                                <div class="pet-3d-mouth" id="petMouth"></div>
                             </div>
+                            <!-- 身体 -->
                             <div class="pet-3d-body-main">
+                                <div class="pet-3d-dress"></div>
                                 <div class="pet-3d-arm left"></div>
                                 <div class="pet-3d-arm right"></div>
+                                <div class="pet-3d-foot left"></div>
+                                <div class="pet-3d-foot right"></div>
                             </div>
                         </div>
                     </div>
                     <div class="pet-3d-shadow"></div>
                 </div>
                 <div class="pet-3d-info">
-                    <div class="pet-display-name">Buddy</div>
+                    <div class="pet-display-name">Bella</div>
                     <div class="pet-display-level">Lv. 3</div>
+                </div>
+                <!-- 宠物说话气泡 -->
+                <div class="pet-speech-bubble" id="petSpeechBubble" style="display: none;">
+                    <span id="petSpeechText">你真棒！</span>
                 </div>
             </div>
 
@@ -1383,6 +3004,105 @@
             </div>
         </div>
 
+        <!-- 成就页 -->
+        <div class="page" id="achievement-page">
+            <div class="page-header">
+                <div class="page-title">我的成就</div>
+            </div>
+
+            <!-- 星星统计 -->
+            <div class="star-stats">
+                <div class="star-stats-icon">⭐</div>
+                <div class="star-stats-info">
+                    <div class="star-stats-count" id="totalStars">12</div>
+                    <div class="star-stats-label">收集的星星</div>
+                </div>
+            </div>
+
+            <!-- 成就列表 -->
+            <div class="achievement-section">
+                <div class="section-header">
+                    <div class="section-title">学习成就</div>
+                </div>
+
+                <div class="achievement-card unlocked">
+                    <div class="achievement-icon">🎯</div>
+                    <div class="achievement-info">
+                        <div class="achievement-name">初学者</div>
+                        <div class="achievement-desc">完成第一节课</div>
+                        <div class="achievement-progress">1/1</div>
+                    </div>
+                    <div class="achievement-reward">⭐ +5</div>
+                </div>
+
+                <div class="achievement-card unlocked">
+                    <div class="achievement-icon">📚</div>
+                    <div class="achievement-info">
+                        <div class="achievement-name">小学者</div>
+                        <div class="achievement-desc">学习10个单词</div>
+                        <div class="achievement-progress">10/10</div>
+                    </div>
+                    <div class="achievement-reward">⭐ +10</div>
+                </div>
+
+                <div class="achievement-card">
+                    <div class="achievement-icon">🎤</div>
+                    <div class="achievement-info">
+                        <div class="achievement-name">语音达人</div>
+                        <div class="achievement-desc">完成5次语音对话</div>
+                        <div class="achievement-progress">3/5</div>
+                    </div>
+                    <div class="achievement-reward">⭐ +15</div>
+                </div>
+
+                <div class="achievement-card">
+                    <div class="achievement-icon">🏆</div>
+                    <div class="achievement-info">
+                        <div class="achievement-name">英语小能手</div>
+                        <div class="achievement-desc">完成所有课程</div>
+                        <div class="achievement-progress">2/8</div>
+                    </div>
+                    <div class="achievement-reward">⭐ +50</div>
+                </div>
+            </div>
+
+            <div class="achievement-section">
+                <div class="section-header">
+                    <div class="section-title">宠物成就</div>
+                </div>
+
+                <div class="achievement-card unlocked">
+                    <div class="achievement-icon">🍖</div>
+                    <div class="achievement-info">
+                        <div class="achievement-name">好主人</div>
+                        <div class="achievement-desc">喂食宠物10次</div>
+                        <div class="achievement-progress">10/10</div>
+                    </div>
+                    <div class="achievement-reward">⭐ +5</div>
+                </div>
+
+                <div class="achievement-card">
+                    <div class="achievement-icon">🎮</div>
+                    <div class="achievement-info">
+                        <div class="achievement-name">玩伴</div>
+                        <div class="achievement-desc">和宠物玩耍20次</div>
+                        <div class="achievement-progress">15/20</div>
+                    </div>
+                    <div class="achievement-reward">⭐ +10</div>
+                </div>
+
+                <div class="achievement-card">
+                    <div class="achievement-icon">💖</div>
+                    <div class="achievement-info">
+                        <div class="achievement-name">最好的朋友</div>
+                        <div class="achievement-desc">宠物心情达到100</div>
+                        <div class="achievement-progress">90/100</div>
+                    </div>
+                    <div class="achievement-reward">⭐ +20</div>
+                </div>
+            </div>
+        </div>
+
         <!-- 底部导航 -->
         <div class="bottom-nav">
             <div class="nav-item active" onclick="showPage('home-page')">
@@ -1397,15 +3117,80 @@
                 <div class="nav-icon">🐾</div>
                 <div class="nav-label">宠物</div>
             </div>
-            <div class="nav-item" onclick="showPage('settings-page')">
-                <div class="nav-icon">👤</div>
-                <div class="nav-label">我的</div>
+            <div class="nav-item" onclick="showPage('achievement-page')">
+                <div class="nav-icon">🏆</div>
+                <div class="nav-label">成就</div>
             </div>
         </div>
     </div>
 
     <script>
+        // 音效系统
+        let soundEnabled = true;
+        let audioContext;
+        
+        // 初始化音频上下文
+        function initAudio() {
+            if (!audioContext) {
+                audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            }
+        }
+        
+        // 播放音效
+        function playSound(frequency, duration, type = 'sine') {
+            if (!soundEnabled) return;
+            
+            initAudio();
+            const oscillator = audioContext.createOscillator();
+            const gainNode = audioContext.createGain();
+            
+            oscillator.connect(gainNode);
+            gainNode.connect(audioContext.destination);
+            
+            oscillator.frequency.value = frequency;
+            oscillator.type = type;
+            
+            gainNode.gain.setValueAtTime(0.3, audioContext.currentTime);
+            gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + duration);
+            
+            oscillator.start(audioContext.currentTime);
+            oscillator.stop(audioContext.currentTime + duration);
+        }
+        
+        // 点击音效
+        function playClickSound() {
+            playSound(800, 0.1, 'square');
+        }
+        
+        // 成功音效
+        function playSuccessSound() {
+            playSound(523, 0.1); // C5
+            setTimeout(() => playSound(659, 0.1), 100); // E5
+            setTimeout(() => playSound(784, 0.2), 200); // G5
+        }
+        
+        // 奖励音效
+        function playRewardSound() {
+            playSound(440, 0.1); // A4
+            setTimeout(() => playSound(554, 0.1), 100); // C#5
+            setTimeout(() => playSound(659, 0.1), 200); // E5
+            setTimeout(() => playSound(880, 0.3), 300); // A5
+        }
+        
+        // 切换音效开关
+        function toggleSound() {
+            soundEnabled = !soundEnabled;
+            const soundIcon = document.getElementById('soundIcon');
+            soundIcon.textContent = soundEnabled ? '🔊' : '🔇';
+            
+            if (soundEnabled) {
+                playClickSound();
+            }
+        }
+        
         function showPage(pageId) {
+            playClickSound();
+            
             // 隐藏所有页面
             document.querySelectorAll('.page').forEach(page => {
                 page.classList.remove('active');
@@ -1420,7 +3205,7 @@
                 if ((pageId === 'home-page' && index === 0) ||
                     (pageId === 'learning-page' && index === 1) ||
                     (pageId === 'pet-page' && index === 2) ||
-                    (pageId === 'settings-page' && index === 3)) {
+                    (pageId === 'achievement-page' && index === 3)) {
                     item.classList.add('active');
                 }
             });
@@ -1430,13 +3215,357 @@
         }
 
         function feedPet() {
+            const pet = document.getElementById('pet3DModel');
+            const mouth = document.getElementById('petMouth');
+            const statusHappy = document.getElementById('statusHappy');
+            const statusHungry = document.getElementById('statusHungry');
+            
+            // 显示开心表情
+            mouth.classList.add('happy');
+            
+            // 宠物说话 - 多种鼓励语
+            const phrases = [
+                'Yummy! Thank you!',
+                'So delicious!',
+                'I love this food!',
+                'Thank you, friend!',
+                'My tummy is happy!'
+            ];
+            showPetSpeech(phrases[Math.floor(Math.random() * phrases.length)]);
+            
+            // 触发弹跳动画
+            pet.classList.add('bounce');
+            setTimeout(() => {
+                pet.classList.remove('bounce');
+            }, 600);
+            
+            // 显示爱心
+            showHeartAnimation();
+            
+            // 更新状态
+            statusHungry.style.display = 'none';
+            statusHappy.style.display = 'flex';
+            
+            // 3秒后恢复
+            setTimeout(() => {
+                mouth.classList.remove('happy');
+            }, 2000);
+            
             alert('🍖 喂食成功！宠物饱腹度 +20');
-            triggerPetBounce();
         }
 
         function playWithPet() {
+            const pet = document.getElementById('pet3DModel');
+            const mouth = document.getElementById('petMouth');
+            
+            // 显示开心表情
+            mouth.classList.add('happy');
+            
+            // 宠物说话
+            const phrases = [
+                'Let\'s play together!',
+                'So much fun!',
+                'I love playing with you!',
+                'Wheee! This is great!',
+                'More, more, more!'
+            ];
+            showPetSpeech(phrases[Math.floor(Math.random() * phrases.length)]);
+            
+            // 触发开心动画
+            pet.classList.add('happy');
+            setTimeout(() => {
+                pet.classList.remove('happy');
+            }, 800);
+            
+            // 显示星星奖励
+            showStarReward();
+            
+            // 3秒后恢复
+            setTimeout(() => {
+                mouth.classList.remove('happy');
+            }, 2000);
+            
             alert('🎮 玩耍成功！宠物心情 +15');
-            triggerPetBounce();
+        }
+
+        // 单词学习相关
+        let currentWordIndex = 0;
+        const words = [
+            { number: '1', english: 'one', chinese: '一', emoji: '🍎' },
+            { number: '2', english: 'two', chinese: '二', emoji: '🍊' },
+            { number: '3', english: 'three', chinese: '三', emoji: '🍋' },
+            { number: '4', english: 'four', chinese: '四', emoji: '🍇' },
+            { number: '5', english: 'five', chinese: '五', emoji: '🍓' }
+        ];
+
+        function nextWord() {
+            currentWordIndex = (currentWordIndex + 1) % words.length;
+            updateWordCard();
+            playClickSound();
+        }
+
+        function updateWordCard() {
+            const word = words[currentWordIndex];
+            document.querySelector('.word-number').textContent = word.number;
+            document.querySelector('.word-english').textContent = word.english;
+            document.querySelector('.word-chinese').textContent = word.chinese;
+            document.querySelector('.word-emoji').textContent = word.emoji;
+            document.getElementById('wordProgress').textContent = currentWordIndex + 1;
+
+            // 更新导航点
+            document.querySelectorAll('.word-dot').forEach((dot, index) => {
+                dot.classList.toggle('active', index === currentWordIndex);
+            });
+
+            // Bella 的提示
+            const tips = [
+                '点击卡片学习下一个单词吧！',
+                '记得跟读发音哦！',
+                '你真棒，继续加油！',
+                '这个数字怎么读呢？',
+                '最后一个啦，加油！'
+            ];
+            document.getElementById('bellaTip').textContent = tips[currentWordIndex];
+        }
+
+        function playWordSound() {
+            const word = words[currentWordIndex];
+            // 使用 Web Speech API 播放发音
+            if ('speechSynthesis' in window) {
+                const utterance = new SpeechSynthesisUtterance(word.english);
+                utterance.lang = 'en-US';
+                utterance.rate = 0.8;
+                speechSynthesis.speak(utterance);
+            }
+            playSound(440, 0.3, 'sine');
+        }
+
+        function startVoicePractice() {
+            showPage('voice-practice-page');
+        }
+
+        // 语音练习相关
+        let isRecording = false;
+
+        function toggleRecording() {
+            const btn = document.getElementById('voiceRecordBtn');
+            const result = document.getElementById('voiceResult');
+            
+            if (!isRecording) {
+                isRecording = true;
+                btn.classList.add('recording');
+                btn.querySelector('.record-text').textContent = '正在录音...';
+                
+                // 模拟录音过程
+                setTimeout(() => {
+                    isRecording = false;
+                    btn.classList.remove('recording');
+                    btn.querySelector('.record-text').textContent = '按住说话';
+                    
+                    // 显示识别结果
+                    result.style.display = 'flex';
+                    playSound(523.25, 0.2, 'sine'); // 成功音效
+                    
+                    // 2秒后隐藏结果
+                    setTimeout(() => {
+                        result.style.display = 'none';
+                    }, 2000);
+                }, 2000);
+            }
+        }
+
+        // 游戏相关
+        let selectedCards = [];
+        let matchedPairs = 0;
+
+        function selectCard(card, value) {
+            if (card.classList.contains('matched')) return;
+            
+            playClickSound();
+            
+            // 如果已经选中，取消选中
+            if (card.classList.contains('selected')) {
+                card.classList.remove('selected');
+                selectedCards = selectedCards.filter(c => c !== card);
+                return;
+            }
+            
+            // 选中卡片
+            card.classList.add('selected');
+            selectedCards.push({ element: card, value: value });
+            
+            // 如果选中了两张卡片，检查是否匹配
+            if (selectedCards.length === 2) {
+                const [card1, card2] = selectedCards;
+                
+                // 检查匹配规则：数字和对应的英文
+                const isMatch = checkMatch(card1.value, card2.value);
+                
+                if (isMatch) {
+                    // 匹配成功
+                    setTimeout(() => {
+                        card1.element.classList.add('matched');
+                        card2.element.classList.add('matched');
+                        card1.element.classList.remove('selected');
+                        card2.element.classList.remove('selected');
+                        selectedCards = [];
+                        matchedPairs++;
+                        document.getElementById('matchCount').textContent = matchedPairs;
+                        playSound(523.25, 0.2, 'sine'); // 成功音效
+                        
+                        // 检查是否完成所有配对
+                        if (matchedPairs === 3) {
+                            setTimeout(() => {
+                                showStarReward();
+                                alert('🎉 太棒了！你完成了所有配对！');
+                            }, 500);
+                        }
+                    }, 300);
+                } else {
+                    // 匹配失败
+                    setTimeout(() => {
+                        card1.element.classList.remove('selected');
+                        card2.element.classList.remove('selected');
+                        selectedCards = [];
+                    }, 800);
+                }
+            }
+        }
+
+        function checkMatch(val1, val2) {
+            const matches = {
+                '1': 'one',
+                '2': 'two',
+                '3': 'three'
+            };
+            return (matches[val1] === val2) || (matches[val2] === val1);
+        }
+
+        function showPetSpeech(text) {
+            const bubble = document.getElementById('petSpeechBubble');
+            const bubbleText = document.getElementById('petSpeechText');
+            
+            bubbleText.textContent = text;
+            bubble.style.display = 'block';
+            
+            // 3秒后隐藏
+            setTimeout(() => {
+                bubble.style.display = 'none';
+            }, 3000);
+        }
+
+        function showStarReward() {
+            const container = document.querySelector('.pet-3d-container');
+            const star = document.createElement('div');
+            star.className = 'star-reward';
+            star.textContent = '⭐';
+            star.style.left = '50%';
+            star.style.top = '50%';
+            container.appendChild(star);
+            
+            setTimeout(() => {
+                star.remove();
+            }, 2000);
+        }
+
+        function showHeartAnimation() {
+            const container = document.querySelector('.pet-3d-container');
+            for (let i = 0; i < 3; i++) {
+                setTimeout(() => {
+                    const heart = document.createElement('div');
+                    heart.className = 'heart-float';
+                    heart.textContent = '💖';
+                    heart.style.left = (40 + Math.random() * 20) + '%';
+                    heart.style.top = '40%';
+                    container.appendChild(heart);
+                    
+                    setTimeout(() => {
+                        heart.remove();
+                    }, 1500);
+                }, i * 200);
+            }
+        }
+
+        // 宠物自动行为系统
+        let petAutoBehaviorInterval;
+        
+        function startPetAutoBehavior() {
+            // 每8-15秒随机执行一个动作
+            scheduleNextBehavior();
+        }
+        
+        function scheduleNextBehavior() {
+            const delay = 8000 + Math.random() * 7000; // 8-15秒
+            petAutoBehaviorInterval = setTimeout(() => {
+                performRandomBehavior();
+                scheduleNextBehavior();
+            }, delay);
+        }
+        
+        function performRandomBehavior() {
+            const pet = document.getElementById('pet3DModel');
+            if (!pet) return;
+            
+            const behaviors = [
+                { action: 'dance', speech: 'Let\'s dance!', probability: 0.2 },
+                { action: 'wave', speech: 'Hi there!', probability: 0.2 },
+                { action: 'spin', speech: 'Wheee!', probability: 0.15 },
+                { action: 'nod', speech: 'Yes yes!', probability: 0.15 },
+                { action: 'bounce', speech: 'Jump jump!', probability: 0.15 },
+                { action: 'happy', speech: 'I\'m so happy!', probability: 0.15 }
+            ];
+            
+            // 根据概率选择行为
+            const rand = Math.random();
+            let cumulative = 0;
+            let selectedBehavior = behaviors[0];
+            
+            for (let behavior of behaviors) {
+                cumulative += behavior.probability;
+                if (rand <= cumulative) {
+                    selectedBehavior = behavior;
+                    break;
+                }
+            }
+            
+            // 执行动作
+            pet.classList.add(selectedBehavior.action);
+            showPetSpeech(selectedBehavior.speech);
+            
+            // 播放音效
+            playSound(400 + Math.random() * 200, 0.2, 'sine');
+            
+            // 移除动画类
+            setTimeout(() => {
+                pet.classList.remove(selectedBehavior.action);
+            }, 1500);
+        }
+        
+        function stopPetAutoBehavior() {
+            if (petAutoBehaviorInterval) {
+                clearTimeout(petAutoBehaviorInterval);
+            }
+        }
+        
+        // 点击宠物触发互动
+        function interactWithPet() {
+            const pet = document.getElementById('pet3DModel');
+            const interactions = [
+                { action: 'bounce', speech: 'Hehe!' },
+                { action: 'spin', speech: 'So fun!' },
+                { action: 'dance', speech: 'Let\'s play!' },
+                { action: 'happy', speech: 'I love you!' }
+            ];
+            
+            const interaction = interactions[Math.floor(Math.random() * interactions.length)];
+            pet.classList.add(interaction.action);
+            showPetSpeech(interaction.speech);
+            showHeartAnimation();
+            playSound(500, 0.3, 'sine');
+            
+            setTimeout(() => {
+                pet.classList.remove(interaction.action);
+            }, 1000);
         }
 
         function toggleVoice() {
@@ -1454,16 +3583,73 @@
                 setTimeout(() => {
                     voiceBtn.classList.remove('active');
                     voiceStatus.style.display = 'none';
+                    // 模拟识别结果并鼓励
+                    const encouragements = [
+                        'Great job!',
+                        'You did it!',
+                        'Amazing!',
+                        'Wonderful!',
+                        'I\'m proud of you!'
+                    ];
+                    showPetSpeech(encouragements[Math.floor(Math.random() * encouragements.length)]);
+                    showStarReward();
                 }, 3000);
             }
         }
 
         function triggerPetBounce() {
             const pet = document.getElementById('pet3DModel');
+            const mouth = document.getElementById('petMouth');
+            
             pet.classList.add('bounce');
+            mouth.classList.add('happy');
+            
+            // 随机说一句话
+            const phrases = [
+                'You\'re amazing!',
+                'I love you!',
+                'Let\'s learn English!',
+                'So much fun!',
+                'You\'re the best!',
+                'Keep going!',
+                'I believe in you!'
+            ];
+            const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+            showPetSpeech(randomPhrase);
+            
+            // 显示爱心
+            showHeartAnimation();
+            
             setTimeout(() => {
                 pet.classList.remove('bounce');
-            }, 600);
+                mouth.classList.remove('happy');
+            }, 800);
+        }
+
+        // 宠物主动说话系统
+        let petMoodTimer;
+        function startPetMoodSystem() {
+            // 每30秒宠物会主动说一句话
+            petMoodTimer = setInterval(() => {
+                const randomActions = [
+                    () => showPetSpeech('Let\'s learn something new!'),
+                    () => {
+                        const pet = document.getElementById('pet3DModel');
+                        pet.classList.add('excited');
+                        showPetSpeech('I\'m so happy!');
+                        setTimeout(() => pet.classList.remove('excited'), 2000);
+                    },
+                    () => showPetSpeech('Do you want to play?'),
+                    () => {
+                        showPetSpeech('I\'m hungry...');
+                        document.getElementById('statusHungry').style.display = 'flex';
+                    },
+                    () => showPetSpeech('You\'re my best friend!')
+                ];
+                
+                const randomAction = randomActions[Math.floor(Math.random() * randomActions.length)];
+                randomAction();
+            }, 30000); // 30秒一次
         }
 
         // 点击3D宠物触发互动
@@ -1471,9 +3657,23 @@
             const pet3D = document.getElementById('pet3DModel');
             if (pet3D) {
                 pet3D.addEventListener('click', function() {
-                    triggerPetBounce();
+                    interactWithPet();
                 });
             }
+            
+            // 初始欢迎语
+            setTimeout(() => {
+                showPetSpeech('Hi! I\'m Bella! Let\'s learn English together!');
+                const pet = document.getElementById('pet3DModel');
+                pet.classList.add('excited');
+                setTimeout(() => pet.classList.remove('excited'), 2000);
+            }, 1000);
+            
+            // 启动宠物情绪系统
+            startPetMoodSystem();
+            
+            // 启动宠物自动行为系统
+            startPetAutoBehavior();
         });
 
         // 点击音效按钮
