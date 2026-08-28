@@ -22,6 +22,8 @@ dependencies:
   shimmer: ^3.0.0
   lottie: ^3.0.0
   confetti_widget: ^0.3.1
+  rive: ^0.13.0
+  flutter_spinkit: ^5.2.0
 
   # Voice (System native)
   speech_to_text: ^7.0.0
@@ -32,6 +34,9 @@ dependencies:
 
   # Game Engine
   flame: ^1.14.0
+
+  # 3D Models
+  model_viewer_plus: ^1.8.0
 
   # AI Agent Framework (LangChain.dart)
   langchain: ^0.9.0

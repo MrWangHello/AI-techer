@@ -334,6 +334,302 @@
             margin-top: 8px;
         }
 
+        /* 3D宠物样式 */
+        .pet-3d-container {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            border-radius: 20px;
+            padding: 20px;
+            margin: 16px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .pet-3d-scene {
+            width: 100%;
+            height: 250px;
+            perspective: 800px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            position: relative;
+        }
+
+        .pet-3d-model {
+            width: 150px;
+            height: 150px;
+            position: relative;
+            transform-style: preserve-3d;
+            animation: petFloat 3s ease-in-out infinite;
+            cursor: pointer;
+            transition: transform 0.3s;
+        }
+
+        .pet-3d-model:hover {
+            transform: scale(1.1);
+        }
+
+        .pet-3d-model.bounce {
+            animation: petBounce 0.6s ease-in-out;
+        }
+
+        .pet-3d-body {
+            position: relative;
+            width: 100%;
+            height: 100%;
+            transform-style: preserve-3d;
+        }
+
+        .pet-3d-head {
+            position: absolute;
+            top: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80px;
+            height: 80px;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            border-radius: 50%;
+            box-shadow: 
+                inset -10px -10px 20px rgba(0,0,0,0.1),
+                0 10px 30px rgba(0,0,0,0.2);
+            transform-style: preserve-3d;
+        }
+
+        .pet-3d-eye {
+            position: absolute;
+            top: 25px;
+            width: 15px;
+            height: 20px;
+            background: #333;
+            border-radius: 50%;
+            animation: blink 4s infinite;
+        }
+
+        .pet-3d-eye.left {
+            left: 20px;
+        }
+
+        .pet-3d-eye.right {
+            right: 20px;
+        }
+
+        .pet-3d-mouth {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 30px;
+            height: 15px;
+            border: 3px solid #333;
+            border-top: none;
+            border-radius: 0 0 30px 30px;
+        }
+
+        .pet-3d-body-main {
+            position: absolute;
+            top: 90px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 100px;
+            height: 80px;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            border-radius: 50px;
+            box-shadow: 
+                inset -10px -10px 20px rgba(0,0,0,0.1),
+                0 10px 30px rgba(0,0,0,0.2);
+        }
+
+        .pet-3d-arm {
+            position: absolute;
+            top: 20px;
+            width: 25px;
+            height: 50px;
+            background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
+            border-radius: 25px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+            transform-origin: top center;
+        }
+
+        .pet-3d-arm.left {
+            left: -15px;
+            animation: armWaveLeft 2s ease-in-out infinite;
+        }
+
+        .pet-3d-arm.right {
+            right: -15px;
+            animation: armWaveRight 2s ease-in-out infinite;
+        }
+
+        .pet-3d-shadow {
+            position: absolute;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 120px;
+            height: 20px;
+            background: rgba(0,0,0,0.2);
+            border-radius: 50%;
+            filter: blur(10px);
+            animation: shadowPulse 3s ease-in-out infinite;
+        }
+
+        .pet-3d-info {
+            text-align: center;
+            margin-top: 16px;
+        }
+
+        /* 语音按钮 */
+        .voice-btn {
+            position: absolute;
+            top: 16px;
+            right: 16px;
+            width: 44px;
+            height: 44px;
+            background: white;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            transition: all 0.3s;
+        }
+
+        .voice-btn.active {
+            background: #FF3B30;
+            animation: pulse 1.5s infinite;
+        }
+
+        /* 语音状态 */
+        .voice-status {
+            background: rgba(255, 59, 48, 0.1);
+            border-radius: 12px;
+            padding: 16px;
+            margin: 0 16px 16px;
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .voice-wave {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            height: 30px;
+        }
+
+        .voice-wave-bar {
+            width: 4px;
+            height: 100%;
+            background: #FF3B30;
+            border-radius: 2px;
+            animation: waveBar 0.8s ease-in-out infinite;
+        }
+
+        .voice-wave-bar:nth-child(2) {
+            animation-delay: 0.1s;
+        }
+
+        .voice-wave-bar:nth-child(3) {
+            animation-delay: 0.2s;
+        }
+
+        .voice-wave-bar:nth-child(4) {
+            animation-delay: 0.3s;
+        }
+
+        .voice-wave-bar:nth-child(5) {
+            animation-delay: 0.4s;
+        }
+
+        .voice-text {
+            color: #FF3B30;
+            font-weight: 500;
+        }
+
+        /* 动画关键帧 */
+        @keyframes petFloat {
+            0%, 100% {
+                transform: translateY(0) rotateY(0deg);
+            }
+            50% {
+                transform: translateY(-20px) rotateY(180deg);
+            }
+        }
+
+        @keyframes petBounce {
+            0%, 100% {
+                transform: translateY(0) scale(1);
+            }
+            25% {
+                transform: translateY(-30px) scale(1.1);
+            }
+            50% {
+                transform: translateY(0) scale(0.95);
+            }
+            75% {
+                transform: translateY(-15px) scale(1.05);
+            }
+        }
+
+        @keyframes blink {
+            0%, 90%, 100% {
+                transform: scaleY(1);
+            }
+            95% {
+                transform: scaleY(0.1);
+            }
+        }
+
+        @keyframes armWaveLeft {
+            0%, 100% {
+                transform: rotate(0deg);
+            }
+            50% {
+                transform: rotate(-30deg);
+            }
+        }
+
+        @keyframes armWaveRight {
+            0%, 100% {
+                transform: rotate(0deg);
+            }
+            50% {
+                transform: rotate(30deg);
+            }
+        }
+
+        @keyframes shadowPulse {
+            0%, 100% {
+                transform: translateX(-50%) scale(1);
+                opacity: 0.2;
+            }
+            50% {
+                transform: translateX(-50%) scale(0.8);
+                opacity: 0.1;
+            }
+        }
+
+        @keyframes pulse {
+            0%, 100% {
+                transform: scale(1);
+                box-shadow: 0 2px 8px rgba(255, 59, 48, 0.3);
+            }
+            50% {
+                transform: scale(1.1);
+                box-shadow: 0 2px 16px rgba(255, 59, 48, 0.5);
+            }
+        }
+
+        @keyframes waveBar {
+            0%, 100% {
+                transform: scaleY(0.3);
+            }
+            50% {
+                transform: scaleY(1);
+            }
+        }
+
         .stat-card {
             background: white;
             border-radius: 12px;
@@ -860,12 +1156,43 @@
         <div class="page" id="pet-page">
             <div class="page-header">
                 <div class="page-title">我的宠物</div>
+                <div class="voice-btn" onclick="toggleVoice()" id="voiceBtn">🎤</div>
             </div>
 
-            <div class="pet-display">
-                <div class="pet-display-icon">🐶</div>
-                <div class="pet-display-name">Buddy</div>
-                <div class="pet-display-level">Lv. 3</div>
+            <!-- 3D宠物展示区域 -->
+            <div class="pet-3d-container">
+                <div class="pet-3d-scene">
+                    <div class="pet-3d-model" id="pet3DModel">
+                        <div class="pet-3d-body">
+                            <div class="pet-3d-head">
+                                <div class="pet-3d-eye left"></div>
+                                <div class="pet-3d-eye right"></div>
+                                <div class="pet-3d-mouth"></div>
+                            </div>
+                            <div class="pet-3d-body-main">
+                                <div class="pet-3d-arm left"></div>
+                                <div class="pet-3d-arm right"></div>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="pet-3d-shadow"></div>
+                </div>
+                <div class="pet-3d-info">
+                    <div class="pet-display-name">Buddy</div>
+                    <div class="pet-display-level">Lv. 3</div>
+                </div>
+            </div>
+
+            <!-- 语音状态提示 -->
+            <div class="voice-status" id="voiceStatus" style="display: none;">
+                <div class="voice-wave">
+                    <div class="voice-wave-bar"></div>
+                    <div class="voice-wave-bar"></div>
+                    <div class="voice-wave-bar"></div>
+                    <div class="voice-wave-bar"></div>
+                    <div class="voice-wave-bar"></div>
+                </div>
+                <div class="voice-text">正在聆听...</div>
             </div>
 
             <div class="stat-card">
@@ -1104,11 +1431,50 @@
 
         function feedPet() {
             alert('🍖 喂食成功！宠物饱腹度 +20');
+            triggerPetBounce();
         }
 
         function playWithPet() {
             alert('🎮 玩耍成功！宠物心情 +15');
+            triggerPetBounce();
         }
+
+        function toggleVoice() {
+            const voiceBtn = document.getElementById('voiceBtn');
+            const voiceStatus = document.getElementById('voiceStatus');
+            const isActive = voiceBtn.classList.contains('active');
+            
+            if (isActive) {
+                voiceBtn.classList.remove('active');
+                voiceStatus.style.display = 'none';
+            } else {
+                voiceBtn.classList.add('active');
+                voiceStatus.style.display = 'flex';
+                // 模拟3秒后自动停止
+                setTimeout(() => {
+                    voiceBtn.classList.remove('active');
+                    voiceStatus.style.display = 'none';
+                }, 3000);
+            }
+        }
+
+        function triggerPetBounce() {
+            const pet = document.getElementById('pet3DModel');
+            pet.classList.add('bounce');
+            setTimeout(() => {
+                pet.classList.remove('bounce');
+            }, 600);
+        }
+
+        // 点击3D宠物触发互动
+        document.addEventListener('DOMContentLoaded', function() {
+            const pet3D = document.getElementById('pet3DModel');
+            if (pet3D) {
+                pet3D.addEventListener('click', function() {
+                    triggerPetBounce();
+                });
+            }
+        });
 
         // 点击音效按钮
         document.querySelectorAll('.vocab-sound, .sentence-en span[style*="cursor"]').forEach(btn => {
