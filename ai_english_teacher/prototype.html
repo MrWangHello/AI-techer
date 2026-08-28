@@ -1,0 +1,1124 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>AI English Teacher - 界面原型</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #f5f5f5;
+            overflow-x: hidden;
+        }
+
+        .app-container {
+            max-width: 414px;
+            margin: 0 auto;
+            background: white;
+            min-height: 100vh;
+            position: relative;
+            box-shadow: 0 0 20px rgba(0,0,0,0.1);
+        }
+
+        /* 页面容器 */
+        .page {
+            display: none;
+            padding-bottom: 70px;
+            animation: fadeIn 0.3s;
+        }
+
+        .page.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        /* 首页 */
+        .home-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            color: white;
+        }
+
+        .welcome-text {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .subtitle-text {
+            font-size: 14px;
+            opacity: 0.9;
+        }
+
+        .pet-card {
+            background: rgba(255,255,255,0.2);
+            border-radius: 16px;
+            padding: 16px;
+            margin-top: 20px;
+            display: flex;
+            align-items: center;
+        }
+
+        .pet-icon {
+            font-size: 60px;
+            margin-right: 16px;
+        }
+
+        .pet-info {
+            flex: 1;
+        }
+
+        .pet-name {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .pet-level {
+            font-size: 14px;
+            opacity: 0.9;
+            margin-top: 4px;
+        }
+
+        .pet-progress {
+            height: 8px;
+            background: rgba(255,255,255,0.3);
+            border-radius: 4px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+
+        .pet-progress-bar {
+            height: 100%;
+            background: white;
+            width: 60%;
+            border-radius: 4px;
+        }
+
+        /* 快捷操作 */
+        .quick-actions {
+            display: flex;
+            padding: 16px;
+            gap: 12px;
+        }
+
+        .quick-action {
+            flex: 1;
+            background: #f0f4ff;
+            border-radius: 16px;
+            padding: 20px 10px;
+            text-align: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .quick-action:active {
+            transform: scale(0.95);
+        }
+
+        .quick-action-icon {
+            font-size: 32px;
+            margin-bottom: 8px;
+        }
+
+        .quick-action-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #667eea;
+        }
+
+        /* 课程列表 */
+        .section-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 16px;
+        }
+
+        .section-title {
+            font-size: 20px;
+            font-weight: bold;
+        }
+
+        .view-all {
+            color: #667eea;
+            font-size: 14px;
+            cursor: pointer;
+        }
+
+        .course-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 0 16px 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+
+        .course-card:active {
+            transform: scale(0.98);
+        }
+
+        .course-number {
+            width: 60px;
+            height: 60px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            font-weight: bold;
+            color: white;
+            margin-right: 16px;
+        }
+
+        .course-info {
+            flex: 1;
+        }
+
+        .course-title {
+            font-size: 18px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .course-meta {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .course-arrow {
+            color: #ccc;
+            font-size: 20px;
+        }
+
+        /* 学习页 */
+        .page-header {
+            background: white;
+            padding: 16px;
+            border-bottom: 1px solid #eee;
+            position: sticky;
+            top: 0;
+            z-index: 10;
+        }
+
+        .page-title {
+            font-size: 20px;
+            font-weight: bold;
+            text-align: center;
+        }
+
+        /* 课程详情页 */
+        .lesson-header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            padding: 20px;
+            color: white;
+            text-align: center;
+        }
+
+        .lesson-title {
+            font-size: 28px;
+            font-weight: bold;
+        }
+
+        .lesson-subtitle {
+            font-size: 16px;
+            opacity: 0.9;
+            margin-top: 8px;
+        }
+
+        .lesson-section {
+            padding: 16px;
+        }
+
+        .lesson-section-title {
+            font-size: 20px;
+            font-weight: bold;
+            margin-bottom: 12px;
+        }
+
+        .vocab-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+            display: flex;
+            align-items: center;
+        }
+
+        .vocab-info {
+            flex: 1;
+        }
+
+        .vocab-word {
+            font-size: 24px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+
+        .vocab-phonetic {
+            font-size: 14px;
+            color: #999;
+            margin-bottom: 4px;
+        }
+
+        .vocab-translation {
+            font-size: 16px;
+            color: #666;
+        }
+
+        .vocab-sound {
+            font-size: 32px;
+            cursor: pointer;
+            padding: 8px;
+        }
+
+        .sentence-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .sentence-en {
+            font-size: 18px;
+            font-weight: 500;
+            margin-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .sentence-zh {
+            font-size: 14px;
+            color: #666;
+        }
+
+        /* 宠物页 */
+        .pet-display {
+            background: linear-gradient(135deg, #a8edea 0%, #fed6e3 100%);
+            border-radius: 20px;
+            padding: 40px 20px;
+            text-align: center;
+            margin: 16px;
+        }
+
+        .pet-display-icon {
+            font-size: 120px;
+            margin-bottom: 16px;
+        }
+
+        .pet-display-name {
+            font-size: 24px;
+            font-weight: bold;
+            color: #333;
+        }
+
+        .pet-display-level {
+            font-size: 18px;
+            color: #666;
+            margin-top: 8px;
+        }
+
+        .stat-card {
+            background: white;
+            border-radius: 12px;
+            padding: 16px;
+            margin: 0 16px 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .stat-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+
+        .stat-label {
+            font-size: 16px;
+            font-weight: bold;
+        }
+
+        .stat-value {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .stat-progress {
+            height: 12px;
+            background: #f0f0f0;
+            border-radius: 6px;
+            overflow: hidden;
+        }
+
+        .stat-progress-bar {
+            height: 100%;
+            border-radius: 6px;
+            transition: width 0.3s;
+        }
+
+        .pet-actions {
+            display: flex;
+            gap: 12px;
+            padding: 16px;
+        }
+
+        .pet-action-btn {
+            flex: 1;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 12px;
+            padding: 16px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
+        }
+
+        .pet-action-btn:active {
+            transform: scale(0.98);
+        }
+
+        /* AI 对话页 */
+        .chat-messages {
+            padding: 16px;
+            min-height: calc(100vh - 200px);
+        }
+
+        .chat-message {
+            margin-bottom: 16px;
+            display: flex;
+        }
+
+        .chat-message.user {
+            justify-content: flex-end;
+        }
+
+        .chat-bubble {
+            max-width: 70%;
+            padding: 12px 16px;
+            border-radius: 20px;
+            font-size: 16px;
+            line-height: 1.5;
+        }
+
+        .chat-message.ai .chat-bubble {
+            background: #f0f0f0;
+            border-bottom-left-radius: 4px;
+        }
+
+        .chat-message.user .chat-bubble {
+            background: #667eea;
+            color: white;
+            border-bottom-right-radius: 4px;
+        }
+
+        .chat-input-area {
+            position: fixed;
+            bottom: 70px;
+            left: 0;
+            right: 0;
+            max-width: 414px;
+            margin: 0 auto;
+            background: white;
+            padding: 16px;
+            border-top: 1px solid #eee;
+            display: flex;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .chat-input {
+            flex: 1;
+            border: 1px solid #ddd;
+            border-radius: 24px;
+            padding: 12px 16px;
+            font-size: 16px;
+            outline: none;
+        }
+
+        .chat-input:focus {
+            border-color: #667eea;
+        }
+
+        .chat-btn {
+            width: 44px;
+            height: 44px;
+            border-radius: 50%;
+            border: none;
+            background: #667eea;
+            color: white;
+            font-size: 20px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .chat-btn:active {
+            transform: scale(0.95);
+        }
+
+        /* 设置页 */
+        .settings-section {
+            margin-bottom: 24px;
+        }
+
+        .settings-section-title {
+            font-size: 14px;
+            font-weight: bold;
+            color: #999;
+            padding: 16px 16px 8px;
+        }
+
+        .settings-item {
+            background: white;
+            padding: 16px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            cursor: pointer;
+        }
+
+        .settings-item:active {
+            background: #f9f9f9;
+        }
+
+        .settings-item-content {
+            flex: 1;
+        }
+
+        .settings-item-title {
+            font-size: 16px;
+            margin-bottom: 4px;
+        }
+
+        .settings-item-subtitle {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .settings-item-arrow {
+            color: #ccc;
+        }
+
+        .settings-radio {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .radio-dot {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            border: 2px solid #ddd;
+            position: relative;
+        }
+
+        .radio-dot.active {
+            border-color: #667eea;
+        }
+
+        .radio-dot.active::after {
+            content: '';
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #667eea;
+        }
+
+        /* 底部导航 */
+        .bottom-nav {
+            position: fixed;
+            bottom: 0;
+            left: 0;
+            right: 0;
+            max-width: 414px;
+            margin: 0 auto;
+            background: white;
+            border-top: 1px solid #eee;
+            display: flex;
+            padding: 8px 0;
+            z-index: 100;
+        }
+
+        .nav-item {
+            flex: 1;
+            text-align: center;
+            padding: 8px;
+            cursor: pointer;
+            color: #999;
+            transition: color 0.2s;
+        }
+
+        .nav-item.active {
+            color: #667eea;
+        }
+
+        .nav-icon {
+            font-size: 24px;
+            margin-bottom: 4px;
+        }
+
+        .nav-label {
+            font-size: 12px;
+        }
+
+        /* 返回按钮 */
+        .back-btn {
+            position: absolute;
+            left: 16px;
+            top: 16px;
+            font-size: 24px;
+            cursor: pointer;
+            color: white;
+            z-index: 10;
+        }
+
+        /* 响应式 */
+        @media (max-width: 414px) {
+            .app-container {
+                max-width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="app-container">
+        <!-- 首页 -->
+        <div class="page active" id="home-page">
+            <div class="home-header">
+                <div class="welcome-text">欢迎回来！</div>
+                <div class="subtitle-text">今天也要加油学习哦～</div>
+                
+                <div class="pet-card" onclick="showPage('pet-page')">
+                    <div class="pet-icon">🐶</div>
+                    <div class="pet-info">
+                        <div class="pet-name">Buddy</div>
+                        <div class="pet-level">Lv. 3</div>
+                        <div class="pet-progress">
+                            <div class="pet-progress-bar"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="quick-actions">
+                <div class="quick-action" onclick="showPage('chat-page')">
+                    <div class="quick-action-icon">💬</div>
+                    <div class="quick-action-label">AI对话</div>
+                </div>
+                <div class="quick-action" onclick="showPage('learning-page')">
+                    <div class="quick-action-icon">📚</div>
+                    <div class="quick-action-label">课程学习</div>
+                </div>
+                <div class="quick-action" onclick="showPage('pet-page')">
+                    <div class="quick-action-icon">🐾</div>
+                    <div class="quick-action-label">我的宠物</div>
+                </div>
+            </div>
+
+            <div class="section-header">
+                <div class="section-title">课程列表</div>
+                <div class="view-all" onclick="showPage('learning-page')">查看全部</div>
+            </div>
+
+            <div class="course-card" onclick="showPage('lesson-page')">
+                <div class="course-number" style="background: #4A90E2;">1</div>
+                <div class="course-info">
+                    <div class="course-title">Greetings</div>
+                    <div class="course-meta">4 个单词 · 2 个句子</div>
+                </div>
+                <div class="course-arrow">›</div>
+            </div>
+
+            <div class="course-card" onclick="showPage('lesson-page')">
+                <div class="course-number" style="background: #50C878;">2</div>
+                <div class="course-info">
+                    <div class="course-title">Colors</div>
+                    <div class="course-meta">6 个单词 · 3 个句子</div>
+                </div>
+                <div class="course-arrow">›</div>
+            </div>
+
+            <div class="course-card" onclick="showPage('lesson-page')">
+                <div class="course-number" style="background: #FF9500;">3</div>
+                <div class="course-info">
+                    <div class="course-title">Numbers</div>
+                    <div class="course-meta">10 个单词 · 3 个句子</div>
+                </div>
+                <div class="course-arrow">›</div>
+            </div>
+
+            <div class="course-card" onclick="showPage('lesson-page')">
+                <div class="course-number" style="background: #AF52DE;">4</div>
+                <div class="course-info">
+                    <div class="course-title">Animals</div>
+                    <div class="course-meta">6 个单词 · 4 个句子</div>
+                </div>
+                <div class="course-arrow">›</div>
+            </div>
+        </div>
+
+        <!-- 学习页 -->
+        <div class="page" id="learning-page">
+            <div class="page-header">
+                <div class="page-title">课程学习</div>
+            </div>
+
+            <div style="padding: 16px;">
+                <div class="course-card" onclick="showPage('lesson-page')">
+                    <div class="course-number" style="background: #4A90E2;">1</div>
+                    <div class="course-info">
+                        <div class="course-title">Greetings</div>
+                        <div class="course-meta">4 个单词 · 2 个句子</div>
+                    </div>
+                    <div class="course-arrow">›</div>
+                </div>
+
+                <div class="course-card" onclick="showPage('lesson-page')">
+                    <div class="course-number" style="background: #50C878;">2</div>
+                    <div class="course-info">
+                        <div class="course-title">Colors</div>
+                        <div class="course-meta">6 个单词 · 3 个句子</div>
+                    </div>
+                    <div class="course-arrow">›</div>
+                </div>
+
+                <div class="course-card" onclick="showPage('lesson-page')">
+                    <div class="course-number" style="background: #FF9500;">3</div>
+                    <div class="course-info">
+                        <div class="course-title">Numbers</div>
+                        <div class="course-meta">10 个单词 · 3 个句子</div>
+                    </div>
+                    <div class="course-arrow">›</div>
+                </div>
+
+                <div class="course-card" onclick="showPage('lesson-page')">
+                    <div class="course-number" style="background: #AF52DE;">4</div>
+                    <div class="course-info">
+                        <div class="course-title">Animals</div>
+                        <div class="course-meta">6 个单词 · 4 个句子</div>
+                    </div>
+                    <div class="course-arrow">›</div>
+                </div>
+
+                <div class="course-card" onclick="showPage('lesson-page')">
+                    <div class="course-number" style="background: #FF3B30;">5</div>
+                    <div class="course-info">
+                        <div class="course-title">Fruits</div>
+                        <div class="course-meta">6 个单词 · 4 个句子</div>
+                    </div>
+                    <div class="course-arrow">›</div>
+                </div>
+
+                <div class="course-card" onclick="showPage('lesson-page')">
+                    <div class="course-number" style="background: #5AC8FA;">6</div>
+                    <div class="course-info">
+                        <div class="course-title">Family</div>
+                        <div class="course-meta">5 个单词 · 4 个句子</div>
+                    </div>
+                    <div class="course-arrow">›</div>
+                </div>
+
+                <div class="course-card" onclick="showPage('lesson-page')">
+                    <div class="course-number" style="background: #FF2D55;">7</div>
+                    <div class="course-info">
+                        <div class="course-title">Body</div>
+                        <div class="course-meta">8 个单词 · 4 个句子</div>
+                    </div>
+                    <div class="course-arrow">›</div>
+                </div>
+
+                <div class="course-card" onclick="showPage('lesson-page')">
+                    <div class="course-number" style="background: #8E8E93;">8</div>
+                    <div class="course-info">
+                        <div class="course-title">Actions</div>
+                        <div class="course-meta">6 个单词 · 4 个句子</div>
+                    </div>
+                    <div class="course-arrow">›</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 课程详情页 -->
+        <div class="page" id="lesson-page">
+            <div class="lesson-header">
+                <div class="back-btn" onclick="showPage('learning-page')">‹</div>
+                <div class="lesson-title">Greetings</div>
+                <div class="lesson-subtitle">Unit 1 · Grade 1</div>
+            </div>
+
+            <div class="lesson-section">
+                <div class="lesson-section-title">单词学习</div>
+                
+                <div class="vocab-card">
+                    <div class="vocab-info">
+                        <div class="vocab-word">hello</div>
+                        <div class="vocab-phonetic">/həˈloʊ/</div>
+                        <div class="vocab-translation">你好</div>
+                    </div>
+                    <div class="vocab-sound">🔊</div>
+                </div>
+
+                <div class="vocab-card">
+                    <div class="vocab-info">
+                        <div class="vocab-word">goodbye</div>
+                        <div class="vocab-phonetic">/ɡʊdˈbaɪ/</div>
+                        <div class="vocab-translation">再见</div>
+                    </div>
+                    <div class="vocab-sound">🔊</div>
+                </div>
+
+                <div class="vocab-card">
+                    <div class="vocab-info">
+                        <div class="vocab-word">hi</div>
+                        <div class="vocab-phonetic">/haɪ/</div>
+                        <div class="vocab-translation">嗨</div>
+                    </div>
+                    <div class="vocab-sound">🔊</div>
+                </div>
+
+                <div class="vocab-card">
+                    <div class="vocab-info">
+                        <div class="vocab-word">bye</div>
+                        <div class="vocab-phonetic">/baɪ/</div>
+                        <div class="vocab-translation">拜拜</div>
+                    </div>
+                    <div class="vocab-sound">🔊</div>
+                </div>
+            </div>
+
+            <div class="lesson-section">
+                <div class="lesson-section-title">句子练习</div>
+                
+                <div class="sentence-card">
+                    <div class="sentence-en">
+                        <span>Hello! How are you?</span>
+                        <span style="cursor: pointer;">🔊</span>
+                    </div>
+                    <div class="sentence-zh">你好！你好吗？</div>
+                </div>
+
+                <div class="sentence-card">
+                    <div class="sentence-en">
+                        <span>Goodbye! See you later!</span>
+                        <span style="cursor: pointer;">🔊</span>
+                    </div>
+                    <div class="sentence-zh">再见！待会儿见！</div>
+                </div>
+            </div>
+
+            <div class="lesson-section">
+                <div class="lesson-section-title">对话练习</div>
+                
+                <div class="sentence-card" style="background: #e3f2fd;">
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                        <span style="margin-right: 8px;">👨‍🏫</span>
+                        <span style="color: #1976d2; font-weight: bold;">Teacher</span>
+                    </div>
+                    <div style="font-size: 16px; margin-bottom: 4px;">Hello! What's your name?</div>
+                    <div style="font-size: 14px; color: #666;">你好！你叫什么名字？</div>
+                </div>
+
+                <div class="sentence-card" style="background: #e8f5e9;">
+                    <div style="display: flex; align-items: center; margin-bottom: 8px;">
+                        <span style="margin-right: 8px;">👦</span>
+                        <span style="color: #388e3c; font-weight: bold;">You</span>
+                    </div>
+                    <div style="font-size: 16px; margin-bottom: 4px;">My name is ___.</div>
+                    <div style="font-size: 14px; color: #666;">我的名字是___。</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 宠物页 -->
+        <div class="page" id="pet-page">
+            <div class="page-header">
+                <div class="page-title">我的宠物</div>
+            </div>
+
+            <div class="pet-display">
+                <div class="pet-display-icon">🐶</div>
+                <div class="pet-display-name">Buddy</div>
+                <div class="pet-display-level">Lv. 3</div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-label">经验值</div>
+                    <div class="stat-value">60 / 100</div>
+                </div>
+                <div class="stat-progress">
+                    <div class="stat-progress-bar" style="width: 60%; background: #4A90E2;"></div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-label">饱腹度</div>
+                    <div class="stat-value">80 / 100</div>
+                </div>
+                <div class="stat-progress">
+                    <div class="stat-progress-bar" style="width: 80%; background: #FF9500;"></div>
+                </div>
+            </div>
+
+            <div class="stat-card">
+                <div class="stat-header">
+                    <div class="stat-label">心情</div>
+                    <div class="stat-value">90 / 100</div>
+                </div>
+                <div class="stat-progress">
+                    <div class="stat-progress-bar" style="width: 90%; background: #FF2D55;"></div>
+                </div>
+            </div>
+
+            <div class="pet-actions">
+                <button class="pet-action-btn" onclick="feedPet()">
+                    <span>🍖</span>
+                    <span>喂食</span>
+                </button>
+                <button class="pet-action-btn" onclick="playWithPet()">
+                    <span>🎮</span>
+                    <span>玩耍</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- AI 对话页 -->
+        <div class="page" id="chat-page">
+            <div class="page-header">
+                <div class="page-title">AI English Teacher</div>
+            </div>
+
+            <div class="chat-messages">
+                <div class="chat-message ai">
+                    <div class="chat-bubble">Hello! I'm your English teacher. Let's learn together! You can speak to me or type your message.</div>
+                </div>
+
+                <div class="chat-message user">
+                    <div class="chat-bubble">Hello!</div>
+                </div>
+
+                <div class="chat-message ai">
+                    <div class="chat-bubble">Hi there! How are you today? Say "I am fine" to practice!</div>
+                </div>
+
+                <div class="chat-message user">
+                    <div class="chat-bubble">I am fine!</div>
+                </div>
+
+                <div class="chat-message ai">
+                    <div class="chat-bubble">Great job! You're doing wonderful! Let's learn some new words. Can you say "apple"?</div>
+                </div>
+            </div>
+
+            <div class="chat-input-area">
+                <button class="chat-btn">🎤</button>
+                <input type="text" class="chat-input" placeholder="Type or speak...">
+                <button class="chat-btn">➤</button>
+            </div>
+        </div>
+
+        <!-- 设置页 -->
+        <div class="page" id="settings-page">
+            <div class="page-header">
+                <div class="page-title">设置</div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-section-title">AI 模型</div>
+                
+                <div class="settings-item">
+                    <div class="settings-item-content">
+                        <div class="settings-item-title">自动模式（推荐）</div>
+                        <div class="settings-item-subtitle">有网用云端，无网用本地</div>
+                    </div>
+                    <div class="radio-dot active"></div>
+                </div>
+
+                <div class="settings-item">
+                    <div class="settings-item-content">
+                        <div class="settings-item-title">云端 API</div>
+                        <div class="settings-item-subtitle">使用 DeepSeek/通义千问</div>
+                    </div>
+                    <div class="radio-dot"></div>
+                </div>
+
+                <div class="settings-item">
+                    <div class="settings-item-content">
+                        <div class="settings-item-title">本地模型</div>
+                        <div class="settings-item-subtitle">离线运行，无需网络</div>
+                    </div>
+                    <div class="radio-dot"></div>
+                </div>
+
+                <div class="settings-item">
+                    <div class="settings-item-content">
+                        <div class="settings-item-title">配置 API Key</div>
+                        <div class="settings-item-subtitle">设置 DeepSeek/通义千问 API Key</div>
+                    </div>
+                    <div class="settings-item-arrow">›</div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-section-title">语音设置</div>
+                
+                <div class="settings-item">
+                    <div class="settings-item-content">
+                        <div class="settings-item-title">语音识别 (STT)</div>
+                        <div class="settings-item-subtitle">系统原生</div>
+                    </div>
+                    <div class="settings-item-arrow">›</div>
+                </div>
+
+                <div class="settings-item">
+                    <div class="settings-item-content">
+                        <div class="settings-item-title">语音合成 (TTS)</div>
+                        <div class="settings-item-subtitle">系统原生</div>
+                    </div>
+                    <div class="settings-item-arrow">›</div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-section-title">学习设置</div>
+                
+                <div class="settings-item">
+                    <div class="settings-item-content">
+                        <div class="settings-item-title">每日学习目标</div>
+                        <div class="settings-item-subtitle">30 分钟</div>
+                    </div>
+                    <div class="settings-item-arrow">›</div>
+                </div>
+
+                <div class="settings-item">
+                    <div class="settings-item-content">
+                        <div class="settings-item-title">难度</div>
+                        <div class="settings-item-subtitle">标准</div>
+                    </div>
+                    <div class="settings-item-arrow">›</div>
+                </div>
+
+                <div class="settings-item">
+                    <div class="settings-item-content">
+                        <div class="settings-item-title">每日提醒</div>
+                        <div class="settings-item-subtitle">19:00</div>
+                    </div>
+                    <div style="width: 50px; height: 30px; background: #667eea; border-radius: 15px; position: relative;">
+                        <div style="width: 26px; height: 26px; background: white; border-radius: 50%; position: absolute; top: 2px; right: 2px;"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="settings-section">
+                <div class="settings-section-title">数据管理</div>
+                
+                <div class="settings-item">
+                    <div class="settings-item-content">
+                        <div class="settings-item-title">导出学习报告</div>
+                    </div>
+                    <div class="settings-item-arrow">›</div>
+                </div>
+
+                <div class="settings-item">
+                    <div class="settings-item-content">
+                        <div class="settings-item-title" style="color: #FF3B30;">重置所有数据</div>
+                    </div>
+                    <div class="settings-item-arrow">›</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 底部导航 -->
+        <div class="bottom-nav">
+            <div class="nav-item active" onclick="showPage('home-page')">
+                <div class="nav-icon">🏠</div>
+                <div class="nav-label">首页</div>
+            </div>
+            <div class="nav-item" onclick="showPage('learning-page')">
+                <div class="nav-icon">📚</div>
+                <div class="nav-label">学习</div>
+            </div>
+            <div class="nav-item" onclick="showPage('pet-page')">
+                <div class="nav-icon">🐾</div>
+                <div class="nav-label">宠物</div>
+            </div>
+            <div class="nav-item" onclick="showPage('settings-page')">
+                <div class="nav-icon">👤</div>
+                <div class="nav-label">我的</div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        function showPage(pageId) {
+            // 隐藏所有页面
+            document.querySelectorAll('.page').forEach(page => {
+                page.classList.remove('active');
+            });
+            
+            // 显示目标页面
+            document.getElementById(pageId).classList.add('active');
+            
+            // 更新导航状态
+            document.querySelectorAll('.nav-item').forEach((item, index) => {
+                item.classList.remove('active');
+                if ((pageId === 'home-page' && index === 0) ||
+                    (pageId === 'learning-page' && index === 1) ||
+                    (pageId === 'pet-page' && index === 2) ||
+                    (pageId === 'settings-page' && index === 3)) {
+                    item.classList.add('active');
+                }
+            });
+            
+            // 滚动到顶部
+            window.scrollTo(0, 0);
+        }
+
+        function feedPet() {
+            alert('🍖 喂食成功！宠物饱腹度 +20');
+        }
+
+        function playWithPet() {
+            alert('🎮 玩耍成功！宠物心情 +15');
+        }
+
+        // 点击音效按钮
+        document.querySelectorAll('.vocab-sound, .sentence-en span[style*="cursor"]').forEach(btn => {
+            btn.addEventListener('click', function() {
+                this.style.transform = 'scale(1.2)';
+                setTimeout(() => {
+                    this.style.transform = 'scale(1)';
+                }, 200);
+            });
+        });
+    </script>
+</body>
+</html>
