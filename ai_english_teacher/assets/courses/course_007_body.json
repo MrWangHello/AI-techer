@@ -1,0 +1,109 @@
+{
+  "id": "course_007_body",
+  "title": "Body",
+  "grade": 1,
+  "unit": 7,
+  "vocabularies": [
+    {
+      "word": "head",
+      "phonetic": "/hɛd/",
+      "image": "assets/images/body/head.png",
+      "audio": "assets/audio/words/head.mp3",
+      "translation": "头"
+    },
+    {
+      "word": "eye",
+      "phonetic": "/aɪ/",
+      "image": "assets/images/body/eye.png",
+      "audio": "assets/audio/words/eye.mp3",
+      "translation": "眼睛"
+    },
+    {
+      "word": "ear",
+      "phonetic": "/ɪr/",
+      "image": "assets/images/body/ear.png",
+      "audio": "assets/audio/words/ear.mp3",
+      "translation": "耳朵"
+    },
+    {
+      "word": "nose",
+      "phonetic": "/noʊz/",
+      "image": "assets/images/body/nose.png",
+      "audio": "assets/audio/words/nose.mp3",
+      "translation": "鼻子"
+    },
+    {
+      "word": "mouth",
+      "phonetic": "/maʊθ/",
+      "image": "assets/images/body/mouth.png",
+      "audio": "assets/audio/words/mouth.mp3",
+      "translation": "嘴巴"
+    },
+    {
+      "word": "hand",
+      "phonetic": "/hænd/",
+      "image": "assets/images/body/hand.png",
+      "audio": "assets/audio/words/hand.mp3",
+      "translation": "手"
+    },
+    {
+      "word": "foot",
+      "phonetic": "/fʊt/",
+      "image": "assets/images/body/foot.png",
+      "audio": "assets/audio/words/foot.mp3",
+      "translation": "脚"
+    },
+    {
+      "word": "arm",
+      "phonetic": "/ɑːrm/",
+      "image": "assets/images/body/arm.png",
+      "audio": "assets/audio/words/arm.mp3",
+      "translation": "手臂"
+    }
+  ],
+  "sentences": [
+    {
+      "en": "Touch your nose.",
+      "zh": "摸摸你的鼻子。",
+      "audio": "assets/audio/sentences/touch_nose.mp3"
+    },
+    {
+      "en": "I have two eyes.",
+      "zh": "我有两只眼睛。",
+      "audio": "assets/audio/sentences/two_eyes.mp3"
+    },
+    {
+      "en": "Clap your hands.",
+      "zh": "拍拍你的手。",
+      "audio": "assets/audio/sentences/clap_hands.mp3"
+    },
+    {
+      "en": "Stamp your feet.",
+      "zh": "跺跺你的脚。",
+      "audio": "assets/audio/sentences/stamp_feet.mp3"
+    }
+  ],
+  "dialogues": [
+    {
+      "role": "teacher",
+      "en": "What's this?",
+      "zh": "这是什么？"
+    },
+    {
+      "role": "student_hint",
+      "en": "This is my ___.",
+      "zh": "这是我的___。"
+    }
+  ],
+  "games": [
+    {
+      "type": "point",
+      "prompt": "Point to the body part",
+      "pairs": [
+        {"word": "head", "image": "assets/images/body/head.png"},
+        {"word": "eye", "image": "assets/images/body/eye.png"},
+        {"word": "nose", "image": "assets/images/body/nose.png"}
+      ]
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+{
+  "id": "course_002_colors",
+  "title": "Colors",
+  "grade": 1,
+  "unit": 2,
+  "vocabularies": [
+    {
+      "word": "red",
+      "phonetic": "/rɛd/",
+      "image": "assets/images/colors/red.png",
+      "audio": "assets/audio/words/red.mp3",
+      "translation": "红色"
+    },
+    {
+      "word": "blue",
+      "phonetic": "/bluː/",
+      "image": "assets/images/colors/blue.png",
+      "audio": "assets/audio/words/blue.mp3",
+      "translation": "蓝色"
+    },
+    {
+      "word": "green",
+      "phonetic": "/ɡriːn/",
+      "image": "assets/images/colors/green.png",
+      "audio": "assets/audio/words/green.mp3",
+      "translation": "绿色"
+    },
+    {
+      "word": "yellow",
+      "phonetic": "/ˈjɛloʊ/",
+      "image": "assets/images/colors/yellow.png",
+      "audio": "assets/audio/words/yellow.mp3",
+      "translation": "黄色"
+    },
+    {
+      "word": "black",
+      "phonetic": "/blæk/",
+      "image": "assets/images/colors/black.png",
+      "audio": "assets/audio/words/black.mp3",
+      "translation": "黑色"
+    },
+    {
+      "word": "white",
+      "phonetic": "/waɪt/",
+      "image": "assets/images/colors/white.png",
+      "audio": "assets/audio/words/white.mp3",
+      "translation": "白色"
+    }
+  ],
+  "sentences": [
+    {
+      "en": "What color is it?",
+      "zh": "这是什么颜色？",
+      "audio": "assets/audio/sentences/what_color.mp3"
+    },
+    {
+      "en": "I like red.",
+      "zh": "我喜欢红色。",
+      "audio": "assets/audio/sentences/i_like_red.mp3"
+    },
+    {
+      "en": "The sky is blue.",
+      "zh": "天空是蓝色的。",
+      "audio": "assets/audio/sentences/sky_blue.mp3"
+    }
+  ],
+  "dialogues": [
+    {
+      "role": "teacher",
+      "en": "What's your favorite color?",
+      "zh": "你最喜欢什么颜色？"
+    },
+    {
+      "role": "student_hint",
+      "en": "I like ___.",
+      "zh": "我喜欢___。"
+    }
+  ],
+  "games": [
+    {
+      "type": "match",
+      "prompt": "Match the color to the picture",
+      "pairs": [
+        {"word": "red", "image": "assets/images/colors/red.png"},
+        {"word": "blue", "image": "assets/images/colors/blue.png"},
+        {"word": "green", "image": "assets/images/colors/green.png"}
+      ]
+    }
+  ]
+}
