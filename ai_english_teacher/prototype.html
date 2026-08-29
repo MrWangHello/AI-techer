@@ -934,17 +934,29 @@
         }
 
         .pet-3d-model {
-            width: 200px;
-            height: 240px;
+            width: 220px;
+            height: 320px;
             position: relative;
             transform-style: preserve-3d;
             animation: petFloat 4s ease-in-out infinite, petBreathe 3s ease-in-out infinite;
             cursor: pointer;
             transition: transform 0.3s;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
 
-        .pet-3d-model:hover {
-            transform: scale(1.05);
+        .pet-3d-image {
+            width: 100%;
+            height: 100%;
+            object-fit: contain;
+            border-radius: 20px;
+            filter: drop-shadow(0 8px 24px rgba(255, 182, 193, 0.4));
+            transition: filter 0.3s;
+        }
+
+        .pet-3d-model:hover .pet-3d-image {
+            filter: drop-shadow(0 12px 32px rgba(255, 182, 193, 0.6));
         }
 
         .pet-3d-model.bounce {
@@ -971,6 +983,18 @@
             animation: petNod 0.8s ease-in-out;
         }
 
+        .pet-3d-model.excited {
+            animation: petExcited 1s ease-in-out;
+        }
+
+        /* 兴奋动画 */
+        @keyframes petExcited {
+            0%, 100% { transform: translateY(0) scale(1); }
+            25% { transform: translateY(-15px) scale(1.05); }
+            50% { transform: translateY(-5px) scale(1.02); }
+            75% { transform: translateY(-15px) scale(1.05); }
+        }
+
         /* 呼吸动画 */
         @keyframes petBreathe {
             0%, 100% {
@@ -987,13 +1011,13 @@
                 transform: translateY(0) rotate(0deg);
             }
             25% {
-                transform: translateY(-20px) rotate(-10deg);
+                transform: translateY(-20px) rotate(-5deg);
             }
             50% {
                 transform: translateY(-10px) rotate(0deg);
             }
             75% {
-                transform: translateY(-20px) rotate(10deg);
+                transform: translateY(-20px) rotate(5deg);
             }
         }
 
@@ -1003,10 +1027,10 @@
                 transform: rotate(0deg);
             }
             25% {
-                transform: rotate(-15deg);
+                transform: rotate(-5deg);
             }
             75% {
-                transform: rotate(15deg);
+                transform: rotate(5deg);
             }
         }
 
@@ -1016,10 +1040,10 @@
                 transform: rotate(0deg) scale(1);
             }
             50% {
-                transform: rotate(180deg) scale(1.1);
+                transform: rotate(10deg) scale(1.05);
             }
             100% {
-                transform: rotate(360deg) scale(1);
+                transform: rotate(0deg) scale(1);
             }
         }
 
@@ -1029,7 +1053,7 @@
                 transform: translateY(0);
             }
             50% {
-                transform: translateY(10px);
+                transform: translateY(8px);
             }
         }
 
@@ -2747,7 +2771,7 @@
         <!-- 宠物页 -->
         <div class="page" id="pet-page">
             <div class="page-header">
-                <div class="page-title">我的宠物</div>
+                <div class="page-title">我的伙伴</div>
                 <div class="voice-btn" onclick="toggleVoice()" id="voiceBtn">🎤</div>
             </div>
 
@@ -2756,41 +2780,12 @@
                 <!-- 状态指示器 -->
                 <div class="pet-status-indicator">
                     <div class="status-icon happy" id="statusHappy">😊</div>
-                    <div class="status-icon hungry" id="statusHungry" style="display:none;">🍖</div>
+                    <div class="status-icon hungry" id="statusHungry" style="display:none;"></div>
                 </div>
                 
                 <div class="pet-3d-scene">
-                    <div class="pet-3d-model" id="pet3DModel">
-                        <div class="pet-3d-body">
-                            <!-- 头部 -->
-                            <div class="pet-3d-head">
-                                <!-- 耳朵 -->
-                                <div class="pet-3d-ear left"></div>
-                                <div class="pet-3d-ear right"></div>
-                                <!-- 蝴蝶结 -->
-                                <div class="pet-3d-bow">
-                                    <div class="pet-3d-bow-center"></div>
-                                </div>
-                                <!-- 眼睛 -->
-                                <div class="pet-3d-eyelash left"></div>
-                                <div class="pet-3d-eyelash right"></div>
-                                <div class="pet-3d-eye left"></div>
-                                <div class="pet-3d-eye right"></div>
-                                <!-- 腮红 -->
-                                <div class="pet-3d-blush left"></div>
-                                <div class="pet-3d-blush right"></div>
-                                <!-- 嘴巴 -->
-                                <div class="pet-3d-mouth" id="petMouth"></div>
-                            </div>
-                            <!-- 身体 -->
-                            <div class="pet-3d-body-main">
-                                <div class="pet-3d-dress"></div>
-                                <div class="pet-3d-arm left"></div>
-                                <div class="pet-3d-arm right"></div>
-                                <div class="pet-3d-foot left"></div>
-                                <div class="pet-3d-foot right"></div>
-                            </div>
-                        </div>
+                    <div class="pet-3d-model" id="pet3DModel" onclick="interactWithPet()">
+                        <img src="assets/images/princess_pet.jpg?v=2" alt="Bella" class="pet-3d-image" id="petImage">
                     </div>
                     <div class="pet-3d-shadow"></div>
                 </div>
@@ -3216,12 +3211,8 @@
 
         function feedPet() {
             const pet = document.getElementById('pet3DModel');
-            const mouth = document.getElementById('petMouth');
             const statusHappy = document.getElementById('statusHappy');
             const statusHungry = document.getElementById('statusHungry');
-            
-            // 显示开心表情
-            mouth.classList.add('happy');
             
             // 宠物说话 - 多种鼓励语
             const phrases = [
@@ -3246,20 +3237,11 @@
             statusHungry.style.display = 'none';
             statusHappy.style.display = 'flex';
             
-            // 3秒后恢复
-            setTimeout(() => {
-                mouth.classList.remove('happy');
-            }, 2000);
-            
             alert('🍖 喂食成功！宠物饱腹度 +20');
         }
 
         function playWithPet() {
             const pet = document.getElementById('pet3DModel');
-            const mouth = document.getElementById('petMouth');
-            
-            // 显示开心表情
-            mouth.classList.add('happy');
             
             // 宠物说话
             const phrases = [
@@ -3279,11 +3261,6 @@
             
             // 显示星星奖励
             showStarReward();
-            
-            // 3秒后恢复
-            setTimeout(() => {
-                mouth.classList.remove('happy');
-            }, 2000);
             
             alert('🎮 玩耍成功！宠物心情 +15');
         }
@@ -3330,13 +3307,8 @@
 
         function playWordSound() {
             const word = words[currentWordIndex];
-            // 使用 Web Speech API 播放发音
-            if ('speechSynthesis' in window) {
-                const utterance = new SpeechSynthesisUtterance(word.english);
-                utterance.lang = 'en-US';
-                utterance.rate = 0.8;
-                speechSynthesis.speak(utterance);
-            }
+            // 使用 speakText 统一播放
+            speakText(word.english);
             playSound(440, 0.3, 'sine');
         }
 
@@ -3346,32 +3318,114 @@
 
         // 语音练习相关
         let isRecording = false;
+        let recognition = null;
+
+        // 初始化语音识别
+        function initSpeechRecognition() {
+            const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+            if (SpeechRecognition) {
+                recognition = new SpeechRecognition();
+                recognition.lang = 'en-US';
+                recognition.continuous = false;
+                recognition.interimResults = false;
+                
+                recognition.onresult = function(event) {
+                    const transcript = event.results[0][0].transcript;
+                    handleVoiceResult(transcript);
+                };
+                
+                recognition.onerror = function(event) {
+                    console.warn('语音识别错误:', event.error);
+                    stopRecording();
+                    // 显示友好提示
+                    const result = document.getElementById('voiceResult');
+                    result.querySelector('.result-icon').textContent = '⚠️';
+                    result.querySelector('.result-text').textContent = '没听清，再试一次吧！';
+                    result.style.display = 'flex';
+                    setTimeout(() => { result.style.display = 'none'; }, 2000);
+                };
+                
+                recognition.onend = function() {
+                    stopRecording();
+                };
+            }
+        }
 
         function toggleRecording() {
+            if (!recognition) {
+                initSpeechRecognition();
+            }
+            
             const btn = document.getElementById('voiceRecordBtn');
             const result = document.getElementById('voiceResult');
             
             if (!isRecording) {
-                isRecording = true;
-                btn.classList.add('recording');
-                btn.querySelector('.record-text').textContent = '正在录音...';
-                
-                // 模拟录音过程
-                setTimeout(() => {
-                    isRecording = false;
-                    btn.classList.remove('recording');
-                    btn.querySelector('.record-text').textContent = '按住说话';
-                    
-                    // 显示识别结果
-                    result.style.display = 'flex';
-                    playSound(523.25, 0.2, 'sine'); // 成功音效
-                    
-                    // 2秒后隐藏结果
-                    setTimeout(() => {
+                if (recognition) {
+                    try {
+                        recognition.start();
+                        isRecording = true;
+                        btn.classList.add('recording');
+                        btn.querySelector('.record-text').textContent = '正在听...';
                         result.style.display = 'none';
-                    }, 2000);
-                }, 2000);
+                    } catch(e) {
+                        console.warn('启动识别失败:', e);
+                        // 回退到模拟模式
+                        simulateRecording(btn, result);
+                    }
+                } else {
+                    // 浏览器不支持，用模拟模式
+                    simulateRecording(btn, result);
+                }
+            } else {
+                if (recognition) {
+                    recognition.stop();
+                }
+                stopRecording();
             }
+        }
+
+        function stopRecording() {
+            isRecording = false;
+            const btn = document.getElementById('voiceRecordBtn');
+            if (btn) {
+                btn.classList.remove('recording');
+                btn.querySelector('.record-text').textContent = '按住说话';
+            }
+        }
+
+        function simulateRecording(btn, result) {
+            isRecording = true;
+            btn.classList.add('recording');
+            btn.querySelector('.record-text').textContent = '正在听...';
+            
+            setTimeout(() => {
+                stopRecording();
+                const currentWord = words ? words[currentWordIndex]?.english : 'one';
+                handleVoiceResult(currentWord || 'one');
+            }, 2000);
+        }
+
+        function handleVoiceResult(transcript) {
+            const result = document.getElementById('voiceResult');
+            const currentWord = words ? words[currentWordIndex]?.english : 'one';
+            
+            // 简单匹配检查
+            const isCorrect = transcript.toLowerCase().includes(currentWord?.toLowerCase() || '');
+            
+            if (isCorrect) {
+                result.querySelector('.result-icon').textContent = '✅';
+                result.querySelector('.result-text').textContent = '太棒了！发音很标准！';
+                playSound(523.25, 0.2, 'sine');
+                showPetSpeech('Great job! You did it!');
+            } else {
+                result.querySelector('.result-icon').textContent = '💪';
+                result.querySelector('.result-text').textContent = `你说的是 "${transcript}"，再试一次吧！`;
+                playSound(300, 0.3, 'sine');
+                showPetSpeech('Almost! Try again!');
+            }
+            
+            result.style.display = 'flex';
+            setTimeout(() => { result.style.display = 'none'; }, 3000);
         }
 
         // 游戏相关
@@ -3448,10 +3502,54 @@
             bubbleText.textContent = text;
             bubble.style.display = 'block';
             
+            // 同时用 TTS 读出文字
+            speakText(text);
+            
             // 3秒后隐藏
             setTimeout(() => {
                 bubble.style.display = 'none';
             }, 3000);
+        }
+
+        // TTS 语音合成 - 让宠物说话
+        function speakText(text) {
+            if (!soundEnabled) return;
+            if (!('speechSynthesis' in window)) {
+                console.warn('浏览器不支持语音合成');
+                return;
+            }
+            // 取消之前的语音
+            speechSynthesis.cancel();
+            
+            const utterance = new SpeechSynthesisUtterance(text);
+            utterance.lang = 'en-US';
+            utterance.rate = 0.85;
+            utterance.pitch = 1.3; // 偏高音调，更像小女孩/宠物
+            utterance.volume = 1.0;
+            
+            // 尝试选择女声
+            const voices = speechSynthesis.getVoices();
+            const femaleVoice = voices.find(v => 
+                v.name.includes('Female') || 
+                v.name.includes('Samantha') || 
+                v.name.includes('Google UK English Female') ||
+                v.name.includes('Karen') ||
+                v.name.includes('Moira') ||
+                v.name.includes('Tessa')
+            );
+            if (femaleVoice) {
+                utterance.voice = femaleVoice;
+            }
+            
+            speechSynthesis.speak(utterance);
+        }
+
+        // 预加载语音列表（某些浏览器需要）
+        if ('speechSynthesis' in window) {
+            speechSynthesis.getVoices();
+            speechSynthesis.onvoiceschanged = function() {
+                speechSynthesis.getVoices();
+            };
         }
 
         function showStarReward() {
@@ -3576,33 +3674,93 @@
             if (isActive) {
                 voiceBtn.classList.remove('active');
                 voiceStatus.style.display = 'none';
+                if (recognition) {
+                    recognition.stop();
+                }
             } else {
-                voiceBtn.classList.add('active');
-                voiceStatus.style.display = 'flex';
-                // 模拟3秒后自动停止
-                setTimeout(() => {
-                    voiceBtn.classList.remove('active');
-                    voiceStatus.style.display = 'none';
-                    // 模拟识别结果并鼓励
-                    const encouragements = [
-                        'Great job!',
-                        'You did it!',
-                        'Amazing!',
-                        'Wonderful!',
-                        'I\'m proud of you!'
-                    ];
-                    showPetSpeech(encouragements[Math.floor(Math.random() * encouragements.length)]);
-                    showStarReward();
-                }, 3000);
+                // 初始化语音识别
+                if (!recognition) {
+                    initSpeechRecognition();
+                }
+                
+                if (recognition) {
+                    try {
+                        recognition.start();
+                        voiceBtn.classList.add('active');
+                        voiceStatus.style.display = 'flex';
+                        
+                        recognition.onresult = function(event) {
+                            const transcript = event.results[0][0].transcript;
+                            voiceBtn.classList.remove('active');
+                            voiceStatus.style.display = 'none';
+                            
+                            // 根据识别结果回应
+                            const encouragements = [
+                                'Great job!',
+                                'You did it!',
+                                'Amazing!',
+                                'Wonderful!',
+                                'I\'m proud of you!'
+                            ];
+                            showPetSpeech(encouragements[Math.floor(Math.random() * encouragements.length)]);
+                            showStarReward();
+                        };
+                        
+                        recognition.onerror = function(event) {
+                            console.warn('语音识别错误:', event.error);
+                            voiceBtn.classList.remove('active');
+                            voiceStatus.style.display = 'none';
+                            showPetSpeech('Try again!');
+                        };
+                        
+                        recognition.onend = function() {
+                            voiceBtn.classList.remove('active');
+                            voiceStatus.style.display = 'none';
+                        };
+                    } catch(e) {
+                        console.warn('启动识别失败:', e);
+                        // 回退到模拟模式
+                        voiceBtn.classList.add('active');
+                        voiceStatus.style.display = 'flex';
+                        setTimeout(() => {
+                            voiceBtn.classList.remove('active');
+                            voiceStatus.style.display = 'none';
+                            const encouragements = [
+                                'Great job!',
+                                'You did it!',
+                                'Amazing!',
+                                'Wonderful!',
+                                'I\'m proud of you!'
+                            ];
+                            showPetSpeech(encouragements[Math.floor(Math.random() * encouragements.length)]);
+                            showStarReward();
+                        }, 3000);
+                    }
+                } else {
+                    // 浏览器不支持，用模拟模式
+                    voiceBtn.classList.add('active');
+                    voiceStatus.style.display = 'flex';
+                    setTimeout(() => {
+                        voiceBtn.classList.remove('active');
+                        voiceStatus.style.display = 'none';
+                        const encouragements = [
+                            'Great job!',
+                            'You did it!',
+                            'Amazing!',
+                            'Wonderful!',
+                            'I\'m proud of you!'
+                        ];
+                        showPetSpeech(encouragements[Math.floor(Math.random() * encouragements.length)]);
+                        showStarReward();
+                    }, 3000);
+                }
             }
         }
 
         function triggerPetBounce() {
             const pet = document.getElementById('pet3DModel');
-            const mouth = document.getElementById('petMouth');
             
             pet.classList.add('bounce');
-            mouth.classList.add('happy');
             
             // 随机说一句话
             const phrases = [
@@ -3622,7 +3780,6 @@
             
             setTimeout(() => {
                 pet.classList.remove('bounce');
-                mouth.classList.remove('happy');
             }, 800);
         }
 
@@ -3653,21 +3810,44 @@
         }
 
         // 点击3D宠物触发互动
+        let firstInteraction = true;
         document.addEventListener('DOMContentLoaded', function() {
             const pet3D = document.getElementById('pet3DModel');
             if (pet3D) {
                 pet3D.addEventListener('click', function() {
+                    // 首次交互时解锁语音（移动端需要）
+                    if (firstInteraction) {
+                        firstInteraction = false;
+                        initAudio();
+                        // 预加载语音
+                        if ('speechSynthesis' in window) {
+                            speechSynthesis.getVoices();
+                        }
+                    }
                     interactWithPet();
                 });
             }
             
-            // 初始欢迎语
-            setTimeout(() => {
+            // 初始欢迎语（延迟到用户交互后再播放）
+            function playWelcome() {
                 showPetSpeech('Hi! I\'m Bella! Let\'s learn English together!');
                 const pet = document.getElementById('pet3DModel');
                 pet.classList.add('excited');
                 setTimeout(() => pet.classList.remove('excited'), 2000);
-            }, 1000);
+            }
+            
+            // 首次点击页面任意位置时播放欢迎语（解决移动端语音需要用户交互的问题）
+            document.addEventListener('click', function onFirstClick() {
+                if (firstInteraction) {
+                    firstInteraction = false;
+                    initAudio();
+                    if ('speechSynthesis' in window) {
+                        speechSynthesis.getVoices();
+                    }
+                    playWelcome();
+                    document.removeEventListener('click', onFirstClick);
+                }
+            }, { once: false });
             
             // 启动宠物情绪系统
             startPetMoodSystem();
