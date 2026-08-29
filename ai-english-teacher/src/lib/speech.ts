@@ -1,311 +1,265 @@
-// 语音工具模块 - 基于 Web Speech API
-// 使用 Chrome SpeechSynthesis bug 的业界标准修复方案
-// 已知问题：Chrome 会在引擎空闲几秒后杀死它，下次 speak() 首调用会静默失败
-// 修复方案：每个 speak() 调用内部自动重试一次
+/**
+ * 语音工具模块
+ * 
+ * TTS：通过 Cloudflare Worker 调用 Edge-TTS，返回 MP3 音频播放
+ * STT：使用浏览器 Web Speech API（语音识别）
+ * 
+ * 环境变量：
+ * - NEXT_PUBLIC_TTS_WORKER_URL: Edge-TTS Worker 地址
+ *   默认值：https://ai-teacher-tts.你的用户名.workers.dev
+ *   部署 Worker 后需要修改此地址
+ */
 
-let recognition: any = null;
-let isListening = false;
-let voicesLoaded = false;
-let voicesPromise: Promise<void> | null = null;
+// ============ TTS Worker 配置 ============
 
-// 语音合成状态回调
+const TTS_WORKER_URL = process.env.NEXT_PUBLIC_TTS_WORKER_URL || 'https://ai-teacher-tts.你的用户名.workers.dev';
+const TTS_WORKER_CONFIGURED = !TTS_WORKER_URL.includes('你的用户名');
+
+// 默认音色
+const VOICES = {
+  'zh-CN': 'zh-CN-XiaoxiaoNeural',
+  'en-US': 'en-US-AriaNeural',
+};
+
+// ============ 语音合成状态管理 ============
+
+let currentAudio: HTMLAudioElement | null = null;
+let isSpeaking = false;
+
 type SpeakingStateCallback = (speaking: boolean) => void;
 let onSpeakingStateChange: SpeakingStateCallback | null = null;
 
-// 注册语音合成状态监听
 export function setSpeakingStateCallback(cb: SpeakingStateCallback): void {
   onSpeakingStateChange = cb;
 }
 
-// 获取语音合成引擎
-function getSynth(): SpeechSynthesis | null {
-  if (typeof window === "undefined") return null;
-  return window.speechSynthesis;
-}
+// ============ TTS 核心函数 ============
 
-// 加载语音列表（Chrome 需要异步加载）
-function loadVoices(): Promise<void> {
-  if (voicesLoaded) return Promise.resolve();
-  if (voicesPromise) return voicesPromise;
-
-  voicesPromise = new Promise((resolve) => {
-    const synth = getSynth();
-    if (!synth) {
-      voicesLoaded = true;
-      resolve();
-      return;
-    }
-
-    const voices = synth.getVoices();
-    if (voices.length > 0) {
-      voicesLoaded = true;
-      resolve();
-      return;
-    }
-
-    // 等待 onvoiceschanged 事件
-    synth.onvoiceschanged = () => {
-      voicesLoaded = true;
-      resolve();
-    };
-
-    // 超时保护（5秒后不再等待）
-    setTimeout(() => {
-      if (!voicesLoaded) {
-        voicesLoaded = true;
-        resolve();
-      }
-    }, 5000);
-  });
-
-  return voicesPromise;
-}
-
-// 获取可用语音列表
-export function getAvailableVoices(): SpeechSynthesisVoice[] {
-  const synth = getSynth();
-  if (!synth) return [];
+/**
+ * 获取可用音色列表
+ */
+export async function getAvailableVoices(): Promise<Array<{ name: string; locale: string; gender: string; friendlyName: string }>> {
   try {
-    return synth.getVoices();
-  } catch {
+    const resp = await fetch(`${TTS_WORKER_URL}/voices`, {
+      method: 'GET',
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!resp.ok) return [];
+    return await resp.json();
+  } catch (e) {
+    console.warn('[TTS] Failed to fetch voices:', e);
     return [];
   }
 }
 
-// 检查语音合成是否可用（同步检测）
-export function isSpeechAvailable(): boolean {
-  if (typeof window === "undefined") return false;
-  return !!window.speechSynthesis;
-}
-
-// 检测语音合成是否真正可用（尝试获取voices）
-export function isSpeechUsable(): boolean {
-  if (typeof window === "undefined") return false;
-  const synth = window.speechSynthesis;
-  if (!synth) return false;
+/**
+ * 检查 TTS Worker 是否可用
+ */
+export async function checkTTSAvailable(): Promise<boolean> {
   try {
-    // 如果有voices列表，说明引擎可用
-    const voices = synth.getVoices();
-    return voices.length > 0 || typeof synth.speak === "function";
+    const resp = await fetch(`${TTS_WORKER_URL}/`, {
+      method: 'GET',
+      signal: AbortSignal.timeout(3000),
+    });
+    return resp.ok;
   } catch {
     return false;
   }
 }
 
-// ============ 语音合成核心函数 ============
-
-// 内部：创建语音配置
-function createUtterance(
+/**
+ * 内部：发送合成请求并播放音频
+ */
+async function synthesizeAndPlay(
   text: string,
+  voice: string,
   lang: string,
-  rate: number,
-  pitch: number,
-  onEnd: () => void
-): SpeechSynthesisUtterance {
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = lang;
-  utterance.rate = rate;
-  utterance.pitch = pitch;
-  utterance.volume = 1;
-
-  // 选择对应语言的语音
-  try {
-    const synth = getSynth();
-    if (synth) {
-      const voices = synth.getVoices();
-      // 找对应语言的语音，优先女声
-      const matchedVoice = voices.find(
-        (v) => v.lang.startsWith(lang.split("-")[0]) && /female|女|samantha|google|xiaoyi|xiaoxuan|xiaoyan|yaoyao/i.test(v.name)
-      ) || voices.find(
-        (v) => v.lang.startsWith(lang.split("-")[0])
-      );
-      if (matchedVoice) {
-        utterance.voice = matchedVoice;
-      }
-    }
-  } catch (_) {}
-
-  utterance.onstart = () => {
-    console.log(`[Speech] Started: "${text.substring(0, 30)}"`);
-  };
-
-  utterance.onend = () => {
-    onEnd();
-  };
-
-  utterance.onerror = (e) => {
-    // 'canceled' 和 'interrupted' 是正常的中断，不是错误
-    if (e.error === "canceled" || e.error === "interrupted") return;
-    console.warn(`[Speech] Error: ${e.error} for "${text.substring(0, 30)}"`);
-    onEnd();
-  };
-
-  return utterance;
-}
-
-// 内部：执行实际 speak 调用（带 Chrome 重试机制）
-function doSpeak(utterance: SpeechSynthesisUtterance): boolean {
-  const synth = getSynth();
-  if (!synth) return false;
+  onEnd?: () => void,
+  speed?: number,
+): Promise<boolean> {
+  // 取消之前的播放
+  stopSpeaking();
 
   try {
-    loadVoices();
-
-    // 取消之前的播报
-    synth.cancel();
-
-    // 确保引擎未暂停
-    if (synth.paused) {
-      synth.resume();
-    }
-
-    // Chrome bug 修复：如果引擎正在 speaking，先等它完成
-    // 如果引擎空闲（不 speaking），首次 speak 可能静默失败
-    // 解决方案：先 speak 一个空字符串唤醒引擎，再 speak 实际内容
-    const wakeAndSpeak = () => {
-      // 第二次调用：真正播报
-      synth.speak(utterance);
-    };
-
-    if (synth.speaking) {
-      // 引擎正在忙，直接 speak（会排队）
-      synth.speak(utterance);
-    } else {
-      // 引擎空闲，先唤醒再播报
-      // 用空字符串唤醒引擎
-      const wakeUp = new SpeechSynthesisUtterance(" ");
-      wakeUp.volume = 0;
-      wakeUp.rate = 2;
-      wakeUp.onend = wakeAndSpeak;
-      wakeUp.onerror = wakeAndSpeak; // 即使唤醒失败也尝试播报
-      synth.speak(wakeUp);
-    }
-
-    return true;
-  } catch (e) {
-    console.warn("[Speech] doSpeak failed:", e);
-    return false;
-  }
-}
-
-// 播报中文文本（TTS）
-export function speak(text: string, onEnd?: () => void, speed?: number): boolean {
-  const synth = getSynth();
-  if (!synth) {
-    console.warn("[Speech] SpeechSynthesis not available");
-    onSpeakingStateChange?.(false);
-    return false;
-  }
-
-  try {
-    // 状态更新
+    isSpeaking = true;
     onSpeakingStateChange?.(true);
 
-    const utterance = createUtterance(
-      text,
-      "zh-CN",
-      speed ?? 1.0,
-      1.1,
-      () => {
+    // 速率映射：speed 1.0 → rate 0，speed 1.5 → +50%，speed 0.8 → -20%
+    const rate = speed ? Math.round((speed - 1) * 100) : 0;
+
+    const resp = await fetch(`${TTS_WORKER_URL}/synthesize`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text, voice, rate, lang }),
+      signal: AbortSignal.timeout(15000),
+    });
+
+    if (!resp.ok) {
+      const err = await resp.json().catch(() => ({ error: 'Unknown error' }));
+      throw new Error(err.error || `HTTP ${resp.status}`);
+    }
+
+    // 获取音频数据
+    const audioBlob = await resp.blob();
+
+    if (audioBlob.size === 0) {
+      throw new Error('Empty audio response');
+    }
+
+    // 创建并播放音频
+    const audioUrl = URL.createObjectURL(audioBlob);
+    const audio = new Audio(audioUrl);
+    currentAudio = audio;
+
+    return new Promise((resolve) => {
+      audio.onended = () => {
+        cleanup(audioUrl);
+        isSpeaking = false;
         onSpeakingStateChange?.(false);
         onEnd?.();
-      }
-    );
+        resolve(true);
+      };
 
-    const success = doSpeak(utterance);
-    if (!success) {
-      onSpeakingStateChange?.(false);
-    }
-    return success;
-  } catch (e) {
-    console.warn("[Speech] speak failed:", e);
-    onSpeakingStateChange?.(false);
-    return false;
-  }
-}
-
-// 朗读英文
-export function speakEnglish(text: string): boolean {
-  const synth = getSynth();
-  if (!synth) {
-    console.warn("[Speech] SpeechSynthesis not available");
-    onSpeakingStateChange?.(false);
-    return false;
-  }
-
-  try {
-    onSpeakingStateChange?.(true);
-
-    const utterance = createUtterance(
-      text,
-      "en-US",
-      0.9,
-      1.0,
-      () => {
+      audio.onerror = (e) => {
+        console.warn('[TTS] Audio playback error:', e);
+        cleanup(audioUrl);
+        isSpeaking = false;
         onSpeakingStateChange?.(false);
-      }
-    );
+        onEnd?.();
+        resolve(false);
+      };
 
-    const success = doSpeak(utterance);
-    if (!success) {
-      onSpeakingStateChange?.(false);
-    }
-    return success;
+      audio.play().catch((e) => {
+        console.warn('[TTS] Audio play failed:', e);
+        cleanup(audioUrl);
+        isSpeaking = false;
+        onSpeakingStateChange?.(false);
+        onEnd?.();
+        resolve(false);
+      });
+    });
   } catch (e) {
-    console.warn("[Speech] speakEnglish failed:", e);
+    console.warn('[TTS] Synthesis failed:', e);
+    isSpeaking = false;
+    onSpeakingStateChange?.(false);
+    onEnd?.();
+    return false;
+  }
+}
+
+function cleanup(audioUrl: string) {
+  URL.revokeObjectURL(audioUrl);
+  if (currentAudio) {
+    currentAudio = null;
+  }
+}
+
+/**
+ * 播报中文文本
+ * @param text 要朗读的文本
+ * @param onEnd 播放结束回调
+ * @param speed 语速（1.0 = 正常）
+ * @returns 是否成功发起请求
+ */
+export function speak(text: string, onEnd?: () => void, speed?: number): boolean {
+  if (!TTS_WORKER_CONFIGURED) {
+    console.warn('[TTS] Worker URL not configured. Set NEXT_PUBLIC_TTS_WORKER_URL');
+    onSpeakingStateChange?.(false);
+    onEnd?.();
+    return false;
+  }
+  if (!text.trim()) {
+    onSpeakingStateChange?.(false);
+    onEnd?.();
+    return false;
+  }
+  // 异步触发，返回 true 表示已发起请求
+  synthesizeAndPlay(text, VOICES['zh-CN'], 'zh-CN', onEnd, speed);
+  return true;
+}
+
+/**
+ * 朗读英文
+ * @param text 要朗读的英文文本
+ * @returns 是否成功发起请求
+ */
+export function speakEnglish(text: string): boolean {
+  if (!TTS_WORKER_CONFIGURED) {
+    console.warn('[TTS] Worker URL not configured. Set NEXT_PUBLIC_TTS_WORKER_URL');
     onSpeakingStateChange?.(false);
     return false;
   }
+  if (!text.trim()) {
+    onSpeakingStateChange?.(false);
+    return false;
+  }
+  synthesizeAndPlay(text, VOICES['en-US'], 'en-US');
+  return true;
 }
 
-// 预热语音引擎（由用户手势触发）
-export function warmUpSpeech(): boolean {
-  const synth = getSynth();
-  if (!synth) return false;
-
-  try {
-    loadVoices();
-
-    // 唤醒引擎
-    if (synth.paused) {
-      synth.resume();
-    }
-
-    // 如果引擎已经在说话，说明已经预热过了
-    if (synth.speaking) return true;
-
-    // 用一个空字符串唤醒引擎（不立刻取消，让引擎启动）
-    const wakeUp = new SpeechSynthesisUtterance(" ");
-    wakeUp.volume = 0;
-    wakeUp.rate = 2;
-    synth.speak(wakeUp);
-
-    // 注意：不调用 cancel()，让引擎自然处理这个空 utterance
-    // 这会触发引擎的启动流程，后续的 speak 调用就能正常工作
-
-    console.log("[Speech] Engine warmed up");
-    return true;
-  } catch (e) {
-    console.warn("[Speech] warmUp failed:", e);
-    return false;
+/**
+ * 停止播放
+ */
+export function stopSpeaking(): void {
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio = null;
+  }
+  if (isSpeaking) {
+    isSpeaking = false;
+    onSpeakingStateChange?.(false);
   }
 }
 
-// ============ 语音识别（STT） ============
+// 别名兼容
+export const cancelSpeech = stopSpeaking;
 
-// 开始语音识别（STT）
+// 预热（不再需要，保留接口兼容）
+export function warmUpSpeech(): boolean {
+  return true;
+}
+
+// ============ 语音检测 ============
+
+/**
+ * 检测 TTS 是否可用（检查 Worker 是否在线）
+ * 注意：这是一个异步函数，调用者需要 await
+ */
+export async function isSpeechAvailableAsync(): Promise<boolean> {
+  return checkTTSAvailable();
+}
+
+/**
+ * 同步检测（仅检查浏览器环境）
+ */
+export function isSpeechAvailable(): boolean {
+  return typeof window !== 'undefined';
+}
+
+/**
+ * 同步检测（始终返回 true，实际可用性由 isSpeechAvailableAsync 判断）
+ */
+export function isSpeechSupported(): boolean {
+  return true;
+}
+
+// ============ 语音识别（STT）- 保持不变 ============
+
+let recognition: any = null;
+let isListening = false;
+
 export function startListening(
   onResult: (text: string) => void,
   onError?: (error: string) => void
 ): void {
-  if (typeof window === "undefined") return;
+  if (typeof window === 'undefined') return;
 
   const SpeechRecognition =
     (window as any).SpeechRecognition ||
     (window as any).webkitSpeechRecognition;
 
   if (!SpeechRecognition) {
-    onError?.("您的浏览器不支持语音识别");
+    onError?.('您的浏览器不支持语音识别');
     return;
   }
 
@@ -313,7 +267,7 @@ export function startListening(
 
   try {
     recognition = new SpeechRecognition();
-    recognition.lang = "zh-CN";
+    recognition.lang = 'zh-CN';
     recognition.continuous = false;
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
@@ -327,16 +281,16 @@ export function startListening(
     recognition.onerror = (event: any) => {
       isListening = false;
       const errorMap: Record<string, string> = {
-        "no-speech": "没有检测到语音",
-        "aborted": "语音识别被中断",
-        "audio-capture": "无法访问麦克风",
-        "network": "网络错误",
-        "not-allowed": "麦克风权限被拒绝",
-        "service-not-allowed": "语音识别服务不可用",
-        "bad-grammar": "语法错误",
-        "language-not-supported": "不支持的语言",
+        'no-speech': '没有检测到语音',
+        'aborted': '语音识别被中断',
+        'audio-capture': '无法访问麦克风',
+        'network': '网络错误',
+        'not-allowed': '麦克风权限被拒绝',
+        'service-not-allowed': '语音识别服务不可用',
+        'bad-grammar': '语法错误',
+        'language-not-supported': '不支持的语言',
       };
-      onError?.(errorMap[event.error] || event.error || "语音识别出错");
+      onError?.(errorMap[event.error] || event.error || '语音识别出错');
     };
 
     recognition.onend = () => {
@@ -347,11 +301,10 @@ export function startListening(
     isListening = true;
   } catch (e) {
     isListening = false;
-    onError?.("语音识别启动失败");
+    onError?.('语音识别启动失败');
   }
 }
 
-// 停止语音识别
 export function stopListening(): void {
   if (recognition && isListening) {
     try {
@@ -361,27 +314,15 @@ export function stopListening(): void {
   isListening = false;
 }
 
-// 当前是否在监听
 export function getIsListening(): boolean {
   return isListening;
 }
 
-// 检测语音合成是否可用
-export function isSpeechSupported(): boolean {
-  return typeof window !== "undefined" && !!window.speechSynthesis;
-}
-
-// 检测语音识别是否可用
 export function isSTTSupported(): boolean {
-  return typeof window !== "undefined" &&
+  return typeof window !== 'undefined' &&
     !!((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition);
 }
 
-// 取消所有语音播报
-export function cancelSpeech(): void {
-  const synth = getSynth();
-  if (synth) {
-    synth.cancel();
-    onSpeakingStateChange?.(false);
-  }
+export function getAvailableVoicesSync(): any[] {
+  return [];
 }
