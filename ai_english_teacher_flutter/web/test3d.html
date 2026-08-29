@@ -26,58 +26,78 @@
     }
     .btn-row button:active { opacity: 0.7; }
     .info { padding: 16px; text-align: center; font-size: 13px; color: #888; }
+    .log { padding: 8px 16px; font-size: 12px; color: #999; word-break: break-all; }
   </style>
 </head>
 <body>
   <h2>3D Pet Test</h2>
   <p id="status">Loading...</p>
 
+  <!-- Use model-viewer's official sample model (guaranteed to work) -->
   <model-viewer
     id="viewer"
-    src="assets/models/RobotExpressive.glb"
-    alt="3D Robot"
+    src="https://modelviewer.dev/shared-assets/models/Astronaut.glb"
+    alt="3D Astronaut"
     camera-controls
     auto-rotate
     rotation-per-second="10deg"
     shadow-intensity="0.5"
-    animation-name="Idle"
   ></model-viewer>
 
   <div class="btn-row">
-    <button onclick="playAnim('Idle')">Idle</button>
-    <button onclick="playAnim('Wave')">Wave</button>
-    <button onclick="playAnim('Dance')">Dance</button>
-    <button onclick="playAnim('Jump')">Jump</button>
-    <button onclick="playAnim('Yes')">Yes</button>
-    <button onclick="playAnim('No')">No</button>
-    <button onclick="playAnim('ThumbsUp')">ThumbsUp</button>
-    <button onclick="playAnim('Punch')">Punch</button>
+    <button onclick="switchModel('astronaut')">Astronaut</button>
+    <button onclick="switchModel('robot')">Robot</button>
+    <button onclick="switchModel('horse')">Horse</button>
   </div>
 
   <p class="info" id="info"></p>
+  <p class="log" id="log"></p>
 
   <script type="module">
-    import 'https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js';
+    import 'https://unpkg.com/@google/model-viewer@3.3.0/dist/model-viewer.min.js';
 
     const viewer = document.getElementById('viewer');
     const status = document.getElementById('status');
     const info = document.getElementById('info');
+    const log = document.getElementById('log');
+
+    const models = {
+      astronaut: 'https://modelviewer.dev/shared-assets/models/Astronaut.glb',
+      robot: 'https://modelviewer.dev/shared-assets/models/RobotExpressive.glb',
+      horse: 'https://modelviewer.dev/shared-assets/models/Horse.glb',
+    };
+
+    function logMsg(msg) {
+      log.textContent = msg;
+      console.log('[3D Test]', msg);
+    }
 
     viewer.addEventListener('load', () => {
       status.textContent = '✅ Model loaded!';
       status.style.color = 'green';
       const anims = viewer.availableAnimations || [];
       info.textContent = 'Animations: ' + anims.join(', ');
+      logMsg('Load OK at ' + new Date().toLocaleTimeString());
     });
 
     viewer.addEventListener('error', (e) => {
-      status.textContent = '❌ Error: ' + (e.detail?.message || 'unknown');
+      const detail = e.detail || {};
+      const msg = detail.message || detail.type || JSON.stringify(detail) || 'unknown';
+      status.textContent = '❌ Error: ' + msg;
       status.style.color = 'red';
+      logMsg('Error: ' + msg + ' | src=' + viewer.src);
     });
 
-    window.playAnim = function(name) {
-      viewer.animationName = name;
-      status.textContent = 'Playing: ' + name;
+    viewer.addEventListener('progress', (e) => {
+      const pct = Math.round(e.detail.totalProgress * 100);
+      logMsg('Loading... ' + pct + '%');
+    });
+
+    window.switchModel = function(name) {
+      viewer.src = models[name];
+      status.textContent = 'Loading ' + name + '...';
+      status.style.color = '#666';
+      info.textContent = '';
     };
   </script>
 </body>

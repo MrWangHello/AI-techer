@@ -76,6 +76,11 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
 
     mv.callMethod('addEventListener', ['error', js.allowInterop((e) {
       print('Model error: $e');
+      // 尝试获取详细错误信息
+      try {
+        final detail = e['detail'];
+        print('Error detail: $detail');
+      } catch (_) {}
       if (mounted) widget.onModelReady?.call();
     })]);
 

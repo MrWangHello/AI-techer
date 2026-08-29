@@ -34,7 +34,7 @@ jobs:
         run: cd ai_english_teacher_flutter && flutter pub get
 
       - name: Build Flutter Web
-        run: cd ai_english_teacher_flutter && flutter build web --release --base-href "/AI-techer/"
+        run: cd ai_english_teacher_flutter && flutter build web --release --base-href "/AI-techer/" --web-renderer html
 
       - name: Copy GLB model to build output
         run: |
