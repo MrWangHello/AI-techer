@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'package:o3d/o3d.dart';
+import 'model_viewer_widget.dart';
 
 void main() {
   runApp(const AIEnglishTeacherApp());
@@ -71,27 +71,16 @@ class PetPage extends StatefulWidget {
 }
 
 class _PetPageState extends State<PetPage> {
-  final O3DController _o3dController = O3DController();
   String _currentAnimation = 'Idle';
   bool _modelLoaded = false;
-  List<String> _availableAnimations = [];
 
-  @override
-  void initState() {
-    super.initState();
-    // Get available animations after model loads
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      _o3dController.availableAnimations().then((animations) {
-        debugPrint('Available animations: $animations');
-        setState(() {
-          _availableAnimations = animations;
-        });
-      });
-    });
-  }
+  // RobotExpressive animations
+  final List<String> _animations = [
+    'Idle', 'Wave', 'Dance', 'Jump',
+    'Yes', 'No', 'ThumbsUp', 'Punch',
+  ];
 
   void _playAnim(String name) {
-    _o3dController.play(animationName: name);
     setState(() => _currentAnimation = name);
   }
 
@@ -138,38 +127,22 @@ class _PetPageState extends State<PetPage> {
                   ),
                   // 3D Model
                   Center(
-                    child: O3D.asset(
+                    child: ModelViewerWidget(
                       src: 'assets/models/RobotExpressive.glb',
-                      controller: _o3dController,
+                      animationName: 'Idle',
+                      autoRotate: true,
                       cameraControls: true,
-                      autoRotate: false,
-                      autoPlay: true,
-                      interactionPrompt: InteractionPrompt.none,
-                      backgroundColor: Colors.transparent,
-                      onLoad: () {
+                      shadowIntensity: 0.5,
+                      backgroundColor: 'transparent',
+                      onModelReady: () {
                         debugPrint('Model loaded!');
                         setState(() => _modelLoaded = true);
                       },
-                      onError: (error) {
-                        debugPrint('Model load error: $error');
-                      },
                     ),
                   ),
-                  // Loading overlay
+                  // Loading overlay with timeout
                   if (!_modelLoaded)
-                    Container(
-                      color: Colors.white54,
-                      child: const Center(
-                        child: Column(
-                          mainAxisAlignment: MainAxisAlignment.center,
-                          children: [
-                            CircularProgressIndicator(color: Colors.pink),
-                            SizedBox(height: 12),
-                            Text('Loading 3D...', style: TextStyle(color: Colors.pink)),
-                          ],
-                        ),
-                      ),
-                    ),
+                    _LoadingOverlay(),
                   // Name & Level
                   Positioned(
                     bottom: 16,
@@ -354,6 +327,62 @@ class _PetPageState extends State<PetPage> {
         duration: const Duration(seconds: 2),
         behavior: SnackBarBehavior.floating,
         shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+      ),
+    );
+  }
+}
+
+class _LoadingOverlay extends StatefulWidget {
+  @override
+  State<_LoadingOverlay> createState() => _LoadingOverlayState();
+}
+
+class _LoadingOverlayState extends State<_LoadingOverlay> {
+  bool _timeout = false;
+
+  @override
+  void initState() {
+    super.initState();
+    // 10 秒后显示降级提示
+    Future.delayed(const Duration(seconds: 10), () {
+      if (mounted) {
+        setState(() => _timeout = true);
+      }
+    });
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      color: Colors.white54,
+      child: Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            if (!_timeout) ...[
+              const CircularProgressIndicator(color: Colors.pink),
+              const SizedBox(height: 12),
+              const Text('Loading 3D...', style: TextStyle(color: Colors.pink)),
+            ] else ...[
+              const Icon(Icons.pets, size: 64, color: Colors.pink),
+              const SizedBox(height: 12),
+              const Text(
+                '3D 模型加载中...',
+                style: TextStyle(color: Colors.pink, fontSize: 16),
+              ),
+              const SizedBox(height: 8),
+              const Text(
+                '请确保网络连接正常',
+                style: TextStyle(color: Colors.grey, fontSize: 12),
+              ),
+              const SizedBox(height: 16),
+              ElevatedButton(
+                onPressed: () => setState(() => _timeout = false),
+                child: const Text('重试'),
+              ),
+            ],
+          ],
+        ),
       ),
     );
   }

@@ -14,7 +14,7 @@
     This is a placeholder for base href that will be replaced by the value of
     the `--base-href` argument provided to `flutter build`.
   -->
-  <base href="$FLUTTER_BASE_HREF">
+  <base href="/">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
@@ -32,29 +32,7 @@
   <title>AI English Teacher</title>
   <link rel="manifest" href="manifest.json">
   <!-- Google model-viewer for 3D GLB rendering -->
-  <script type="module">
-    // 尝试多个 CDN 源，确保加载成功
-    const cdnUrls = [
-      'https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js',
-      'https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js',
-      'https://cdn.bootcdn.net/ajax/libs/model-viewer/3.5.0/model-viewer.min.js'
-    ];
-    
-    async function loadModelViewer() {
-      for (const url of cdnUrls) {
-        try {
-          await import(url);
-          console.log('model-viewer loaded from:', url);
-          return;
-        } catch (e) {
-          console.warn('Failed to load from', url, e);
-        }
-      }
-      console.error('All CDN sources failed to load model-viewer');
-    }
-    
-    loadModelViewer();
-  </script>
+  <script type="module" src="https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js" defer></script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>
