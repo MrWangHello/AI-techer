@@ -57,17 +57,19 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
   overlay.id = '$_overlayId';
 
   if (placeholder) {
-    var rect = placeholder.getBoundingClientRect();
+    // 使用相对定位，让模型跟随容器滚动
+    placeholder.style.position = 'relative';
+    placeholder.style.overflow = 'hidden';
+    placeholder.style.borderRadius = '24px';
+    placeholder.style.background = '${widget.backgroundColor}';
+    
     overlay.style.cssText = 'position:absolute;' +
-      'top:' + (window.scrollY + rect.top) + 'px;' +
-      'left:' + (window.scrollX + rect.left) + 'px;' +
-      'width:' + rect.width + 'px;' +
-      'height:' + rect.height + 'px;' +
-      'z-index:100;' +
-      'background:${widget.backgroundColor};' +
-      'pointer-events:auto;' +
-      'overflow:hidden;' +
-      'border-radius:24px;';
+      'top:0;left:0;' +
+      'width:100%;height:100%;' +
+      'z-index:10;' +
+      'pointer-events:auto;';
+    
+    placeholder.appendChild(overlay);
   } else {
     overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:380px;z-index:100;';
   }
@@ -93,7 +95,6 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
   });
 
   overlay.appendChild(mv);
-  document.body.appendChild(overlay);
   window['$_overlayId'] = {overlay: overlay, mv: mv};
 })();
 ''';

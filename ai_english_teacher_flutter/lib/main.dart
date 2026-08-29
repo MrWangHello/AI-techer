@@ -152,7 +152,15 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
 
   String get _moodEmoji => widget.petData.petMoodEmoji;
 
-  void _playAnim(String name) => setState(() => _currentAnimation = name);
+  void _playAnim(String name) {
+    // 先切换到 Idle 作为过渡，然后再切换到目标动画
+    setState(() => _currentAnimation = 'Idle');
+    Future.delayed(const Duration(milliseconds: 300), () {
+      if (mounted) {
+        setState(() => _currentAnimation = name);
+      }
+    });
+  }
 
   void _showBubble(String text) {
     setState(() { _bubbleText = text; _bubbleAnim.forward(from: 0); });
@@ -388,7 +396,7 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
                   Center(
                     child: ModelViewerWidget(
                       key: ValueKey(_currentAnimation),
-                      src: 'https://modelviewer.dev/shared-assets/models/RobotExpressive.glb',
+                      src: 'assets/models/RobotExpressive.glb',
                       animationName: _currentAnimation,
                       autoRotate: true,
                       cameraControls: true,
@@ -1064,6 +1072,8 @@ class _StudyPageState extends State<StudyPage> {
           child: InkWell(
             borderRadius: BorderRadius.circular(16),
             onTap: () {
+              // 点击单词时朗读单词
+              _speakWord(w['word']!);
               widget.petData.learnWord(w['word']!);
               widget.petData.advanceDailyTask('learn');
               widget.onUpdated();
@@ -1128,7 +1138,17 @@ class _StudyPageState extends State<StudyPage> {
         // Question
         Text(q['emoji'] as String, style: const TextStyle(fontSize: 64)),
         const SizedBox(height: 16),
-        Text('「${q['word']}」是什么意思?', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.grey.shade800)),
+        InkWell(
+          onTap: () => _speakWord(q['word'] as String),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text('「${q['word']}」是什么意思?', style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.grey.shade800)),
+              const SizedBox(width: 8),
+              Icon(Icons.volume_up, color: Colors.pink, size: 24),
+            ],
+          ),
+        ),
         const SizedBox(height: 32),
         // Options
         ...(q['options'] as List<String>).map((opt) {
@@ -1227,6 +1247,22 @@ class _StudyPageState extends State<StudyPage> {
           Text(
             item['meaning'] as String,
             style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.grey.shade800),
+          ),
+          const SizedBox(height: 8),
+          InkWell(
+            onTap: () => _speakWord(item['word'] as String),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Icon(Icons.volume_up, color: Colors.green, size: 20),
+                const SizedBox(width: 4),
+                Text(
+                  '听发音',
+                  style: TextStyle(fontSize: 14, color: Colors.green),
+                ),
+              ],
+            ),
           ),
           const SizedBox(height: 8),
           Text(
@@ -1514,9 +1550,19 @@ class _StudyPageState extends State<StudyPage> {
           const SizedBox(height: 32),
           Text(wordData['emoji'] as String, style: const TextStyle(fontSize: 64)),
           const SizedBox(height: 16),
-          Text(
-            '「${wordData['word']}」是什么意思?',
-            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.grey.shade800),
+          InkWell(
+            onTap: () => _speakWord(wordData['word'] as String),
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Text(
+                  '「${wordData['word']}」是什么意思?',
+                  style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.grey.shade800),
+                ),
+                const SizedBox(width: 8),
+                Icon(Icons.volume_up, color: Colors.indigo, size: 24),
+              ],
+            ),
           ),
           const SizedBox(height: 32),
           ...options.map((opt) {
