@@ -9,12 +9,13 @@ interface Cat3DProps {
 }
 
 // 各表情对应的视频
+const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
 const MOOD_VIDEOS: Record<string, string> = {
-  neutral: "/videos/white-cat-3d.mp4",
-  happy: "/videos/white-cat-happy-3d.mp4",
-  sad: "/videos/white-cat-sleepy-3d.mp4",
-  surprised: "/videos/white-cat-surprised-3d.mp4",
-  thinking: "/videos/white-cat-thinking-3d.mp4",
+  neutral: `${BASE}/videos/white-cat-3d.mp4`,
+  happy: `${BASE}/videos/white-cat-happy-3d.mp4`,
+  sad: `${BASE}/videos/white-cat-sleepy-3d.mp4`,
+  surprised: `${BASE}/videos/white-cat-surprised-3d.mp4`,
+  thinking: `${BASE}/videos/white-cat-thinking-3d.mp4`,
 };
 
 // 心情对应的背景渐变

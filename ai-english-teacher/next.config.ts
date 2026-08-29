@@ -14,6 +14,9 @@ const nextConfig: NextConfig = {
     : {
         images: { unoptimized: true },
       }),
+  env: {
+    NEXT_PUBLIC_BASE_PATH: isBuildForPages ? "/AI-techer" : "",
+  },
   allowedDevOrigins: [
     "run-agent-*.remote-agent.svc.cluster.local",
     "*.remote-agent.svc.cluster.local",
