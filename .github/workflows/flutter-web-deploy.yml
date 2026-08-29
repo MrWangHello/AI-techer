@@ -43,13 +43,21 @@ jobs:
           echo "Copied models:"
           ls -la ai_english_teacher_flutter/build/web/assets/models/
 
-      - name: Bump Service Worker cache version
+      - name: Bump Service Worker cache version and bust Flutter bootstrap cache
         run: |
           SW_FILE="ai_english_teacher_flutter/build/web/flutter_service_worker.js"
+          INDEX_FILE="ai_english_teacher_flutter/build/web/index.html"
           TIMESTAMP=$(date +%s)
+          # 1. 更新 Service Worker 缓存名称
           sed -i "s/CACHE_NAME = 'flutter-app-cache'/CACHE_NAME = 'flutter-app-cache-${TIMESTAMP}'/" "$SW_FILE"
           echo "Updated service worker cache name:"
           grep "CACHE_NAME" "$SW_FILE"
+          # 2. 给 flutter_bootstrap.js 添加版本号参数，强制浏览器不缓存
+          sed -i "s|src=\"flutter_bootstrap.js\"|src=\"flutter_bootstrap.js?v=${TIMESTAMP}\"|" "$INDEX_FILE"
+          # 3. 也给 main.dart.js 添加版本号参数
+          sed -i "s|src=\"main.dart.js\"|src=\"main.dart.js?v=${TIMESTAMP}\"|" "$INDEX_FILE"
+          echo "Updated index.html references:"
+          grep -o 'src="[^"]*\.js?v=[0-9]*"' "$INDEX_FILE" || echo "No JS with version found"
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
