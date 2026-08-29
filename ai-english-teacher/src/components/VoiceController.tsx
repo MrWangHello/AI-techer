@@ -2,7 +2,7 @@
 
 import { useState, useCallback } from "react";
 import { Mic, MicOff, Volume2 } from "lucide-react";
-import { startListening, stopListening, getIsListening, speak, warmUpSpeech } from "@/lib/speech";
+import { startListening, stopListening, getIsListening, speak } from "@/lib/speech";
 import { processUserInput, AgentResponse } from "@/lib/mock-agent";
 
 interface VoiceControllerProps {
@@ -32,8 +32,6 @@ export default function VoiceController({
 
     setError(null);
     setStatusText("正在听...");
-    // 在用户手势中预热语音引擎，确保后续 TTS 可以发声
-    warmUpSpeech();
     setListening(true);
 
     startListening(

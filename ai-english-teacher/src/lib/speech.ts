@@ -1,126 +1,99 @@
-// 语音工具模块 - 基于 Web Speech API，零成本
+// 语音工具模块 - 基于 Web Speech API
 
-let speechSynth: SpeechSynthesis | null = null;
 let recognition: any = null;
 let isListening = false;
-let onResultCallback: ((text: string) => void) | null = null;
-let isWarmedUp = false;
 
-// 初始化语音合成
-export function initSpeech(): boolean {
-  if (typeof window === "undefined") return false;
-  speechSynth = window.speechSynthesis;
-  return !!speechSynth;
-}
-
-/**
- * 预热语音引擎 - 必须在用户手势（点击）中调用
- * Chrome 要求语音合成必须在用户手势上下文中首次触发
- */
-export function warmUpSpeech(): void {
-  if (typeof window === "undefined") return;
-  if (isWarmedUp) return;
-
-  if (!speechSynth) {
-    if (!initSpeech()) return;
-  }
-
-  try {
-    // 在用户手势中创建并播放一个无声的短语音
-    // 这会"解锁"浏览器对 SpeechSynthesis 的限制
-    speechSynth!.cancel();
-
-    // 预加载语音列表
-    speechSynth!.getVoices();
-
-    // 创建一个短的无声音频来预热引擎
-    const warmup = new SpeechSynthesisUtterance("");
-    warmup.volume = 0; // 无声
-    warmup.rate = 1;
-    warmup.pitch = 1;
-    speechSynth!.speak(warmup);
-
-    // 确保引擎恢复
-    if (speechSynth!.paused) {
-      speechSynth!.resume();
-    }
-
-    isWarmedUp = true;
-    console.log("[Speech] Engine warmed up successfully");
-  } catch (e) {
-    console.warn("[Speech] Warmup failed:", e);
-  }
+// 获取语音合成引擎
+function getSynth(): SpeechSynthesis | null {
+  if (typeof window === "undefined") return null;
+  return window.speechSynthesis;
 }
 
 // 播报文本（TTS）
-export function speak(text: string, onEnd?: () => void, speed?: number): void {
-  if (!speechSynth) {
-    if (!initSpeech()) return;
+export function speak(text: string, onEnd?: () => void, speed?: number): boolean {
+  const synth = getSynth();
+  if (!synth) {
+    console.warn("[Speech] SpeechSynthesis not available");
+    return false;
   }
 
-  // 取消之前的播报
-  speechSynth!.cancel();
+  try {
+    // 取消之前的播报
+    synth.cancel();
 
-  // 确保引擎未暂停
-  if (speechSynth!.paused) {
-    speechSynth!.resume();
+    // 确保引擎未暂停（Chrome 的需要）
+    if (synth.paused) {
+      synth.resume();
+    }
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "zh-CN";
+    utterance.rate = speed ?? 1.0;
+    utterance.pitch = 1.1;
+    utterance.volume = 1;
+
+    // 选择中文语音（如果可用）
+    try {
+      const voices = synth.getVoices();
+      // 优先找中文女声
+      const zhVoice = voices.find(
+        (v) => v.lang.startsWith("zh") && /female|女/i.test(v.name)
+      );
+      if (zhVoice) {
+        utterance.voice = zhVoice;
+      }
+    } catch (_) {}
+
+    if (onEnd) {
+      utterance.onend = onEnd;
+    }
+
+    utterance.onerror = (e) => {
+      console.warn("[Speech] Speak error:", e.error || e);
+      onEnd?.();
+    };
+
+    synth.speak(utterance);
+    console.log("[Speech] Speaking:", text.substring(0, 30));
+    return true;
+  } catch (e) {
+    console.warn("[Speech] Speak failed:", e);
+    return false;
   }
-
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "zh-CN";
-  utterance.rate = speed ?? 1.0;
-  utterance.pitch = 1.1;
-  utterance.volume = 1;
-
-  // 选择中文语音
-  const voices = speechSynth!.getVoices();
-  const zhVoice = voices.find(
-    (v) => v.lang.startsWith("zh") && v.name.includes("Female")
-  );
-  if (zhVoice) utterance.voice = zhVoice;
-
-  if (onEnd) {
-    utterance.onend = onEnd;
-  }
-
-  utterance.onerror = (e) => {
-    console.warn("[Speech] Speak error:", e);
-    // 如果出错，尝试重新预热
-    isWarmedUp = false;
-  };
-
-  speechSynth!.speak(utterance);
 }
 
 // 朗读英文单词
-export function speakEnglish(text: string): void {
-  if (!speechSynth) {
-    if (!initSpeech()) return;
+export function speakEnglish(text: string): boolean {
+  const synth = getSynth();
+  if (!synth) return false;
+
+  try {
+    synth.cancel();
+    if (synth.paused) synth.resume();
+
+    const utterance = new SpeechSynthesisUtterance(text);
+    utterance.lang = "en-US";
+    utterance.rate = 0.9;
+    utterance.pitch = 1.0;
+
+    try {
+      const voices = synth.getVoices();
+      const enVoice = voices.find(
+        (v) => v.lang.startsWith("en") && /female|女/i.test(v.name)
+      );
+      if (enVoice) utterance.voice = enVoice;
+    } catch (_) {}
+
+    utterance.onerror = (e) => {
+      console.warn("[Speech] SpeakEnglish error:", e.error || e);
+    };
+
+    synth.speak(utterance);
+    return true;
+  } catch (e) {
+    console.warn("[Speech] SpeakEnglish failed:", e);
+    return false;
   }
-
-  speechSynth!.cancel();
-
-  if (speechSynth!.paused) {
-    speechSynth!.resume();
-  }
-
-  const utterance = new SpeechSynthesisUtterance(text);
-  utterance.lang = "en-US";
-  utterance.rate = 0.9;
-  utterance.pitch = 1.0;
-
-  const voices = speechSynth!.getVoices();
-  const enVoice = voices.find(
-    (v) => v.lang.startsWith("en") && v.name.includes("Female")
-  );
-  if (enVoice) utterance.voice = enVoice;
-
-  utterance.onerror = (e) => {
-    console.warn("[Speech] SpeakEnglish error:", e);
-    isWarmedUp = false;
-  };
-
-  speechSynth!.speak(utterance);
 }
 
 // 开始语音识别（STT）
@@ -150,7 +123,7 @@ export function startListening(
 
     recognition.onresult = (event: any) => {
       const transcript = event.results[0][0].transcript;
-      onResultCallback = null;
+      isListening = false;
       onResult(transcript);
     };
 
@@ -163,7 +136,6 @@ export function startListening(
       isListening = false;
     };
 
-    onResultCallback = onResult;
     recognition.start();
     isListening = true;
   } catch (e) {
@@ -177,9 +149,7 @@ export function stopListening(): void {
   if (recognition && isListening) {
     try {
       recognition.stop();
-    } catch (e) {
-      // 忽略
-    }
+    } catch (_) {}
   }
   isListening = false;
 }
@@ -189,9 +159,13 @@ export function getIsListening(): boolean {
   return isListening;
 }
 
-// 预加载语音
-export function preloadVoices(): void {
-  if (typeof window !== "undefined" && window.speechSynthesis) {
-    window.speechSynthesis.getVoices();
-  }
+// 检测语音合成是否可用
+export function isSpeechSupported(): boolean {
+  return typeof window !== "undefined" && !!window.speechSynthesis;
+}
+
+// 检测语音识别是否可用
+export function isSTTSupported(): boolean {
+  return typeof window !== "undefined" &&
+    !!(window as any).SpeechRecognition || !!(window as any).webkitSpeechRecognition;
 }

@@ -1,8 +1,8 @@
 "use client";
 
 import { useState, useEffect, useCallback } from "react";
-import { Home, PawPrint, BookOpen, Settings, Volume2, RotateCcw, Trophy, Sparkles } from "lucide-react";
-import ModelCanvas from "@/components/ModelCanvas";
+import { Home, PawPrint, BookOpen, Settings, RotateCcw } from "lucide-react";
+import AnimatedCat from "@/components/AnimatedCat";
 import VoiceController from "@/components/VoiceController";
 import PetStatus from "@/components/PetStatus";
 import StudyCards from "@/components/StudyCards";
@@ -22,7 +22,7 @@ import {
   ACHIEVEMENTS,
   PetData,
 } from "@/lib/pet-data";
-import { speak, warmUpSpeech } from "@/lib/speech";
+import { speak } from "@/lib/speech";
 import { AgentResponse } from "@/lib/mock-agent";
 import { WORDS } from "@/lib/words";
 
@@ -33,8 +33,6 @@ export default function HomePage() {
   // 使用默认值初始化（SSR 和客户端第一次渲染一致），useEffect 中再加载 localStorage 数据
   const [pet, setPet] = useState<PetData>({ ...loadPetData() });
   const [petLoaded, setPetLoaded] = useState(false);
-  const [modelReady, setModelReady] = useState(false);
-  const [modelError, setModelError] = useState<string | null>(null);
   const [agentEmotion, setAgentEmotion] = useState<"happy" | "sad" | "surprised" | "neutral" | "thinking">("neutral");
   const [agentAction, setAgentAction] = useState<"feed" | "play" | "study" | "none">("none");
   const [lastReply, setLastReply] = useState<string>("");
@@ -60,16 +58,6 @@ export default function HomePage() {
       savePetData(pet);
     }
   }, [pet, petLoaded]);
-
-  // 首次用户交互时预热语音引擎
-  useEffect(() => {
-    const handleFirstClick = () => {
-      warmUpSpeech();
-      document.removeEventListener("click", handleFirstClick);
-    };
-    document.addEventListener("click", handleFirstClick, { once: true });
-    return () => document.removeEventListener("click", handleFirstClick);
-  }, []);
 
   // 学习计时器
   useEffect(() => {
@@ -382,18 +370,15 @@ export default function HomePage() {
   // 宠物页内容
   const renderPetPage = () => (
     <div className="space-y-4">
-      {/* Live2D 模型 */}
+      {/* 2D 动画猫 */}
       <div className="bg-white rounded-2xl shadow-sm border border-pink-100 overflow-hidden">
         <div className="aspect-[4/5] max-h-[500px] relative">
-          <ModelCanvas
-            onReady={() => setModelReady(true)}
-            onError={(err) => setModelError(err)}
+          <AnimatedCat
+            mood={agentEmotion}
             onTap={() => {
               setAgentEmotion("happy");
               speak("嘿嘿，别戳我！");
             }}
-            mood={agentEmotion}
-            action={agentAction}
           />
         </div>
       </div>
