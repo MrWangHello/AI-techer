@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Home, PawPrint, BookOpen, Settings, RotateCcw } from "lucide-react";
-import AnimatedCat from "@/components/AnimatedCat";
+import RealisticCat from "@/components/RealisticCat";
 import VoiceController from "@/components/VoiceController";
 import PetStatus from "@/components/PetStatus";
 import StudyCards from "@/components/StudyCards";
@@ -45,6 +45,7 @@ export default function HomePage() {
   const [showAchievements, setShowAchievements] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [studyingMinutes, setStudyingMinutes] = useState(0);
+  const [catSpeaking, setCatSpeaking] = useState(false);
 
   // 客户端加载 localStorage 数据，避免 hydration 不匹配
   useEffect(() => {
@@ -146,7 +147,8 @@ export default function HomePage() {
     setPet((prev) => {
       const updated = feedPet(prev);
       addFeed("🍖", "喂食了 Bella");
-      speak("好香呀！谢谢喂我！喵~");
+      setCatSpeaking(true);
+      speak("好香呀！谢谢喂我！喵~", () => setCatSpeaking(false));
       setAgentEmotion("happy");
       return checkAndAwardAchievements(updated);
     });
@@ -156,7 +158,8 @@ export default function HomePage() {
     setPet((prev) => {
       const updated = playWithPet(prev);
       addFeed("🎮", "和 Bella 一起玩");
-      speak("好呀好呀！一起玩！");
+      setCatSpeaking(true);
+      speak("好呀好呀！一起玩！", () => setCatSpeaking(false));
       setAgentEmotion("happy");
       return checkAndAwardAchievements(updated);
     });
@@ -166,7 +169,8 @@ export default function HomePage() {
     setPet((prev) => {
       const updated = bathePet(prev);
       addFeed("🛁", "给 Bella 洗澡");
-      speak("洗澡澡，好舒服！");
+      setCatSpeaking(true);
+      speak("洗澡澡，好舒服！", () => setCatSpeaking(false));
       setAgentEmotion("happy");
       return checkAndAwardAchievements(updated);
     });
@@ -176,7 +180,8 @@ export default function HomePage() {
     setPet((prev) => {
       const updated = sleepPet(prev);
       addFeed("💤", "Bella 睡觉了");
-      speak("晚安，做个好梦~");
+      setCatSpeaking(true);
+      speak("晚安，做个好梦~", () => setCatSpeaking(false));
       setAgentEmotion("neutral");
       return checkAndAwardAchievements(updated);
     });
@@ -210,7 +215,8 @@ export default function HomePage() {
     if (newPetName.trim()) {
       setPet((prev) => ({ ...prev, petName: newPetName.trim() }));
       setShowPetNameInput(false);
-      speak(`好的，以后叫我 ${newPetName.trim()} 吧！`);
+      setCatSpeaking(true);
+      speak(`好的，以后叫我 ${newPetName.trim()} 吧！`, () => setCatSpeaking(false));
     }
   };
 
@@ -221,7 +227,8 @@ export default function HomePage() {
     setInteractionFeed([]);
     setAchievementMsg("");
     setCheckinMsg("");
-    speak("数据已重置！让我们重新开始吧！");
+    setCatSpeaking(true);
+    speak("数据已重置！让我们重新开始吧！", () => setCatSpeaking(false));
   };
 
   const handleVoiceSpeedChange = (speed: number) => {
@@ -370,14 +377,16 @@ export default function HomePage() {
   // 宠物页内容
   const renderPetPage = () => (
     <div className="space-y-4">
-      {/* 2D 动画猫 */}
+      {/* 真实白猫 */}
       <div className="bg-white rounded-2xl shadow-sm border border-pink-100 overflow-hidden">
         <div className="aspect-[4/5] max-h-[500px] relative">
-          <AnimatedCat
+          <RealisticCat
             mood={agentEmotion}
+            speaking={catSpeaking}
             onTap={() => {
               setAgentEmotion("happy");
-              speak("嘿嘿，别戳我！");
+              setCatSpeaking(true);
+              speak("嘿嘿，别戳我！", () => setCatSpeaking(false));
             }}
           />
         </div>
@@ -457,7 +466,10 @@ export default function HomePage() {
       </div>
 
       {/* 语音控制 */}
-      <VoiceController onAgentResponse={handleAgentResponse} />
+      <VoiceController
+        onAgentResponse={handleAgentResponse}
+        onSpeakingChange={setCatSpeaking}
+      />
     </div>
   );
 

@@ -1,9 +1,9 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useRef, useCallback } from "react";
 import { WORDS, Word } from "@/lib/words";
-import { speakEnglish } from "@/lib/speech";
-import { Volume2, Check, X } from "lucide-react";
+import { speakEnglish, warmUpSpeech, setSpeakingStateCallback } from "@/lib/speech";
+import { Volume2, Volume1, Check, X } from "lucide-react";
 
 interface StudyCardsProps {
   onWordLearned?: (word: Word) => void;
@@ -17,16 +17,48 @@ export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsPr
   const [quizResult, setQuizResult] = useState<boolean | null>(null);
   const [score, setScore] = useState(0);
   const [quizIndex, setQuizIndex] = useState(0);
+  const [speakingWord, setSpeakingWord] = useState(false);
+  const [ttsError, setTtsError] = useState<string | null>(null);
+  const warmedUp = useRef(false);
+
+  // 首次点击时预热语音引擎
+  const ensureWarmup = useCallback(() => {
+    if (!warmedUp.current) {
+      warmedUp.current = warmUpSpeech();
+      if (warmedUp.current) {
+        console.log("[StudyCards] Speech warmed up successfully");
+      }
+    }
+  }, []);
 
   const currentWord = WORDS[currentIndex];
 
-  // 学习模式：朗读单词
+  // 学习模式：朗读单词 - 带视觉反馈
   const speakWord = () => {
-    speakEnglish(currentWord.en);
+    ensureWarmup();
+    setTtsError(null);
+    setSpeakingWord(true);
+    const success = speakEnglish(currentWord.en);
+    if (!success) {
+      setTtsError("语音合成不可用，请检查浏览器设置");
+      setSpeakingWord(false);
+    } else {
+      // 2秒后自动关闭状态
+      setTimeout(() => setSpeakingWord(false), 2000);
+    }
   };
 
   const speakSentence = () => {
-    speakEnglish(currentWord.sentence);
+    ensureWarmup();
+    setTtsError(null);
+    setSpeakingWord(true);
+    const success = speakEnglish(currentWord.sentence);
+    if (!success) {
+      setTtsError("语音合成不可用，请检查浏览器设置");
+      setSpeakingWord(false);
+    } else {
+      setTimeout(() => setSpeakingWord(false), 2500);
+    }
   };
 
   const nextWord = () => {
@@ -41,6 +73,7 @@ export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsPr
 
   // 测验模式：随机出题
   const startQuiz = () => {
+    ensureWarmup();
     setMode("quiz");
     setQuizIndex(0);
     setScore(0);
@@ -82,8 +115,6 @@ export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsPr
   };
 
   if (mode === "quiz") {
-    // 获取当前题目的中文
-    const q = getQuizQuestion();
     return (
       <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-sm border border-pink-100">
         <div className="flex items-center justify-between mb-4">
@@ -95,7 +126,7 @@ export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsPr
 
         <div className="text-center mb-4">
           <div className="text-2xl font-bold text-pink-600 mb-2">
-            {q.correctWord.zh}
+            {quiz.correctWord.zh}
           </div>
           <div className="text-sm text-gray-400">请选择对应的英文</div>
         </div>
@@ -106,12 +137,12 @@ export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsPr
               quizResult ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"
             }`}
           >
-            {quizResult ? "✅ 回答正确！" : `❌ 正确答案: ${q.correctWord.en}`}
+            {quizResult ? "✅ 回答正确！" : `❌ 正确答案: ${quiz.correctWord.en}`}
           </div>
         )}
 
         <div className="grid grid-cols-2 gap-2">
-          {q.options.map((word, i) => (
+          {quiz.options.map((word, i) => (
             <button
               key={i}
               onClick={() => handleQuizAnswer(word)}
@@ -121,7 +152,7 @@ export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsPr
                 transition-all duration-200
                 ${
                   quizResult !== null
-                    ? word.en === q.correctWord.en
+                    ? word.en === quiz.correctWord.en
                       ? "bg-green-500 text-white"
                       : "bg-gray-100 text-gray-400"
                     : "bg-pink-50 hover:bg-pink-100 text-gray-700 active:scale-95"
@@ -167,7 +198,7 @@ export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsPr
         )}
         {showAnswer && (
           <div className="text-sm text-gray-400 mt-2 italic">
-            "{currentWord.sentence}"
+            &ldquo;{currentWord.sentence}&rdquo;
           </div>
         )}
       </div>
@@ -176,19 +207,37 @@ export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsPr
       <div className="flex justify-center gap-3 mb-4">
         <button
           onClick={speakWord}
-          className="flex items-center gap-1.5 bg-pink-500 text-white px-4 py-2 rounded-full text-sm
-            hover:bg-pink-600 active:scale-95 transition-all"
+          disabled={speakingWord}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm
+            active:scale-95 transition-all ${
+            speakingWord
+              ? "bg-green-500 text-white"
+              : "bg-pink-500 text-white hover:bg-pink-600"
+          }`}
         >
-          <Volume2 className="w-4 h-4" />
-          朗读
+          {speakingWord ? (
+            <Volume1 className="w-4 h-4 animate-pulse" />
+          ) : (
+            <Volume2 className="w-4 h-4" />
+          )}
+          {speakingWord ? "播放中..." : "朗读"}
         </button>
         <button
           onClick={speakSentence}
-          className="flex items-center gap-1.5 bg-purple-500 text-white px-4 py-2 rounded-full text-sm
-            hover:bg-purple-600 active:scale-95 transition-all"
+          disabled={speakingWord}
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm
+            active:scale-95 transition-all ${
+            speakingWord
+              ? "bg-green-500 text-white"
+              : "bg-purple-500 text-white hover:bg-purple-600"
+          }`}
         >
-          <Volume2 className="w-4 h-4" />
-          例句
+          {speakingWord ? (
+            <Volume1 className="w-4 h-4 animate-pulse" />
+          ) : (
+            <Volume2 className="w-4 h-4" />
+          )}
+          {speakingWord ? "播放中..." : "例句"}
         </button>
         <button
           onClick={() => setShowAnswer(!showAnswer)}
@@ -197,6 +246,22 @@ export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsPr
         >
           {showAnswer ? "隐藏" : "显示"}
         </button>
+      </div>
+
+      {/* TTS 错误提示 */}
+      {ttsError && (
+        <div className="text-center mb-3">
+          <span className="text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
+            {ttsError}
+          </span>
+        </div>
+      )}
+
+      {/* 语音提示 */}
+      <div className="text-center mb-2">
+        <span className="text-[10px] text-gray-300">
+          {speakingWord ? "🔊 正在朗读..." : "点击朗读按钮听取发音"}
+        </span>
       </div>
 
       {/* 导航 */}
