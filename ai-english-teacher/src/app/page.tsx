@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useCallback } from "react";
 import { Home, PawPrint, BookOpen, Settings, RotateCcw } from "lucide-react";
-import RealisticCat from "@/components/RealisticCat";
+import RealisticCat from "@/components/Cat3D";
 import VoiceController from "@/components/VoiceController";
 import PetStatus from "@/components/PetStatus";
 import StudyCards from "@/components/StudyCards";
