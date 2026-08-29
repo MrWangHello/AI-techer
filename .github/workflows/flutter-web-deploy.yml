@@ -43,6 +43,14 @@ jobs:
           echo "Copied models:"
           ls -la ai_english_teacher_flutter/build/web/assets/models/
 
+      - name: Bump Service Worker cache version
+        run: |
+          SW_FILE="ai_english_teacher_flutter/build/web/flutter_service_worker.js"
+          TIMESTAMP=$(date +%s)
+          sed -i "s/CACHE_NAME = 'flutter-app-cache'/CACHE_NAME = 'flutter-app-cache-${TIMESTAMP}'/" "$SW_FILE"
+          echo "Updated service worker cache name:"
+          grep "CACHE_NAME" "$SW_FILE"
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
