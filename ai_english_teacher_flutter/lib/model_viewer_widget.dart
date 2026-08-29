@@ -4,8 +4,7 @@ import 'package:flutter/material.dart';
 
 /// 3D GLB 模型查看器 Widget
 ///
-/// 直接用 dart:js 将 <model-viewer> 元素插入主 document，
-/// 完全绕过 Flutter HtmlElementView 的 shadow DOM 限制。
+/// 使用纯 JS 创建全屏覆盖层（z-index: 9999），确保在 Flutter canvas 之上显示。
 class ModelViewerWidget extends StatefulWidget {
   final String src;
   final String? animationName;
@@ -31,80 +30,94 @@ class ModelViewerWidget extends StatefulWidget {
 }
 
 class _ModelViewerWidgetState extends State<ModelViewerWidget> {
-  html.DivElement? _container;
-  bool _inserted = false;
+  static int _counter = 0;
+  late final String _overlayId;
+  bool _visible = false;
 
   @override
   void initState() {
     super.initState();
-    // 延迟插入，确保 model-viewer 库已加载
-    Future.delayed(const Duration(milliseconds: 500), () {
-      if (mounted) _insertModelViewer();
+    _overlayId = 'mv-overlay-${_counter++}';
+    // 延迟创建，确保 Flutter 已初始化
+    Future.delayed(const Duration(milliseconds: 800), () {
+      if (mounted) _createOverlay();
     });
   }
 
-  void _insertModelViewer() {
-    if (_inserted) return;
+  void _createOverlay() {
+    if (!mounted) return;
 
-    // 创建容器 div
-    _container = html.DivElement()
-      ..style.width = '100%'
-      ..style.height = '100%'
-      ..style.position = 'relative';
+    // 用 JS 创建覆盖层 div + model-viewer
+    final script = '''
+(function() {
+  // 移除旧的 overlay（如果有）
+  var old = document.getElementById('$_overlayId');
+  if (old) old.remove();
 
-    // 用 dart:js 创建 model-viewer custom element 并插入主 document
-    final mv = js.context.callMethod('document.createElement', ['model-viewer']);
-    mv['setAttribute']('src', widget.src);
-    mv['setAttribute']('style',
-        'width:100%;height:100%;background-color:${widget.backgroundColor};');
+  // 创建覆盖层
+  var overlay = document.createElement('div');
+  overlay.id = '$_overlayId';
+  overlay.style.cssText = 'position:absolute;top:0;left:0;width:100%;height:100%;z-index:9999;background:${widget.backgroundColor};pointer-events:auto;';
 
-    if (widget.cameraControls) mv['setAttribute']('camera-controls', '');
-    if (widget.autoRotate) {
-      mv['setAttribute']('auto-rotate', '');
-      mv['setAttribute']('rotation-per-second', '10deg');
-    }
-    mv['setAttribute']('shadow-intensity', widget.shadowIntensity.toString());
-    if (widget.animationName != null) {
-      mv['setAttribute']('animation-name', widget.animationName!);
-    }
+  // 创建 model-viewer
+  var mv = document.createElement('model-viewer');
+  mv.setAttribute('src', '${widget.src}');
+  mv.setAttribute('style', 'width:100%;height:100%;');
+  ${widget.cameraControls ? "mv.setAttribute('camera-controls', '');" : ""}
+  ${widget.autoRotate ? "mv.setAttribute('auto-rotate', '');mv.setAttribute('rotation-per-second', '10deg');" : ""}
+  mv.setAttribute('shadow-intensity', '${widget.shadowIntensity}');
+  ${widget.animationName != null ? "mv.setAttribute('animation-name', '${widget.animationName}');" : ""}
 
-    // 监听加载事件
-    mv.callMethod('addEventListener', ['load', js.allowInterop((_) {
-      print('Model loaded!');
-      if (mounted) widget.onModelReady?.call();
-    })]);
+  // 加载事件
+  mv.addEventListener('load', function() {
+    window.parent.postMessage({type: 'mv-load', id: '$_overlayId'}, '*');
+  });
+  mv.addEventListener('error', function(e) {
+    window.parent.postMessage({type: 'mv-error', id: '$_overlayId', detail: e.detail}, '*');
+  });
 
-    mv.callMethod('addEventListener', ['error', js.allowInterop((e) {
-      print('Model error: $e');
-      // 尝试获取详细错误信息
-      try {
-        final detail = e['detail'];
-        print('Error detail: $detail');
-      } catch (_) {}
-      if (mounted) widget.onModelReady?.call();
-    })]);
+  overlay.appendChild(mv);
+  document.body.appendChild(overlay);
 
-    _container!.append(mv as html.Node);
+  // 存储引用供后续控制
+  window['$_overlayId'] = {overlay: overlay, mv: mv};
+})();
+''';
+    js.context.callMethod('eval', [script]);
+    setState(() => _visible = true);
 
-    // 将容器插入 Flutter 的 overlay 区域
-    final host = html.document.querySelector('flt-glass-pane') ??
-        html.document.body;
-    if (host != null) {
-      (host as html.Node).append(_container!);
-      _inserted = true;
-    }
+    // 监听消息
+    html.window.addEventListener('message', js.allowInterop((event) {
+      final data = (event as html.MessageEvent).data;
+      if (data is Map && data['id'] == _overlayId) {
+        if (data['type'] == 'mv-load') {
+          print('Model loaded!');
+          widget.onModelReady?.call();
+        } else if (data['type'] == 'mv-error') {
+          print('Model error: ${data['detail']}');
+          widget.onModelReady?.call();
+        }
+      }
+    }));
+  }
+
+  void _updateAnimation(String name) {
+    js.context.callMethod('eval', [
+      "if(window['$_overlayId']) window['$_overlayId'].mv.setAttribute('animation-name', '$name');"
+    ]);
   }
 
   @override
   void dispose() {
-    _container?.remove();
-    _inserted = false;
+    js.context.callMethod('eval', [
+      "var el=document.getElementById('$_overlayId');if(el)el.remove();delete window['$_overlayId'];"
+    ]);
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    // 返回一个占位容器，实际渲染由 dart:js 插入的 DOM 元素完成
+    // 返回透明占位，实际 3D 模型由 JS 创建的覆盖层显示
     return Container(
       width: double.infinity,
       height: double.infinity,

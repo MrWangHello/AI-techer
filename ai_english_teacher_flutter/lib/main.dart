@@ -128,7 +128,7 @@ class _PetPageState extends State<PetPage> {
                   // 3D Model
                   Center(
                     child: ModelViewerWidget(
-                      src: 'assets/models/RobotExpressive.glb',
+                      src: 'https://modelviewer.dev/shared-assets/models/RobotExpressive.glb',
                       animationName: 'Idle',
                       autoRotate: true,
                       cameraControls: true,
