@@ -88,11 +88,22 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
   String _currentAnimation = 'Idle';
   bool _modelLoaded = false;
   String? _bubbleText;
-  String _moodEmoji = '😊';
   bool _showMiniGame = false;
   int _miniGameScore = 0;
   int _miniGameTarget = 0;
   String _miniGameEmoji = '';
+
+  // 装扮系统
+  static const List<Map<String, dynamic>> _accessories = [
+    {'id': 'hat_crown', 'name': '皇冠', 'icon': '👑', 'price': 50, 'type': 'hat'},
+    {'id': 'hat_cap', 'name': '鸭舌帽', 'icon': '🧢', 'price': 30, 'type': 'hat'},
+    {'id': 'hat_tophat', 'name': '礼帽', 'icon': '🎩', 'price': 80, 'type': 'hat'},
+    {'id': 'glasses_sun', 'name': '太阳镜', 'icon': '🕶️', 'price': 40, 'type': 'glasses'},
+    {'id': 'glasses_round', 'name': '圆框眼镜', 'icon': '👓', 'price': 25, 'type': 'glasses'},
+    {'id': 'bow_tie', 'name': '领结', 'icon': '🎀', 'price': 35, 'type': 'accessory'},
+    {'id': 'scarf', 'name': '围巾', 'icon': '🧣', 'price': 45, 'type': 'accessory'},
+    {'id': 'flower', 'name': '小花', 'icon': '🌸', 'price': 20, 'type': 'accessory'},
+  ];
 
   late AnimationController _bubbleAnim;
 
@@ -130,7 +141,7 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
   void initState() {
     super.initState();
     _bubbleAnim = AnimationController(vsync: this, duration: const Duration(milliseconds: 300));
-    _updateMoodEmoji();
+    widget.petData.recordInteraction();
   }
 
   @override
@@ -139,10 +150,7 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
     super.dispose();
   }
 
-  void _updateMoodEmoji() {
-    final m = widget.petData.mood;
-    _moodEmoji = m >= 80 ? '😊' : m >= 60 ? '😐' : m >= 40 ? '😟' : '😢';
-  }
+  String get _moodEmoji => widget.petData.petMoodEmoji;
 
   void _playAnim(String name) => setState(() => _currentAnimation = name);
 
@@ -166,8 +174,9 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
     widget.petData.addMood(2);
     widget.petData.addExp(1);
     widget.petData.totalInteractions++;
+    widget.petData.recordInteraction();
     widget.onUpdated();
-    _updateMoodEmoji();
+    setState(() {});
   }
 
   void _onFeed() {
@@ -178,12 +187,14 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
     widget.petData.addExp(5);
     widget.petData.totalFeedings++;
     widget.petData.totalInteractions++;
+    widget.petData.recordInteraction();
+    widget.petData.advanceDailyTask('feed');
     if (widget.petData.checkLevelUp()) {
       _playAnim('Jump');
       _showBubble('🎉 Level Up! Now Lv.${widget.petData.level}!');
     }
     widget.onUpdated();
-    _updateMoodEmoji();
+    setState(() {});
   }
 
   void _onPlay() {
@@ -194,12 +205,13 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
     widget.petData.addExp(8);
     widget.petData.totalPlays++;
     widget.petData.totalInteractions++;
+    widget.petData.recordInteraction();
     if (widget.petData.checkLevelUp()) {
       _playAnim('Jump');
       _showBubble('🎉 Level Up! Now Lv.${widget.petData.level}!');
     }
     widget.onUpdated();
-    _updateMoodEmoji();
+    setState(() {});
   }
 
   void _onStudy() {
@@ -209,12 +221,26 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
     widget.petData.addMood(3);
     widget.petData.totalStudies++;
     widget.petData.totalInteractions++;
+    widget.petData.recordInteraction();
     if (widget.petData.checkLevelUp()) {
       _playAnim('Jump');
       _showBubble('🎉 Level Up! Now Lv.${widget.petData.level}!');
     }
     widget.onUpdated();
-    _updateMoodEmoji();
+    setState(() {});
+  }
+
+  void _showDressUpShop() {
+    showModalBottomSheet(
+      context: context,
+      isScrollControlled: true,
+      backgroundColor: Colors.transparent,
+      builder: (ctx) => _DressUpShopSheet(
+        petData: widget.petData,
+        accessories: _accessories,
+        onUpdated: widget.onUpdated,
+      ),
+    );
   }
 
   void _startMiniGame() {
@@ -270,6 +296,11 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
         title: const Text('我的伙伴'),
         centerTitle: true,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.checkroom),
+            tooltip: '装扮',
+            onPressed: _showDressUpShop,
+          ),
           IconButton(
             icon: const Icon(Icons.videogame_asset),
             tooltip: '小游戏',
@@ -393,6 +424,86 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
                 ],
               ),
             ),
+
+            // Current Accessory Display
+            if (widget.petData.accessory != 'none')
+              Container(
+                margin: const EdgeInsets.symmetric(horizontal: 16),
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [Colors.purple.shade200, Colors.pink.shade200],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  children: [
+                    Text(
+                      _getAccessoryIcon(widget.petData.accessory),
+                      style: const TextStyle(fontSize: 32),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '当前装扮: ${_getAccessoryName(widget.petData.accessory)}',
+                            style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold, color: Colors.white),
+                          ),
+                          Text(
+                            '点击装扮按钮更换配饰',
+                            style: const TextStyle(fontSize: 12, color: Colors.white70),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            if (widget.petData.accessory != 'none') const SizedBox(height: 12),
+
+            // Pet Mood Status
+            Container(
+              margin: const EdgeInsets.symmetric(horizontal: 16),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: _getMoodColor(widget.petData.petMoodState).withOpacity(0.2),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: _getMoodColor(widget.petData.petMoodState), width: 2),
+              ),
+              child: Row(
+                children: [
+                  Text(
+                    widget.petData.petMoodEmoji,
+                    style: const TextStyle(fontSize: 32),
+                  ),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          '宠物状态: ${widget.petData.petMoodLabel}',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.bold,
+                            color: _getMoodColor(widget.petData.petMoodState),
+                          ),
+                        ),
+                        Text(
+                          _getMoodDescription(widget.petData.petMoodState),
+                          style: TextStyle(fontSize: 12, color: Colors.grey.shade600),
+                        ),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            const SizedBox(height: 12),
 
             // Stats
             _buildStatCard('经验值', widget.petData.exp, 100, Colors.blue, Icons.star),
@@ -535,6 +646,38 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
     );
   }
 
+  String _getAccessoryIcon(String id) {
+    final acc = _accessories.firstWhere((a) => a['id'] == id, orElse: () => {'icon': '❓'});
+    return acc['icon'] as String;
+  }
+
+  String _getAccessoryName(String id) {
+    final acc = _accessories.firstWhere((a) => a['id'] == id, orElse: () => {'name': '未知'});
+    return acc['name'] as String;
+  }
+
+  Color _getMoodColor(String state) {
+    switch (state) {
+      case 'happy': return Colors.green;
+      case 'hungry': return Colors.red;
+      case 'bored': return Colors.grey;
+      case 'sad': return Colors.blue;
+      case 'angry': return Colors.deepOrange;
+      default: return Colors.amber;
+    }
+  }
+
+  String _getMoodDescription(String state) {
+    switch (state) {
+      case 'happy': return '宠物很开心，继续互动吧！';
+      case 'hungry': return '宠物饿了，快喂食！';
+      case 'bored': return '宠物有点无聊，和它玩耍吧！';
+      case 'sad': return '宠物有点难过，多陪陪它！';
+      case 'angry': return '宠物生气了！快互动！';
+      default: return '宠物状态一般。';
+    }
+  }
+
   Widget _animBtn(String key, IconData icon, String label, VoidCallback onTap) {
     final isActive = _currentAnimation == key;
     return Material(color: isActive ? Colors.pink.shade100 : Colors.white, borderRadius: BorderRadius.circular(12), elevation: isActive ? 2 : 0,
@@ -580,7 +723,7 @@ class StudyPage extends StatefulWidget {
 }
 
 class _StudyPageState extends State<StudyPage> {
-  int _currentTab = 0; // 0=words, 1=quiz, 2=spelling, 3=listening
+  int _currentTab = 0; // 0=words, 1=quiz, 2=spelling, 3=listening, 4=review
 
   // Word database
   final List<Map<String, String>> _words = [
@@ -676,12 +819,21 @@ class _StudyPageState extends State<StudyPage> {
   String? _listeningAnswer;
   bool _listeningAnswered = false;
 
+  // Review state
+  List<String> _reviewWords = [];
+  int _reviewIndex = 0;
+  int _reviewScore = 0;
+  bool _reviewFinished = false;
+  String? _reviewAnswer;
+  bool _reviewAnswered = false;
+
   @override
   void initState() {
     super.initState();
     _startNewQuiz();
     _startNewSpelling();
     _startNewListening();
+    _startReview();
   }
 
   @override
@@ -716,6 +868,48 @@ class _StudyPageState extends State<StudyPage> {
     _listeningAnswered = false;
   }
 
+  void _startReview() {
+    _reviewWords = widget.petData.getWordsDueForReview();
+    _reviewIndex = 0;
+    _reviewScore = 0;
+    _reviewFinished = false;
+    _reviewAnswer = null;
+    _reviewAnswered = false;
+  }
+
+  void _checkReviewAnswer(String answer) {
+    if (_reviewAnswered) return;
+    setState(() {
+      _reviewAnswer = answer;
+      _reviewAnswered = true;
+    });
+    final word = _reviewWords[_reviewIndex];
+    final wordData = _words.firstWhere((w) => w['word'] == word, orElse: () => {'meaning': ''});
+    final isCorrect = answer == wordData['meaning'];
+    if (isCorrect) {
+      _reviewScore++;
+      widget.petData.markWordReviewed(word);
+      widget.petData.addExp(3);
+      widget.petData.coins += 2;
+    }
+
+    Future.delayed(const Duration(milliseconds: 1200), () {
+      if (!mounted) return;
+      if (_reviewIndex + 1 < _reviewWords.length) {
+        setState(() {
+          _reviewIndex++;
+          _reviewAnswer = null;
+          _reviewAnswered = false;
+        });
+      } else {
+        setState(() => _reviewFinished = true);
+        widget.petData.addMood(_reviewScore * 2);
+        widget.petData.addLog('复习完成，答对 $_reviewScore 题');
+        widget.onUpdated();
+      }
+    });
+  }
+
   void _checkAnswer(String answer) {
     if (_answered) return;
     setState(() {
@@ -742,6 +936,7 @@ class _StudyPageState extends State<StudyPage> {
           widget.petData.highScoreQuiz = _quizScore;
         }
         widget.petData.addLog('测验获得 $_quizScore 分');
+        widget.petData.advanceDailyTask('quiz');
         widget.onUpdated();
       }
     });
@@ -823,6 +1018,7 @@ class _StudyPageState extends State<StudyPage> {
             Expanded(child: _tabBtn('测验', 1)),
             Expanded(child: _tabBtn('拼写', 2)),
             Expanded(child: _tabBtn('听力', 3)),
+            Expanded(child: _tabBtn('复习', 4)),
           ]),
         ),
         Expanded(
@@ -832,7 +1028,9 @@ class _StudyPageState extends State<StudyPage> {
                   ? _buildQuiz()
                   : _currentTab == 2
                       ? _buildSpelling()
-                      : _buildListening(),
+                      : _currentTab == 3
+                          ? _buildListening()
+                          : _buildReview(),
         ),
       ]),
     );
@@ -867,6 +1065,7 @@ class _StudyPageState extends State<StudyPage> {
             borderRadius: BorderRadius.circular(16),
             onTap: () {
               widget.petData.learnWord(w['word']!);
+              widget.petData.advanceDailyTask('learn');
               widget.onUpdated();
               setState(() {});
             },
@@ -1161,6 +1360,183 @@ class _StudyPageState extends State<StudyPage> {
                 width: double.infinity,
                 child: ElevatedButton(
                   onPressed: _listeningAnswered ? null : () => _checkListening(opt),
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: bgColor,
+                    foregroundColor: textColor ?? Colors.grey.shade800,
+                    padding: const EdgeInsets.symmetric(vertical: 16),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    elevation: 1,
+                  ),
+                  child: Text(opt, style: const TextStyle(fontSize: 16)),
+                ),
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildReview() {
+    if (_reviewWords.isEmpty) {
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.check_circle, size: 80, color: Colors.green),
+              const SizedBox(height: 16),
+              Text(
+                '暂无需要复习的单词',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.grey.shade800),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '先去学习页面学习新单词吧！',
+                style: TextStyle(fontSize: 14, color: Colors.grey.shade600),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () => setState(() => _currentTab = 0),
+                icon: const Icon(Icons.menu_book),
+                label: const Text('去学习单词'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    if (_reviewFinished) {
+      final pct = (_reviewScore / _reviewWords.length * 100).round();
+      return Center(
+        child: Padding(
+          padding: const EdgeInsets.all(32),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              Text(pct >= 80 ? '🎉' : pct >= 60 ? '👍' : '💪', style: const TextStyle(fontSize: 64)),
+              const SizedBox(height: 16),
+              Text(
+                '复习完成!',
+                style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold, color: Colors.grey.shade800),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '得分: $_reviewScore / ${_reviewWords.length} ($pct%)',
+                style: TextStyle(fontSize: 18, color: Colors.grey.shade600),
+              ),
+              const SizedBox(height: 8),
+              Text(
+                '获得 ${_reviewScore * 3} 经验值 + ${_reviewScore * 2} 金币!',
+                style: TextStyle(fontSize: 16, color: Colors.blue.shade600),
+              ),
+              const SizedBox(height: 24),
+              ElevatedButton.icon(
+                onPressed: () {
+                  setState(() {
+                    _startReview();
+                  });
+                },
+                icon: const Icon(Icons.refresh),
+                label: const Text('再复习一轮'),
+                style: ElevatedButton.styleFrom(
+                  padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 14),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                ),
+              ),
+            ],
+          ),
+        ),
+      );
+    }
+
+    final word = _reviewWords[_reviewIndex];
+    final wordData = _words.firstWhere((w) => w['word'] == word, orElse: () => {'word': word, 'meaning': '未知', 'emoji': '📝'});
+    final wrongOptions = _words.where((w) => w['word'] != word).toList()..shuffle();
+    final options = [
+      wordData['meaning']!,
+      wrongOptions[0]['meaning']!,
+      wrongOptions[1]['meaning']!,
+      wrongOptions[2]['meaning']!,
+    ]..shuffle();
+
+    return Padding(
+      padding: const EdgeInsets.all(20),
+      child: Column(
+        children: [
+          // Info banner
+          Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(12),
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                colors: [Colors.indigo.shade300, Colors.purple.shade400],
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+              ),
+              borderRadius: BorderRadius.circular(12),
+            ),
+            child: Row(
+              children: [
+                const Icon(Icons.psychology, color: Colors.white, size: 24),
+                const SizedBox(width: 8),
+                const Expanded(
+                  child: Text(
+                    '艾宾浩斯遗忘曲线复习',
+                    style: TextStyle(fontSize: 14, fontWeight: FontWeight.bold, color: Colors.white),
+                  ),
+                ),
+                Text(
+                  '待复习: ${_reviewWords.length}',
+                  style: const TextStyle(fontSize: 13, color: Colors.white, fontWeight: FontWeight.w500),
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 16),
+          LinearProgressIndicator(
+            value: (_reviewIndex + 1) / _reviewWords.length,
+            backgroundColor: Colors.grey.shade200,
+            valueColor: AlwaysStoppedAnimation<Color>(Colors.indigo),
+            minHeight: 6,
+          ),
+          const SizedBox(height: 8),
+          Text(
+            '第 ${_reviewIndex + 1} / ${_reviewWords.length} 题',
+            style: TextStyle(color: Colors.grey.shade500, fontSize: 14),
+          ),
+          const SizedBox(height: 32),
+          Text(wordData['emoji'] as String, style: const TextStyle(fontSize: 64)),
+          const SizedBox(height: 16),
+          Text(
+            '「${wordData['word']}」是什么意思?',
+            style: TextStyle(fontSize: 22, fontWeight: FontWeight.bold, color: Colors.grey.shade800),
+          ),
+          const SizedBox(height: 32),
+          ...options.map((opt) {
+            Color? bgColor;
+            Color? textColor;
+            if (_reviewAnswered) {
+              if (opt == wordData['meaning']) {
+                bgColor = Colors.green.shade100;
+                textColor = Colors.green.shade800;
+              } else if (opt == _reviewAnswer) {
+                bgColor = Colors.red.shade100;
+                textColor = Colors.red.shade800;
+              }
+            }
+            return Padding(
+              padding: const EdgeInsets.only(bottom: 12),
+              child: SizedBox(
+                width: double.infinity,
+                child: ElevatedButton(
+                  onPressed: _reviewAnswered ? null : () => _checkReviewAnswer(opt),
                   style: ElevatedButton.styleFrom(
                     backgroundColor: bgColor,
                     foregroundColor: textColor ?? Colors.grey.shade800,
@@ -1717,6 +2093,10 @@ class _HomePageState extends State<HomePage> {
               ),
               const SizedBox(height: 20),
 
+              // Daily Tasks Card
+              _buildDailyTasksCard(),
+              const SizedBox(height: 20),
+
               // Quick Actions
               const Text(
                 '快速操作',
@@ -1897,6 +2277,308 @@ class _HomePageState extends State<HomePage> {
         children: [
           Text(label, style: const TextStyle(fontSize: 14, color: Colors.white70)),
           Text(value, style: const TextStyle(fontSize: 14, fontWeight: FontWeight.w500, color: Colors.white)),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildDailyTasksCard() {
+    widget.petData.ensureDailyTasks();
+    final completed = widget.petData.dailyTasksCompleted;
+    final total = widget.petData.dailyTasksTotal;
+
+    return Container(
+      width: double.infinity,
+      padding: const EdgeInsets.all(16),
+      decoration: BoxDecoration(
+        gradient: LinearGradient(
+          colors: [Colors.teal.shade300, Colors.cyan.shade400],
+          begin: Alignment.topLeft,
+          end: Alignment.bottomRight,
+        ),
+        borderRadius: BorderRadius.circular(16),
+        boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 8)],
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.task_alt, size: 32, color: Colors.white),
+              const SizedBox(width: 12),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    const Text(
+                      '每日任务',
+                      style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold, color: Colors.white),
+                    ),
+                    Text(
+                      '完成 $completed/$total 个任务',
+                      style: const TextStyle(fontSize: 13, color: Colors.white70),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.white.withOpacity(0.3),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Text(
+                  '${(completed / total * 100).round()}%',
+                  style: const TextStyle(
+                    fontSize: 14,
+                    fontWeight: FontWeight.bold,
+                    color: Colors.white,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(6),
+            child: LinearProgressIndicator(
+              value: completed / total,
+              backgroundColor: Colors.white.withOpacity(0.3),
+              valueColor: const AlwaysStoppedAnimation<Color>(Colors.white),
+              minHeight: 8,
+            ),
+          ),
+          const SizedBox(height: 16),
+          ...widget.petData.dailyTasks.map((task) {
+            final done = task['done'] as bool;
+            final progress = task['progress'] as int;
+            final target = task['target'] as int;
+            return Container(
+              margin: const EdgeInsets.only(bottom: 8),
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: done ? Colors.white.withOpacity(0.3) : Colors.white.withOpacity(0.15),
+                borderRadius: BorderRadius.circular(12),
+              ),
+              child: Row(
+                children: [
+                  Text(task['icon'] as String, style: const TextStyle(fontSize: 24)),
+                  const SizedBox(width: 12),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text(
+                          task['title'] as String,
+                          style: TextStyle(
+                            fontSize: 14,
+                            fontWeight: FontWeight.bold,
+                            color: done ? Colors.white70 : Colors.white,
+                            decoration: done ? TextDecoration.lineThrough : null,
+                          ),
+                        ),
+                        Text(
+                          '$progress/$target',
+                          style: const TextStyle(fontSize: 12, color: Colors.white70),
+                        ),
+                      ],
+                    ),
+                  ),
+                  if (done)
+                    const Icon(Icons.check_circle, color: Colors.white, size: 24)
+                  else
+                    Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: Colors.amber.shade200,
+                        borderRadius: BorderRadius.circular(8),
+                      ),
+                      child: Text(
+                        '+${task['reward']} 💰',
+                        style: const TextStyle(
+                          fontSize: 11,
+                          fontWeight: FontWeight.bold,
+                          color: Colors.amber,
+                        ),
+                      ),
+                    ),
+                ],
+              ),
+            );
+          }),
+        ],
+      ),
+    );
+  }
+}
+
+// ==================== Dress Up Shop ====================
+
+class _DressUpShopSheet extends StatefulWidget {
+  final PetData petData;
+  final List<Map<String, dynamic>> accessories;
+  final VoidCallback onUpdated;
+
+  const _DressUpShopSheet({
+    required this.petData,
+    required this.accessories,
+    required this.onUpdated,
+  });
+
+  @override
+  State<_DressUpShopSheet> createState() => _DressUpShopSheetState();
+}
+
+class _DressUpShopSheetState extends State<_DressUpShopSheet> {
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.all(20),
+      decoration: const BoxDecoration(
+        color: Colors.white,
+        borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              const Text(
+                '🎨 宠物装扮',
+                style: TextStyle(fontSize: 20, fontWeight: FontWeight.bold),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.amber.shade100,
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Icon(Icons.monetization_on, size: 18, color: Colors.amber),
+                    const SizedBox(width: 4),
+                    Text(
+                      '${widget.petData.coins}',
+                      style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.amber),
+                    ),
+                  ],
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 16),
+          const Text(
+            '购买并穿戴装扮，让宠物更可爱！',
+            style: TextStyle(fontSize: 13, color: Colors.grey),
+          ),
+          const SizedBox(height: 16),
+          Flexible(
+            child: ListView.builder(
+              shrinkWrap: true,
+              itemCount: widget.accessories.length,
+              itemBuilder: (context, index) {
+                final acc = widget.accessories[index];
+                final owned = widget.petData.ownedAccessories.contains(acc['id']);
+                final equipped = widget.petData.accessory == acc['id'];
+                final canAfford = widget.petData.coins >= (acc['price'] as int);
+
+                return Card(
+                  margin: const EdgeInsets.only(bottom: 12),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                  color: equipped ? Colors.pink.shade50 : Colors.white,
+                  child: ListTile(
+                    leading: Container(
+                      width: 50,
+                      height: 50,
+                      decoration: BoxDecoration(
+                        color: owned ? Colors.green.shade100 : Colors.grey.shade200,
+                        shape: BoxShape.circle,
+                      ),
+                      child: Center(
+                        child: Text(acc['icon'] as String, style: const TextStyle(fontSize: 28)),
+                      ),
+                    ),
+                    title: Text(
+                      acc['name'] as String,
+                      style: TextStyle(
+                        fontWeight: FontWeight.bold,
+                        color: equipped ? Colors.pink : Colors.grey.shade800,
+                      ),
+                    ),
+                    subtitle: Text(
+                      owned
+                          ? (equipped ? '已装备' : '已拥有')
+                          : '💰 ${acc['price']} 金币',
+                      style: TextStyle(
+                        color: owned
+                            ? (equipped ? Colors.pink : Colors.green)
+                            : (canAfford ? Colors.amber : Colors.red),
+                        fontWeight: FontWeight.w500,
+                      ),
+                    ),
+                    trailing: equipped
+                        ? const Icon(Icons.check_circle, color: Colors.pink, size: 28)
+                        : owned
+                            ? ElevatedButton(
+                                onPressed: () {
+                                  setState(() {
+                                    widget.petData.accessory = acc['id'] as String;
+                                    widget.onUpdated();
+                                  });
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.blue,
+                                  foregroundColor: Colors.white,
+                                ),
+                                child: const Text('装备'),
+                              )
+                            : ElevatedButton(
+                                onPressed: canAfford
+                                    ? () {
+                                        setState(() {
+                                          widget.petData.spendCoins(acc['price'] as int);
+                                          widget.petData.ownedAccessories = [
+                                            ...widget.petData.ownedAccessories,
+                                            acc['id'] as String,
+                                          ];
+                                          widget.petData.accessory = acc['id'] as String;
+                                          widget.petData.addLog('购买装扮「${acc['name']}」');
+                                          widget.onUpdated();
+                                        });
+                                        ScaffoldMessenger.of(context).showSnackBar(
+                                          SnackBar(
+                                            content: Text('购买成功！已装备「${acc['name']}」'),
+                                            backgroundColor: Colors.green,
+                                            duration: const Duration(seconds: 2),
+                                          ),
+                                        );
+                                      }
+                                    : null,
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.amber,
+                                  foregroundColor: Colors.white,
+                                ),
+                                child: const Text('购买'),
+                              ),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(height: 16),
+          SizedBox(
+            width: double.infinity,
+            child: ElevatedButton(
+              onPressed: () => Navigator.pop(context),
+              style: ElevatedButton.styleFrom(
+                padding: const EdgeInsets.symmetric(vertical: 14),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+              ),
+              child: const Text('关闭'),
+            ),
+          ),
         ],
       ),
     );
