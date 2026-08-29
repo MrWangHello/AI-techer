@@ -2,6 +2,11 @@
  * 3D GLB Model Renderer using Three.js
  * 完全本地化，兼容所有浏览器
  * 
+ * 修复内容:
+ * 1. 移除 root 骨骼的位移通道(root motion)，防止模型跑出视野
+ * 2. 单次动画(interact/celebrate等)播放完后自动回到 idle
+ * 3. 动画切换增加容错处理
+ * 
  * 全局API:
  *   window.initAllThreeViewers()       - 手动初始化所有容器
  *   window._threeLoaded                - 全局标记，模型是否已加载过
@@ -11,6 +16,28 @@
 
   window._threeLoaded = false;
   var initializedContainers = new WeakSet();
+
+  // 单次动画列表（播放完后自动回到 idle）
+  var ONE_SHOT_ANIMS = ['interact', 'pickup', 'jump', 'no', 'yes', 'pain', 'fall_over', 'celebrate', 'uppercut'];
+
+  // 移除 root 骨骼的位移通道，防止动画播放时模型跑出视野
+  function removeRootMotion(animations) {
+    if (!animations || !animations.length) return;
+    for (var i = 0; i < animations.length; i++) {
+      var clip = animations[i];
+      var filtered = [];
+      for (var j = 0; j < clip.tracks.length; j++) {
+        var track = clip.tracks[j];
+        var trackName = track.name || '';
+        // 跳过 root 骨骼的位置/位移通道（root motion）
+        if (trackName.indexOf('root.position') !== -1 || trackName.indexOf('root.translation') !== -1) {
+          continue;
+        }
+        filtered.push(track);
+      }
+      clip.tracks = filtered;
+    }
+  }
 
   function fitModelToView(model, camera, containerW, containerH) {
     var box = new THREE.Box3().setFromObject(model);
@@ -108,7 +135,10 @@
     var mixer = null;
     var clock = new THREE.Clock();
     var loadedModel = null;
-    var modelAnimations = []; // 存储所有动画，用于动画切换
+    var modelAnimations = [];
+    // 用于记录当前播放的动画名称，用于单次动画回退
+    var currentAnimName = animName;
+    var oneShotTimer = null;
 
     var loader = new THREE.GLTFLoader();
     loadModel(loader, src, container, function(gltf) {
@@ -123,14 +153,18 @@
       fitModelToView(loadedModel, camera, w, h);
 
       if (gltf.animations && gltf.animations.length > 0) {
-        modelAnimations = gltf.animations;
+        modelAnimations = gltf.animations.slice();
+        // 移除所有动画的 root motion
+        removeRootMotion(modelAnimations);
+
         mixer = new THREE.AnimationMixer(loadedModel);
         var clip = null;
-        for (var i = 0; i < gltf.animations.length; i++) {
-          if (gltf.animations[i].name === animName) { clip = gltf.animations[i]; break; }
+        for (var i = 0; i < modelAnimations.length; i++) {
+          if (modelAnimations[i].name === animName) { clip = modelAnimations[i]; break; }
         }
-        if (!clip) clip = gltf.animations[0];
-        mixer.clipAction(clip).play();
+        if (!clip) clip = modelAnimations[0];
+        currentAnimName = animName;
+        playAnimation(clip, animName, true);
       }
 
       // 启动动画切换监听
@@ -142,6 +176,55 @@
     }, function() {
       container.dispatchEvent(new CustomEvent('three-error', { bubbles: true }));
     });
+
+    // 播放动画（带单次动画自动回退功能）
+    function playAnimation(clip, animName, isInitial) {
+      if (!mixer || !clip) return;
+      try {
+        // 清除之前的单次动画定时器
+        if (oneShotTimer) {
+          clearTimeout(oneShotTimer);
+          oneShotTimer = null;
+        }
+
+        mixer.stopAllAction();
+        var action = mixer.clipAction(clip);
+        action.setLoop(THREE.LoopRepeat, Infinity);
+        // 过渡效果：让动画切换更平滑
+        if (!isInitial) {
+          action.fadeIn(0.3);
+        }
+        action.play();
+        clock.stop();
+        clock.start();
+
+        // 如果是单次动画，设置定时器回到 idle
+        if (ONE_SHOT_ANIMS.indexOf(animName) !== -1) {
+          // 计算动画时长，加一点延迟让动画完整播放
+          var duration = clip.duration;
+          var delay = Math.max(duration * 1000 + 500, 1500);
+          oneShotTimer = setTimeout(function() {
+            // 回到 idle
+            var idleClip = null;
+            for (var i = 0; i < modelAnimations.length; i++) {
+              if (modelAnimations[i].name === 'idle') { idleClip = modelAnimations[i]; break; }
+            }
+            if (idleClip) {
+              currentAnimName = 'idle';
+              mixer.stopAllAction();
+              var idleAction = mixer.clipAction(idleClip);
+              idleAction.setLoop(THREE.LoopRepeat, Infinity);
+              idleAction.fadeIn(0.3);
+              idleAction.play();
+              clock.stop();
+              clock.start();
+            }
+          }, delay);
+        }
+      } catch (e) {
+        console.error('Animation error:', e);
+      }
+    }
 
     // Animation loop
     function animate() {
@@ -155,6 +238,42 @@
       renderer.render(scene, camera);
     }
     animate();
+
+    // 监听 data-anim 属性变化，实现动态切换动画
+    function watchAnimChanges(container, mixer, clock, animations) {
+      if (!window.MutationObserver) return;
+      if (!mixer) return;
+      animations = animations || [];
+      var animObserver = new MutationObserver(function(mutations) {
+        for (var i = 0; i < mutations.length; i++) {
+          if (mutations[i].attributeName === 'data-anim' && mixer) {
+            var newAnim = container.getAttribute('data-anim');
+            if (!newAnim || !animations.length) return;
+            if (newAnim === currentAnimName) return; // 避免重复切换
+
+            try {
+              // 查找动画
+              var clip = null;
+              for (var j = 0; j < animations.length; j++) {
+                if (animations[j].name === newAnim) {
+                  clip = animations[j];
+                  break;
+                }
+              }
+              if (!clip) {
+                clip = animations[0];
+                newAnim = animations[0].name;
+              }
+              currentAnimName = newAnim;
+              playAnimation(clip, newAnim, false);
+            } catch (e) {
+              console.error('Animation switch error:', e);
+            }
+          }
+        }
+      });
+      animObserver.observe(container, { attributes: true, attributeFilter: ['data-anim'] });
+    }
 
     // Resize handler
     if (window.ResizeObserver) {
@@ -179,37 +298,6 @@
   }
 
   window.initAllThreeViewers = initAll;
-
-  // 监听 data-anim 属性变化，实现动态切换动画
-  function watchAnimChanges(container, mixer, clock, animations) {
-    if (!window.MutationObserver) return;
-    animations = animations || [];
-    var animObserver = new MutationObserver(function(mutations) {
-      for (var i = 0; i < mutations.length; i++) {
-        if (mutations[i].attributeName === 'data-anim' && mixer) {
-          var newAnim = container.getAttribute('data-anim');
-          if (newAnim && animations.length > 0) {
-            // 停止所有当前动画
-            mixer.stopAllAction();
-            // 查找并播放新动画
-            var clip = null;
-            for (var j = 0; j < animations.length; j++) {
-              if (animations[j].name === newAnim) {
-                clip = animations[j];
-                break;
-              }
-            }
-            if (!clip) clip = animations[0];
-            mixer.clipAction(clip).play();
-            // 重置时钟避免跳帧
-            clock.stop();
-            clock.start();
-          }
-        }
-      }
-    });
-    animObserver.observe(container, { attributes: true, attributeFilter: ['data-anim'] });
-  }
 
   // 等 DOM 准备好后初始化
   if (document.readyState === 'loading') {
