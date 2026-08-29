@@ -142,3 +142,26 @@
 - ❌ 不在未验证的情况下说"修好了"
 - ❌ 不用 GitHub API 轮询构建状态（会限流）
 - ❌ 不假设库的格式，先检查源码
+
+---
+
+## ✅ 模型更换记录：RobotExpressive → Fox（2026-08-29）
+
+**变更**：
+- 将 3D 模型从 RobotExpressive.glb（机器人）更换为 Fox.glb（卡通狐狸）
+- Fox 模型来自 KhronosGroup glTF-Sample-Assets，CC0 许可证，完全免费
+
+**Fox 模型动画**：
+- **Survey**（闲逛）：默认动画，狐狸四处张望
+- **Walk**（走路）：行走动画
+- **Run**（奔跑）：奔跑动画
+
+**修改的文件**：
+- `three-loader.js`：默认模型改为 Fox.glb，默认动画改为 Survey
+- `model_viewer_widget.dart`：默认模型和动画同步更新
+- `main.dart`：动画列表从 8 个（Idle/Wave/Dance/Jump/Yes/No/ThumbsUp/Punch）精简为 3 个（Survey/Walk/Run）
+- 动作映射：点击→Survey，喂食→Survey，玩耍→Run，学习→Walk，升级→Run
+
+**注意**：
+- Fox 模型只有 3 个动画，比 RobotExpressive 的 8 个少，但每个动画更精细
+- 模型大小 162KB，比 RobotExpressive 的 464KB 小很多，加载更快

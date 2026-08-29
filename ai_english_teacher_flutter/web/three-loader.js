@@ -69,8 +69,8 @@
 
     initializedContainers.add(container);
 
-    var src = container.getAttribute('data-src') || 'assets/models/RobotExpressive.glb';
-    var animName = container.getAttribute('data-anim') || 'Idle';
+    var src = container.getAttribute('data-src') || 'assets/models/Fox.glb';
+    var animName = container.getAttribute('data-anim') || 'Survey';
 
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 1000);
@@ -126,6 +126,9 @@
         mixer.clipAction(clip).play();
       }
 
+      // 启动动画切换监听
+      watchAnimChanges(container, mixer, clock);
+
       window._threeLoaded = true;
       container.setAttribute('data-loaded', 'true');
       container.dispatchEvent(new CustomEvent('three-loaded', { bubbles: true }));
@@ -165,6 +168,40 @@
   }
 
   window.initAllThreeViewers = initAll;
+
+  // 监听 data-anim 属性变化，实现动态切换动画
+  function watchAnimChanges(container, mixer, clock) {
+    if (!window.MutationObserver) return;
+    var animObserver = new MutationObserver(function(mutations) {
+      for (var i = 0; i < mutations.length; i++) {
+        if (mutations[i].attributeName === 'data-anim' && mixer) {
+          var newAnim = container.getAttribute('data-anim');
+          if (newAnim) {
+            // 停止所有当前动画
+            mixer.stopAllAction();
+            // 查找并播放新动画
+            var clip = null;
+            for (var j = 0; j < mixer._root.animations.length; j++) {
+              if (mixer._root.animations[j].name === newAnim) {
+                clip = mixer._root.animations[j];
+                break;
+              }
+            }
+            if (!clip && mixer._root.animations.length > 0) {
+              clip = mixer._root.animations[0];
+            }
+            if (clip) {
+              mixer.clipAction(clip).play();
+              // 重置时钟避免跳帧
+              clock.stop();
+              clock.start();
+            }
+          }
+        }
+      }
+    });
+    animObserver.observe(container, { attributes: true, attributeFilter: ['data-anim'] });
+  }
 
   // 等 DOM 准备好后初始化
   if (document.readyState === 'loading') {
