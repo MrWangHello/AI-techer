@@ -3,42 +3,57 @@
  * 完全本地化，兼容所有浏览器
  * 
  * 全局API:
- *   window.initThreeViewer(container)  - 手动初始化单个容器
- *   window.initAllThreeViewers()       - 初始化所有 .three-viewer 容器
+ *   window.initAllThreeViewers()       - 手动初始化所有容器
  *   window._threeLoaded                - 全局标记，模型是否已加载过
  */
 (function() {
   'use strict';
 
-  // 全局标记：模型是否已经加载成功过（防止 Flutter Widget 重建后重复显示加载）
   window._threeLoaded = false;
-
   var initializedContainers = new WeakSet();
 
-  function fitModelToView(loadedModel, camera, containerW, containerH) {
-    var box = new THREE.Box3().setFromObject(loadedModel);
+  function fitModelToView(model, camera, containerW, containerH) {
+    var box = new THREE.Box3().setFromObject(model);
     var size = box.getSize(new THREE.Vector3());
     var center = box.getCenter(new THREE.Vector3());
-
     var maxDim = Math.max(size.x, size.y, size.z);
-    var fov = camera.fov * (Math.PI / 180);
-    // 让模型占容器高度的 ~80%
-    var cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) / 0.8;
+    if (maxDim < 0.01) return;
 
-    // 同时考虑宽度
-    var aspect = containerW / containerH;
-    var cameraZWidth = Math.abs(maxDim / 2 / Math.tan(fov / 2) / aspect) / 0.8;
-    cameraZ = Math.max(cameraZ, cameraZWidth);
+    var fov = camera.fov * Math.PI / 180;
+    var dist = maxDim / 2 / Math.tan(fov / 2);
 
-    // 最小/最大相机距离
-    cameraZ = Math.max(cameraZ, 1.5);
-    cameraZ = Math.min(cameraZ, 10);
-
-    camera.position.set(center.x, center.y, center.z + cameraZ);
+    // 用更保守的系数 0.6，让模型更紧凑
+    camera.position.set(center.x, center.y, center.z + dist / 0.6);
     camera.lookAt(center);
+    // 把模型移到原点，居中
+    model.position.sub(center);
+  }
 
-    // 居中模型
-    loadedModel.position.sub(center);
+  // 自动重试：加载失败后最多重试 3 次
+  function loadModel(loader, src, container, onSuccess, onError, retries) {
+    retries = retries || 0;
+    loader.load(
+      src,
+      function(gltf) {
+        container.setAttribute('data-loaded', 'true');
+        container.removeAttribute('data-error');
+        onSuccess(gltf);
+      },
+      undefined,
+      function(err) {
+        console.error('GLB load error (attempt ' + (retries + 1) + '):', src, err);
+        if (retries < 3) {
+          container.setAttribute('data-retrying', String(retries + 1));
+          setTimeout(function() {
+            loadModel(loader, src, container, onSuccess, onError, retries + 1);
+          }, 1500 * (retries + 1));
+        } else {
+          container.setAttribute('data-error', 'true');
+          container.removeAttribute('data-retrying');
+          if (onError) onError(err);
+        }
+      }
+    );
   }
 
   function initViewer(container) {
@@ -47,9 +62,8 @@
     var w = container.clientWidth;
     var h = container.clientHeight;
 
-    // 容器尺寸为0时延迟重试
     if (w === 0 || h === 0) {
-      setTimeout(function() { initViewer(container); }, 200);
+      setTimeout(function() { initViewer(container); }, 300);
       return;
     }
 
@@ -58,13 +72,9 @@
     var src = container.getAttribute('data-src') || 'assets/models/RobotExpressive.glb';
     var animName = container.getAttribute('data-anim') || 'Idle';
 
-    // Scene
     var scene = new THREE.Scene();
+    var camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 1000);
 
-    // Camera - 45度 FOV
-    var camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
-
-    // Renderer
     var renderer;
     try {
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
@@ -82,81 +92,57 @@
     scene.add(new THREE.AmbientLight(0xffffff, 0.7));
     var dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
     dirLight.position.set(3, 5, 5);
-    dirLight.castShadow = true;
     scene.add(dirLight);
     var backLight = new THREE.DirectionalLight(0xffffff, 0.3);
     backLight.position.set(-3, 3, -5);
     scene.add(backLight);
+    var fillLight = new THREE.DirectionalLight(0x8888ff, 0.2);
+    fillLight.position.set(0, -3, 4);
+    scene.add(fillLight);
 
     var mixer = null;
     var clock = new THREE.Clock();
     var loadedModel = null;
 
-    // Load GLB
     var loader = new THREE.GLTFLoader();
-    loader.load(
-      src,
-      function(gltf) {
-        loadedModel = gltf.scene;
-
-        loadedModel.traverse(function(child) {
-          if (child.isMesh) {
-            child.castShadow = true;
-            child.receiveShadow = true;
-          }
-        });
-
-        scene.add(loadedModel);
-
-        // 自动适配模型大小到容器
-        fitModelToView(loadedModel, camera, w, h);
-
-        // Animations
-        if (gltf.animations && gltf.animations.length > 0) {
-          mixer = new THREE.AnimationMixer(loadedModel);
-          var clip = null;
-          for (var i = 0; i < gltf.animations.length; i++) {
-            if (gltf.animations[i].name === animName) {
-              clip = gltf.animations[i];
-              break;
-            }
-          }
-          if (!clip) clip = gltf.animations[0];
-          var action = mixer.clipAction(clip);
-          action.play();
+    loadModel(loader, src, container, function(gltf) {
+      loadedModel = gltf.scene;
+      loadedModel.traverse(function(child) {
+        if (child.isMesh) {
+          child.castShadow = true;
+          child.receiveShadow = true;
         }
+      });
+      scene.add(loadedModel);
+      fitModelToView(loadedModel, camera, w, h);
 
-        container.setAttribute('data-loaded', 'true');
-        window._threeLoaded = true;
-        console.log('3D model loaded:', src);
-
-        // 通过 DOM 自定义事件通知 Flutter
-        container.dispatchEvent(new CustomEvent('three-loaded', { bubbles: true }));
-      },
-      function(xhr) {
-        if (xhr.lengthComputable) {
-          var pct = Math.round(xhr.loaded / xhr.total * 100);
-          container.setAttribute('data-progress', pct);
+      if (gltf.animations && gltf.animations.length > 0) {
+        mixer = new THREE.AnimationMixer(loadedModel);
+        var clip = null;
+        for (var i = 0; i < gltf.animations.length; i++) {
+          if (gltf.animations[i].name === animName) { clip = gltf.animations[i]; break; }
         }
-      },
-      function(error) {
-        console.error('GLB load error:', error);
-        container.setAttribute('data-error', 'true');
+        if (!clip) clip = gltf.animations[0];
+        mixer.clipAction(clip).play();
       }
-    );
+
+      window._threeLoaded = true;
+      container.setAttribute('data-loaded', 'true');
+      container.dispatchEvent(new CustomEvent('three-loaded', { bubbles: true }));
+    }, function() {
+      container.dispatchEvent(new CustomEvent('three-error', { bubbles: true }));
+    });
 
     // Animation loop
     function animate() {
       requestAnimationFrame(animate);
       if (mixer) mixer.update(clock.getDelta());
-      if (loadedModel) {
-        loadedModel.rotation.y += 0.005;
-      }
+      if (loadedModel) loadedModel.rotation.y += 0.005;
       renderer.render(scene, camera);
     }
     animate();
 
-    // Resize
+    // Resize handler
     if (window.ResizeObserver) {
       var ro = new ResizeObserver(function() {
         var nw = container.clientWidth;
@@ -166,57 +152,52 @@
           camera.aspect = w / h;
           camera.updateProjectionMatrix();
           renderer.setSize(w, h);
-          // 重新适配模型
-          if (loadedModel) {
-            fitModelToView(loadedModel, camera, w, h);
-          }
+          if (loadedModel) fitModelToView(loadedModel, camera, w, h);
         }
       });
       ro.observe(container);
     }
-
-    container._three = { scene: scene, camera: camera, renderer: renderer, mixer: mixer, model: loadedModel };
   }
 
   function initAll() {
     var viewers = document.querySelectorAll('.three-viewer');
-    for (var i = 0; i < viewers.length; i++) {
-      initViewer(viewers[i]);
-    }
+    for (var i = 0; i < viewers.length; i++) initViewer(viewers[i]);
   }
 
-  window.initThreeViewer = initViewer;
   window.initAllThreeViewers = initAll;
 
+  // 等 DOM 准备好后初始化
   if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(initAll, 300);
-    });
+    document.addEventListener('DOMContentLoaded', function() { setTimeout(initAll, 500); });
   } else {
-    setTimeout(initAll, 300);
+    setTimeout(initAll, 500);
   }
 
+  // MutationObserver 检测动态添加的 .three-viewer 容器
   if (window.MutationObserver) {
     var observer = new MutationObserver(function(mutations) {
       for (var i = 0; i < mutations.length; i++) {
-        var added = mutations[i].addedNodes;
-        for (var j = 0; j < added.length; j++) {
-          var node = added[j];
+        var nodes = mutations[i].addedNodes;
+        for (var j = 0; j < nodes.length; j++) {
+          var node = nodes[j];
           if (node.nodeType === 1) {
             if (node.classList && node.classList.contains('three-viewer')) {
               setTimeout(function() { initViewer(node); }, 100);
             }
             var nested = node.querySelectorAll ? node.querySelectorAll('.three-viewer') : [];
             for (var k = 0; k < nested.length; k++) {
-              setTimeout(function(el) { return function() { initViewer(el); }; }(nested[k]), 100);
+              (function(el) { setTimeout(function() { initViewer(el); }, 100); })(nested[k]);
             }
           }
         }
       }
     });
-    observer.observe(document.body || document.documentElement, {
-      childList: true,
-      subtree: true
-    });
+    if (document.body) {
+      observer.observe(document.body, { childList: true, subtree: true });
+    } else {
+      document.addEventListener('DOMContentLoaded', function() {
+        observer.observe(document.body, { childList: true, subtree: true });
+      });
+    }
   }
 })();

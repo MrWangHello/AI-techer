@@ -154,13 +154,9 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
   String get _moodEmoji => widget.petData.petMoodEmoji;
 
   void _playAnim(String name) {
-    // 先切换到 Idle 作为过渡，然后再切换到目标动画
-    setState(() => _currentAnimation = 'Idle');
-    Future.delayed(const Duration(milliseconds: 300), () {
-      if (mounted) {
-        setState(() => _currentAnimation = name);
-      }
-    });
+    // 直接更新动画，不重建 Widget（移除 ValueKey 后不再需要 setState 切换）
+    ModelViewerWidget.setAnimation(name);
+    setState(() => _currentAnimation = name);
   }
 
   void _showBubble(String text) {
@@ -394,9 +390,9 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
                         ),
                       ),
                     ),
-                  Center(
+                  // 3D 模型填满整个卡片区域，使用 Positioned.fill
+                  Positioned.fill(
                     child: ModelViewerWidget(
-                      key: ValueKey(_currentAnimation),
                       src: 'assets/models/RobotExpressive.glb',
                       animationName: _currentAnimation,
                       autoRotate: true,
@@ -407,7 +403,10 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
                       onTap: _onPetTap,
                     ),
                   ),
-                  if (!_modelLoaded) _LoadingOverlay(),
+                  if (!_modelLoaded)
+                    const Positioned.fill(
+                      child: _LoadingOverlay(),
+                    ),
                   Positioned(
                     bottom: 16,
                     left: 0,
@@ -2636,28 +2635,20 @@ class _DressUpShopSheetState extends State<_DressUpShopSheet> {
 
 // ==================== Loading Overlay ====================
 
-class _LoadingOverlay extends StatefulWidget {
-  @override
-  State<_LoadingOverlay> createState() => _LoadingOverlayState();
-}
-
-class _LoadingOverlayState extends State<_LoadingOverlay> {
-  bool _timeout = false;
-  @override
-  void initState() {
-    super.initState();
-    Future.delayed(const Duration(seconds: 10), () { if (mounted) setState(() => _timeout = true); });
-  }
+class _LoadingOverlay extends StatelessWidget {
+  const _LoadingOverlay();
 
   @override
   Widget build(BuildContext context) {
-    return Container(color: Colors.white54,
-      child: Center(child: Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-        if (!_timeout) ...[const CircularProgressIndicator(color: Colors.pink), const SizedBox(height: 12), const Text('Loading 3D...', style: TextStyle(color: Colors.pink))]
-        else ...[const Icon(Icons.pets, size: 64, color: Colors.pink), const SizedBox(height: 12), const Text('3D 模型加载中...', style: TextStyle(color: Colors.pink, fontSize: 16)),
-          const SizedBox(height: 8), const Text('请确保网络连接正常', style: TextStyle(color: Colors.grey, fontSize: 12)),
-          const SizedBox(height: 16), ElevatedButton(onPressed: () => setState(() => _timeout = false), child: const Text('重试'))],
-      ])),
+    return Container(
+      color: Colors.white.withOpacity(0.4),
+      child: const Center(
+        child: SizedBox(
+          width: 28,
+          height: 28,
+          child: CircularProgressIndicator(strokeWidth: 2.5),
+        ),
+      ),
     );
   }
 }

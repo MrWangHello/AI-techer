@@ -26,6 +26,8 @@ void registerModelViewer() {
 
     // 监听模型加载完成事件（DOM 自定义事件）
     container.addEventListener('three-loaded', (html.Event e) {
+      // 标记容器已加载
+      container.setAttribute('data-flutter-loaded', 'true');
       _onModelViewerEvent?.call('load', null);
     });
 
@@ -43,7 +45,20 @@ void registerModelViewer() {
 bool _isModelAlreadyLoaded() {
   if (!kIsWeb) return false;
   try {
-    return js.context.hasProperty('_threeLoaded') && js.context['_threeLoaded'] == true;
+    // 检查 JS 全局标记
+    if (js.context.hasProperty('_threeLoaded') && js.context['_threeLoaded'] == true) {
+      return true;
+    }
+    // 检查容器 DOM 属性
+    if (_modelViewerElement != null &&
+        _modelViewerElement!.getAttribute('data-loaded') == 'true') {
+      return true;
+    }
+    if (_modelViewerElement != null &&
+        _modelViewerElement!.getAttribute('data-flutter-loaded') == 'true') {
+      return true;
+    }
+    return false;
   } catch (_) {
     return false;
   }
@@ -71,6 +86,14 @@ class ModelViewerWidget extends StatefulWidget {
     this.onModelReady,
     this.onTap,
   });
+
+  /// 静态方法：设置动画（不依赖 Widget 实例，通过全局 DOM 引用）
+  static void setAnimation(String name) {
+    if (!kIsWeb) return;
+    if (_modelViewerElement != null) {
+      _modelViewerElement!.setAttribute('data-anim', name);
+    }
+  }
 
   @override
   State<ModelViewerWidget> createState() => _ModelViewerWidgetState();
@@ -103,6 +126,15 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
     if (_modelViewerElement != null && widget.animationName != null) {
       _modelViewerElement!.setAttribute('data-anim', widget.animationName!);
     }
+
+    // 延迟再检查一次：如果模型已加载但事件丢失，手动标记
+    Future.delayed(const Duration(seconds: 3), () {
+      if (!mounted) return;
+      if (!_modelLoaded && _isModelAlreadyLoaded()) {
+        setState(() { _modelLoaded = true; _modelError = false; });
+        widget.onModelReady?.call();
+      }
+    });
   }
 
   @override
@@ -118,13 +150,6 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
     _onModelViewerEvent = null;
     super.dispose();
   }
-
-  void setAnimation(String name) {
-    _modelViewerElement?.setAttribute('data-anim', name);
-  }
-
-  void pauseAnimation() {}
-  void resumeAnimation() {}
 
   @override
   Widget build(BuildContext context) {
@@ -147,18 +172,18 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
           borderRadius: BorderRadius.circular(24),
           child: HtmlElementView(viewType: 'model-viewer-3d'),
         ),
-        // 加载中提示（仅在首次加载时显示，不显示文字）
+        // 加载中提示（仅在首次加载时显示，半透明背景，只显示小转圈）
         if (!_modelLoaded && !_modelError)
           Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.6),
+              color: Colors.white.withOpacity(0.4),
               borderRadius: BorderRadius.circular(24),
             ),
             child: const Center(
               child: SizedBox(
-                width: 36,
-                height: 36,
-                child: CircularProgressIndicator(strokeWidth: 3),
+                width: 32,
+                height: 32,
+                child: CircularProgressIndicator(strokeWidth: 2.5),
               ),
             ),
           ),
