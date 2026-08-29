@@ -28,11 +28,18 @@
   function waitForLibs(callback, retries) {
     retries = retries || 0;
     if (typeof PIXI !== 'undefined' && PIXI.live2d) {
-      callback();
-      return;
+      // 检查 Live2DModel 是否可用
+      if (typeof PIXI.live2d.Live2DModel !== 'undefined') {
+        callback();
+        return;
+      } else {
+        console.warn('[Live2D] PIXI.live2d exists but Live2DModel not found, retrying...');
+      }
     }
-    if (retries > 30) { // 最多等 15 秒
-      console.error('[Live2D] Libraries failed to load after 30 retries');
+    if (retries > 60) { // 最多等 30 秒
+      console.error('[Live2D] Libraries failed to load after 60 retries');
+      // 触发全局错误事件，让 Flutter 知道
+      document.dispatchEvent(new CustomEvent('live2d-error', { detail: 'Libraries timeout' }));
       return;
     }
     setTimeout(function() { waitForLibs(callback, retries + 1); }, 500);
@@ -55,32 +62,33 @@
     var containerId = container.getAttribute('data-id') || 'l2d-' + Math.random().toString(36).slice(2, 8);
     container.setAttribute('data-id', containerId);
 
-    console.log('[Live2D] Initializing viewer:', containerId, 'model:', modelKey);
+    console.log('[Live2D] Initializing viewer:', containerId, 'model:', modelKey, 'size:', w, 'x', h);
 
-    // 创建 PixiJS 应用
-    var app = new PIXI.Application({
-      width: w,
-      height: h,
-      backgroundAlpha: 0,
-      antialias: true,
-      resolution: Math.min(window.devicePixelRatio || 1, 2),
-      autoDensity: true,
-    });
-    // 确保 canvas 填满容器
-    app.view.style.width = '100%';
-    app.view.style.height = '100%';
-    app.view.style.position = 'absolute';
-    app.view.style.top = '0';
-    app.view.style.left = '0';
-    container.appendChild(app.view);
-    container.style.position = 'relative';
-    container.style.overflow = 'hidden';
+    try {
+      // 创建 PixiJS 应用
+      var app = new PIXI.Application({
+        width: w,
+        height: h,
+        backgroundAlpha: 0,
+        antialias: true,
+        resolution: Math.min(window.devicePixelRatio || 1, 2),
+        autoDensity: true,
+      });
+      // 确保 canvas 填满容器
+      app.view.style.width = '100%';
+      app.view.style.height = '100%';
+      app.view.style.position = 'absolute';
+      app.view.style.top = '0';
+      app.view.style.left = '0';
+      container.appendChild(app.view);
+      container.style.position = 'relative';
+      container.style.overflow = 'hidden';
 
-    // 加载模型
-    var Live2DModel = PIXI.live2d.Live2DModel;
-    Live2DModel.from(config.url, { autoInteract: false })
-      .then(function(model) {
-        appCache[containerId] = { app: app, model: model, config: config };
+      // 加载模型
+      var Live2DModel = PIXI.live2d.Live2DModel;
+      Live2DModel.from(config.url, { autoInteract: false })
+        .then(function(model) {
+          appCache[containerId] = { app: app, model: model, config: config };
 
         // 自适应缩放和居中
         positionModel(model, app, config, w, h);
@@ -122,9 +130,10 @@
         }
       })
       .catch(function(err) {
-        console.error('[Live2D] Model load error:', err);
+        console.error('[Live2D] Model load error:', err && err.message ? err.message : err, 'for model:', config.url);
         container.setAttribute('data-error', 'true');
         container.dispatchEvent(new CustomEvent('live2d-error', { bubbles: true }));
+        console.log('[Live2D] Will retry model in 5 seconds...');
         // 5 秒后重试
         setTimeout(function() {
           if (container.getAttribute('data-loaded') !== 'true') {
@@ -134,6 +143,18 @@
           }
         }, 5000);
       });
+    } catch (e) {
+      console.error('[Live2D] PIXI.Application creation failed:', e && e.message ? e.message : e);
+      container.setAttribute('data-error', 'true');
+      container.dispatchEvent(new CustomEvent('live2d-error', { bubbles: true }));
+      // 3秒后重试
+      setTimeout(function() {
+        if (container.getAttribute('data-loaded') !== 'true') {
+          initializedContainers.delete(container);
+          initViewer(container);
+        }
+      }, 3000);
+    }
   }
 
   function positionModel(model, app, config, w, h) {
