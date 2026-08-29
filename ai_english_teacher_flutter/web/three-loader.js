@@ -69,8 +69,8 @@
 
     initializedContainers.add(container);
 
-    var src = container.getAttribute('data-src') || 'assets/models/Fox.glb';
-    var animName = container.getAttribute('data-anim') || 'Survey';
+    var src = container.getAttribute('data-src') || 'assets/models/poppy-the-mouse.glb';
+    var animName = container.getAttribute('data-anim') || 'idle';
     var autoRotate = container.getAttribute('data-autorotate') !== 'false';
 
     var scene = new THREE.Scene();

@@ -17,8 +17,8 @@ void registerModelViewer() {
   ui.platformViewRegistry.registerViewFactory('model-viewer-3d', (int viewId) {
     final container = html.DivElement()
       ..className = 'three-viewer'
-      ..setAttribute('data-src', 'assets/models/Fox.glb')
-      ..setAttribute('data-anim', 'Survey')
+      ..setAttribute('data-src', 'assets/models/poppy-the-mouse.glb')
+      ..setAttribute('data-anim', 'idle')
       ..style.width = '100%'
       ..style.height = '100%'
       ..style.overflow = 'hidden'
@@ -141,7 +141,7 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
   void didUpdateWidget(ModelViewerWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.animationName != oldWidget.animationName && _modelViewerElement != null) {
-      _modelViewerElement!.setAttribute('data-anim', widget.animationName ?? 'Survey');
+      _modelViewerElement!.setAttribute('data-anim', widget.animationName ?? 'idle');
     }
   }
 

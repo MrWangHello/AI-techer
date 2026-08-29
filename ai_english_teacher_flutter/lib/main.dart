@@ -86,7 +86,7 @@ class PetPage extends StatefulWidget {
 }
 
 class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
-  String _currentAnimation = 'Survey';
+  String _currentAnimation = 'idle';
   bool _modelLoaded = false;
   String? _bubbleText;
   bool _showMiniGame = false;
@@ -108,12 +108,13 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
 
   late AnimationController _bubbleAnim;
 
-  final List<String> _animations = ['Survey', 'Walk', 'Run'];
+  final List<String> _animations = ['idle', 'walk', 'run', 'dance', 'sit', 'wave'];
   final Map<String, String> _animLabels = {
-    'Survey': '闲逛', 'Walk': '走路', 'Run': '奔跑',
+    'idle': '闲逛', 'walk': '走路', 'run': '奔跑', 'dance': '跳舞', 'sit': '坐下', 'wave': '挥手',
   };
   final Map<String, IconData> _animIcons = {
-    'Survey': Icons.visibility, 'Walk': Icons.directions_walk, 'Run': Icons.directions_run,
+    'idle': Icons.visibility, 'walk': Icons.directions_walk, 'run': Icons.directions_run,
+    'dance': Icons.music_note, 'sit': Icons.event_seat, 'wave': Icons.pan_tool,
   };
 
   final List<String> _tapLines = [
@@ -171,7 +172,7 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
   String _randomFrom(List<String> list) => list[DateTime.now().millisecondsSinceEpoch % list.length];
 
   void _onPetTap() {
-    _playAnim('Survey');
+    _playAnim('interact');
     _showBubble(_randomFrom(_tapLines));
     widget.petData.addMood(2);
     widget.petData.addExp(1);
@@ -182,7 +183,7 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
   }
 
   void _onFeed() {
-    _playAnim('Survey');
+    _playAnim('cheer');
     _showBubble(_randomFrom(_feedLines));
     widget.petData.addHunger(15);
     widget.petData.addMood(5);
@@ -192,7 +193,7 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
     widget.petData.recordInteraction();
     widget.petData.advanceDailyTask('feed');
     if (widget.petData.checkLevelUp()) {
-      _playAnim('Run');
+      _playAnim('celebrate');
       _showBubble('🎉 Level Up! Now Lv.${widget.petData.level}!');
     }
     widget.onUpdated();
@@ -200,7 +201,7 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
   }
 
   void _onPlay() {
-    _playAnim('Run');
+    _playAnim('dance');
     _showBubble(_randomFrom(_playLines));
     widget.petData.addMood(15);
     widget.petData.addHunger(-5);
@@ -209,7 +210,7 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
     widget.petData.totalInteractions++;
     widget.petData.recordInteraction();
     if (widget.petData.checkLevelUp()) {
-      _playAnim('Run');
+      _playAnim('celebrate');
       _showBubble('🎉 Level Up! Now Lv.${widget.petData.level}!');
     }
     widget.onUpdated();
@@ -217,7 +218,7 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
   }
 
   void _onStudy() {
-    _playAnim('Walk');
+    _playAnim('sit_talk');
     _showBubble(_randomFrom(_studyLines));
     widget.petData.addExp(15);
     widget.petData.addMood(3);
@@ -225,7 +226,7 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
     widget.petData.totalInteractions++;
     widget.petData.recordInteraction();
     if (widget.petData.checkLevelUp()) {
-      _playAnim('Run');
+      _playAnim('celebrate');
       _showBubble('🎉 Level Up! Now Lv.${widget.petData.level}!');
     }
     widget.onUpdated();
@@ -264,7 +265,7 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
   void _onMiniGameTap(int number) {
     if (number == _miniGameTarget) {
       setState(() => _miniGameScore++);
-      _playAnim('Run');
+      _playAnim('dance');
       _showBubble('Correct! +1 🎉');
       widget.petData.addExp(2);
       widget.petData.addMood(1);
@@ -274,7 +275,7 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
         if (mounted) _generateMiniGameTarget();
       });
     } else {
-      _playAnim('Survey');
+      _playAnim('idle');
       _showBubble('Try again! 💪');
     }
   }
@@ -390,7 +391,7 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
                   // 3D 模型填满整个卡片区域，使用 Positioned.fill
                   Positioned.fill(
                     child: ModelViewerWidget(
-                      src: 'assets/models/Fox.glb',
+                      src: 'assets/models/poppy-the-mouse.glb',
                       animationName: _currentAnimation,
                       autoRotate: true,
                       cameraControls: true,
