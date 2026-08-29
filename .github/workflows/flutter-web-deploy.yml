@@ -36,6 +36,13 @@ jobs:
       - name: Build Flutter Web
         run: cd ai_english_teacher_flutter && flutter build web --release --base-href "/AI-techer/"
 
+      - name: Copy GLB model to build output
+        run: |
+          mkdir -p ai_english_teacher_flutter/build/web/assets/models
+          cp ai_english_teacher_flutter/assets/models/*.glb ai_english_teacher_flutter/build/web/assets/models/
+          echo "Copied models:"
+          ls -la ai_english_teacher_flutter/build/web/assets/models/
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
 
