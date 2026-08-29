@@ -31,10 +31,13 @@
       }
     }
 
-    // 等待 DOM 加载完成
-    document.addEventListener('DOMContentLoaded', function() {
+    // 初始化函数
+    function initModelViewer() {
       const container = document.getElementById('model-viewer-container');
-      const viewer = document.getElementById('pet-model');
+      if (!container) {
+        console.error('model-viewer-container not found');
+        return;
+      }
       
       if (!checkWebGLSupport()) {
         console.warn('WebGL 不支持，显示降级内容');
@@ -69,7 +72,14 @@
           `;
           container.classList.add('active');
         });
-    });
+    }
+
+    // 立即执行或等待 DOM 加载
+    if (document.readyState === 'loading') {
+      document.addEventListener('DOMContentLoaded', initModelViewer);
+    } else {
+      initModelViewer();
+    }
   </script>
   <style>
     #model-viewer-container {
