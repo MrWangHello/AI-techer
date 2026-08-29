@@ -5,11 +5,41 @@
  * 全局API:
  *   window.initThreeViewer(container)  - 手动初始化单个容器
  *   window.initAllThreeViewers()       - 初始化所有 .three-viewer 容器
+ *   window._threeLoaded                - 全局标记，模型是否已加载过
  */
 (function() {
   'use strict';
 
+  // 全局标记：模型是否已经加载成功过（防止 Flutter Widget 重建后重复显示加载）
+  window._threeLoaded = false;
+
   var initializedContainers = new WeakSet();
+
+  function fitModelToView(loadedModel, camera, containerW, containerH) {
+    var box = new THREE.Box3().setFromObject(loadedModel);
+    var size = box.getSize(new THREE.Vector3());
+    var center = box.getCenter(new THREE.Vector3());
+
+    var maxDim = Math.max(size.x, size.y, size.z);
+    var fov = camera.fov * (Math.PI / 180);
+    // 让模型占容器高度的 ~80%
+    var cameraZ = Math.abs(maxDim / 2 / Math.tan(fov / 2)) / 0.8;
+
+    // 同时考虑宽度
+    var aspect = containerW / containerH;
+    var cameraZWidth = Math.abs(maxDim / 2 / Math.tan(fov / 2) / aspect) / 0.8;
+    cameraZ = Math.max(cameraZ, cameraZWidth);
+
+    // 最小/最大相机距离
+    cameraZ = Math.max(cameraZ, 1.5);
+    cameraZ = Math.min(cameraZ, 10);
+
+    camera.position.set(center.x, center.y, center.z + cameraZ);
+    camera.lookAt(center);
+
+    // 居中模型
+    loadedModel.position.sub(center);
+  }
 
   function initViewer(container) {
     if (initializedContainers.has(container)) return;
@@ -17,7 +47,7 @@
     var w = container.clientWidth;
     var h = container.clientHeight;
 
-    // 容器尺寸为0时延迟重试（Flutter HtmlElementView 可能还没布局完）
+    // 容器尺寸为0时延迟重试
     if (w === 0 || h === 0) {
       setTimeout(function() { initViewer(container); }, 200);
       return;
@@ -31,16 +61,15 @@
     // Scene
     var scene = new THREE.Scene();
 
-    // Camera
+    // Camera - 45度 FOV
     var camera = new THREE.PerspectiveCamera(45, w / h, 0.1, 1000);
-    camera.position.set(0, 1.5, 3);
 
     // Renderer
     var renderer;
     try {
       renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
     } catch (e) {
-      container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#666;text-align:center;padding:10px;">WebGL 不可用<br><small>请使用 Chrome 或 QQ 浏览器</small></div>';
+      container.innerHTML = '<div style="display:flex;align-items:center;justify-content:center;height:100%;color:#999;font-size:14px;text-align:center;padding:10px;">WebGL 不可用</div>';
       return;
     }
     renderer.setSize(w, h);
@@ -50,11 +79,14 @@
     container.appendChild(renderer.domElement);
 
     // Lights
-    scene.add(new THREE.AmbientLight(0xffffff, 0.6));
-    var dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
-    dirLight.position.set(5, 10, 7);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.7));
+    var dirLight = new THREE.DirectionalLight(0xffffff, 0.9);
+    dirLight.position.set(3, 5, 5);
     dirLight.castShadow = true;
     scene.add(dirLight);
+    var backLight = new THREE.DirectionalLight(0xffffff, 0.3);
+    backLight.position.set(-3, 3, -5);
+    scene.add(backLight);
 
     var mixer = null;
     var clock = new THREE.Clock();
@@ -74,22 +106,10 @@
           }
         });
 
-        // Auto-scale
-        var box = new THREE.Box3().setFromObject(loadedModel);
-        var size = box.getSize(new THREE.Vector3());
-        var maxDim = Math.max(size.x, size.y, size.z);
-        if (maxDim > 0) {
-          var scale = 2.0 / maxDim;
-          loadedModel.scale.setScalar(scale);
-        }
-
-        // Center
-        box = new THREE.Box3().setFromObject(loadedModel);
-        var center = box.getCenter(new THREE.Vector3());
-        loadedModel.position.sub(center);
-        loadedModel.position.y += 0.5;
-
         scene.add(loadedModel);
+
+        // 自动适配模型大小到容器
+        fitModelToView(loadedModel, camera, w, h);
 
         // Animations
         if (gltf.animations && gltf.animations.length > 0) {
@@ -107,9 +127,10 @@
         }
 
         container.setAttribute('data-loaded', 'true');
+        window._threeLoaded = true;
         console.log('3D model loaded:', src);
 
-        // 通过 DOM 自定义事件通知 Flutter（不依赖 postMessage，避免跨窗口问题）
+        // 通过 DOM 自定义事件通知 Flutter
         container.dispatchEvent(new CustomEvent('three-loaded', { bubbles: true }));
       },
       function(xhr) {
@@ -128,7 +149,6 @@
     function animate() {
       requestAnimationFrame(animate);
       if (mixer) mixer.update(clock.getDelta());
-      // Slow auto-rotate
       if (loadedModel) {
         loadedModel.rotation.y += 0.005;
       }
@@ -146,16 +166,18 @@
           camera.aspect = w / h;
           camera.updateProjectionMatrix();
           renderer.setSize(w, h);
+          // 重新适配模型
+          if (loadedModel) {
+            fitModelToView(loadedModel, camera, w, h);
+          }
         }
       });
       ro.observe(container);
     }
 
-    // Store refs for external control
     container._three = { scene: scene, camera: camera, renderer: renderer, mixer: mixer, model: loadedModel };
   }
 
-  // 初始化所有 .three-viewer 容器
   function initAll() {
     var viewers = document.querySelectorAll('.three-viewer');
     for (var i = 0; i < viewers.length; i++) {
@@ -163,28 +185,24 @@
     }
   }
 
-  // 暴露全局 API
   window.initThreeViewer = initViewer;
   window.initAllThreeViewers = initAll;
 
-  // 自动初始化（页面加载时已有的容器）
   if (document.readyState === 'loading') {
     document.addEventListener('DOMContentLoaded', function() {
-      setTimeout(initAll, 500);
+      setTimeout(initAll, 300);
     });
   } else {
-    setTimeout(initAll, 500);
+    setTimeout(initAll, 300);
   }
 
-  // MutationObserver: 监听 DOM 变化，自动初始化新添加的容器
-  // （Flutter HtmlElementView 动态创建的元素会触发这个）
   if (window.MutationObserver) {
     var observer = new MutationObserver(function(mutations) {
       for (var i = 0; i < mutations.length; i++) {
         var added = mutations[i].addedNodes;
         for (var j = 0; j < added.length; j++) {
           var node = added[j];
-          if (node.nodeType === 1) { // Element
+          if (node.nodeType === 1) {
             if (node.classList && node.classList.contains('three-viewer')) {
               setTimeout(function() { initViewer(node); }, 100);
             }

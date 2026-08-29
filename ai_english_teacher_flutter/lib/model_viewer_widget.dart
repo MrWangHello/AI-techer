@@ -1,16 +1,16 @@
 import 'dart:html' as html;
+import 'dart:js' as js;
 import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart' show kIsWeb;
 
-/// 全局 model-viewer DOM 元素引用，用于控制动画等
+/// 全局 model-viewer DOM 元素引用
 html.Element? _modelViewerElement;
 
 /// 监听 model-viewer 事件的回调
 void Function(String type, dynamic data)? _onModelViewerEvent;
 
 /// 注册 HtmlElementView platform view
-/// 在 main() 中调用一次
 void registerModelViewer() {
   if (!kIsWeb) return;
   
@@ -24,7 +24,7 @@ void registerModelViewer() {
       ..style.overflow = 'hidden'
       ..style.borderRadius = '24px';
 
-    // 监听模型加载完成事件（DOM 自定义事件，不依赖 postMessage）
+    // 监听模型加载完成事件（DOM 自定义事件）
     container.addEventListener('three-loaded', (html.Event e) {
       _onModelViewerEvent?.call('load', null);
     });
@@ -39,8 +39,17 @@ void registerModelViewer() {
   });
 }
 
+/// 检查模型是否已经加载过（全局状态，不随 Widget 重建而重置）
+bool _isModelAlreadyLoaded() {
+  if (!kIsWeb) return false;
+  try {
+    return js.context.hasProperty('_threeLoaded') && js.context['_threeLoaded'] == true;
+  } catch (_) {
+    return false;
+  }
+}
+
 /// 3D GLB 模型查看器 Widget
-/// 使用 HtmlElementView + Three.js 嵌入到 Flutter 布局中
 class ModelViewerWidget extends StatefulWidget {
   final String src;
   final String? animationName;
@@ -75,7 +84,9 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
   void initState() {
     super.initState();
 
-    // 设置事件回调
+    // 检查全局状态：如果模型之前已经加载过，直接跳过加载提示
+    _modelLoaded = _isModelAlreadyLoaded();
+
     _onModelViewerEvent = (type, data) {
       if (!mounted) return;
       if (type == 'load') {
@@ -89,7 +100,6 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
       }
     };
 
-    // 设置初始动画
     if (_modelViewerElement != null && widget.animationName != null) {
       _modelViewerElement!.setAttribute('data-anim', widget.animationName!);
     }
@@ -109,20 +119,12 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
     super.dispose();
   }
 
-  /// 切换动画
   void setAnimation(String name) {
     _modelViewerElement?.setAttribute('data-anim', name);
   }
 
-  /// 暂停动画
-  void pauseAnimation() {
-    // Three.js 暂停
-  }
-
-  /// 恢复动画
-  void resumeAnimation() {
-    // Three.js 恢复
-  }
+  void pauseAnimation() {}
+  void resumeAnimation() {}
 
   @override
   Widget build(BuildContext context) {
@@ -145,39 +147,18 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
           borderRadius: BorderRadius.circular(24),
           child: HtmlElementView(viewType: 'model-viewer-3d'),
         ),
-        // 加载中提示
+        // 加载中提示（仅在首次加载时显示，不显示文字）
         if (!_modelLoaded && !_modelError)
           Container(
             decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.8),
+              color: Colors.white.withOpacity(0.6),
               borderRadius: BorderRadius.circular(24),
             ),
             child: const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  CircularProgressIndicator(),
-                  SizedBox(height: 16),
-                  Text('3D 模型加载中...'),
-                ],
-              ),
-            ),
-          ),
-        // 错误提示
-        if (_modelError)
-          Container(
-            decoration: BoxDecoration(
-              color: Colors.white.withOpacity(0.8),
-              borderRadius: BorderRadius.circular(24),
-            ),
-            child: const Center(
-              child: Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.error_outline, size: 48, color: Colors.red),
-                  SizedBox(height: 16),
-                  Text('3D 模型加载失败'),
-                ],
+              child: SizedBox(
+                width: 36,
+                height: 36,
+                child: CircularProgressIndicator(strokeWidth: 3),
               ),
             ),
           ),
