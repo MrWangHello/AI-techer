@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  html, body { width: 100%; height: 100%; overflow: hidden; background: transparent; }
+  model-viewer { width: 100%; height: 100%; }
+</style>
+<script type="module" src="https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
+</head>
+<body>
+<model-viewer id="mv"></model-viewer>
+<script>
+(function() {
+  const params = new URLSearchParams(window.location.search);
+  const src = params.get('src') || '';
+  const anim = params.get('anim');
+
+  const mv = document.getElementById('mv');
+  mv.setAttribute('src', src);
+  mv.setAttribute('camera-controls', '');
+  mv.setAttribute('auto-rotate', '');
+  mv.setAttribute('rotation-per-second', '10deg');
+  mv.setAttribute('shadow-intensity', params.get('shadow') || '0.5');
+  if (anim) mv.setAttribute('animation-name', anim);
+
+  mv.addEventListener('load', () => {
+    window.parent.postMessage({type: 'model-ready'}, '*');
+  });
+  mv.addEventListener('error', (e) => {
+    window.parent.postMessage({type: 'model-error', detail: e.detail}, '*');
+  });
+})();
+</script>
+</body>
+</html>
