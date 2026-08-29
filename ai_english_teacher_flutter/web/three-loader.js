@@ -22,8 +22,8 @@
     var fov = camera.fov * Math.PI / 180;
     var dist = maxDim / 2 / Math.tan(fov / 2);
 
-    // 用更保守的系数 0.6，让模型更紧凑
-    camera.position.set(center.x, center.y, center.z + dist / 0.6);
+    // 系数 0.85，让模型填满更多画面
+    camera.position.set(center.x, center.y, center.z + dist / 0.85);
     camera.lookAt(center);
     // 把模型移到原点，居中
     model.position.sub(center);
@@ -71,6 +71,7 @@
 
     var src = container.getAttribute('data-src') || 'assets/models/Fox.glb';
     var animName = container.getAttribute('data-anim') || 'Survey';
+    var autoRotate = container.getAttribute('data-autorotate') !== 'false';
 
     var scene = new THREE.Scene();
     var camera = new THREE.PerspectiveCamera(40, w / h, 0.1, 1000);
@@ -84,7 +85,11 @@
     }
     renderer.setSize(w, h);
     renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
-    renderer.outputEncoding = THREE.sRGBEncoding;
+    if (THREE.sRGBEncoding) {
+      renderer.outputEncoding = THREE.sRGBEncoding;
+    } else if (THREE.SRGBColorSpace) {
+      renderer.outputColorSpace = THREE.SRGBColorSpace;
+    }
     renderer.shadowMap.enabled = true;
     container.appendChild(renderer.domElement);
 
@@ -103,6 +108,7 @@
     var mixer = null;
     var clock = new THREE.Clock();
     var loadedModel = null;
+    var modelAnimations = []; // 存储所有动画，用于动画切换
 
     var loader = new THREE.GLTFLoader();
     loadModel(loader, src, container, function(gltf) {
@@ -117,6 +123,7 @@
       fitModelToView(loadedModel, camera, w, h);
 
       if (gltf.animations && gltf.animations.length > 0) {
+        modelAnimations = gltf.animations;
         mixer = new THREE.AnimationMixer(loadedModel);
         var clip = null;
         for (var i = 0; i < gltf.animations.length; i++) {
@@ -127,7 +134,7 @@
       }
 
       // 启动动画切换监听
-      watchAnimChanges(container, mixer, clock);
+      watchAnimChanges(container, mixer, clock, modelAnimations);
 
       window._threeLoaded = true;
       container.setAttribute('data-loaded', 'true');
@@ -140,7 +147,11 @@
     function animate() {
       requestAnimationFrame(animate);
       if (mixer) mixer.update(clock.getDelta());
-      if (loadedModel) loadedModel.rotation.y += 0.005;
+      if (loadedModel && autoRotate) {
+        // 有动画播放时旋转更慢，无动画时正常旋转
+        var rotSpeed = mixer && mixer.time > 0 ? 0.002 : 0.005;
+        loadedModel.rotation.y += rotSpeed;
+      }
       renderer.render(scene, camera);
     }
     animate();
@@ -170,32 +181,29 @@
   window.initAllThreeViewers = initAll;
 
   // 监听 data-anim 属性变化，实现动态切换动画
-  function watchAnimChanges(container, mixer, clock) {
+  function watchAnimChanges(container, mixer, clock, animations) {
     if (!window.MutationObserver) return;
+    animations = animations || [];
     var animObserver = new MutationObserver(function(mutations) {
       for (var i = 0; i < mutations.length; i++) {
         if (mutations[i].attributeName === 'data-anim' && mixer) {
           var newAnim = container.getAttribute('data-anim');
-          if (newAnim) {
+          if (newAnim && animations.length > 0) {
             // 停止所有当前动画
             mixer.stopAllAction();
             // 查找并播放新动画
             var clip = null;
-            for (var j = 0; j < mixer._root.animations.length; j++) {
-              if (mixer._root.animations[j].name === newAnim) {
-                clip = mixer._root.animations[j];
+            for (var j = 0; j < animations.length; j++) {
+              if (animations[j].name === newAnim) {
+                clip = animations[j];
                 break;
               }
             }
-            if (!clip && mixer._root.animations.length > 0) {
-              clip = mixer._root.animations[0];
-            }
-            if (clip) {
-              mixer.clipAction(clip).play();
-              // 重置时钟避免跳帧
-              clock.stop();
-              clock.start();
-            }
+            if (!clip) clip = animations[0];
+            mixer.clipAction(clip).play();
+            // 重置时钟避免跳帧
+            clock.stop();
+            clock.start();
           }
         }
       }

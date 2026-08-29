@@ -274,7 +274,7 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
         if (mounted) _generateMiniGameTarget();
       });
     } else {
-      _playAnim('No');
+      _playAnim('Survey');
       _showBubble('Try again! 💪');
     }
   }
