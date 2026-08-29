@@ -18,95 +18,86 @@
   <title>AI English Teacher</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- Load model-viewer from local file (传统方式，兼容360浏览器) -->
+  <!-- Load model-viewer (传统 script 标签，兼容所有浏览器) -->
   <script src="model-viewer.min.js"></script>
-  <script>
-    // 页面加载完成后初始化
-    window.addEventListener('load', function() {
-      const container = document.getElementById('model-viewer-container');
-      if (container) {
-        console.log('model-viewer-container 找到，显示模型');
-        container.classList.add('active');
-      }
-    });
-  </script>
+
   <style>
-    #model-viewer-container {
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    /* 微信浏览器引导遮罩 */
+    #wechat-guide {
+      display: none;
       position: fixed;
       top: 0;
       left: 0;
       width: 100%;
       height: 100%;
-      z-index: 9999;
-      background: white;
-      display: none;
+      z-index: 99999;
+      background: rgba(0, 0, 0, 0.85);
+      color: white;
+      text-align: center;
+      padding: 40px 20px;
+      box-sizing: border-box;
     }
-    #model-viewer-container.active {
-      display: block;
+    #wechat-guide.show {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
     }
-    #model-viewer-container model-viewer {
-      width: 100%;
-      height: 100%;
+    #wechat-guide h2 {
+      font-size: 24px;
+      margin-bottom: 20px;
+    }
+    #wechat-guide p {
+      font-size: 16px;
+      line-height: 1.6;
+      margin-bottom: 30px;
+      opacity: 0.9;
+    }
+    #wechat-guide .btn {
+      display: inline-block;
+      padding: 14px 40px;
+      background: #07c160;
+      color: white;
+      border-radius: 30px;
+      text-decoration: none;
+      font-size: 18px;
+      font-weight: bold;
+    }
+    #wechat-guide .tip {
+      margin-top: 20px;
+      font-size: 14px;
+      opacity: 0.7;
     }
   </style>
 </head>
 <body>
-  <!-- 3D Model Viewer -->
-  <div id="model-viewer-container">
-    <model-viewer
-      id="pet-model"
-      src="assets/models/RobotExpressive.glb"
-      camera-controls
-      auto-rotate
-      shadow-intensity="0.5"
-      animation-name="Idle"
-      camera-orbit="0deg 75deg 105%"
-      field-of-view="30deg">
-    </model-viewer>
+  <!-- 微信浏览器引导页面 -->
+  <div id="wechat-guide">
+    <h2>&#128274; 请在浏览器中打开</h2>
+    <p>当前页面在微信中无法正常显示 3D 内容。<br>
+    请点击右上角 <strong>"..."</strong>，选择<br>
+    <strong>"在浏览器中打开"</strong> 获得最佳体验。</p>
+    <a class="btn" href="#" onclick="document.getElementById('wechat-guide').classList.remove('show'); return false;">我已了解，继续访问</a>
+    <p class="tip">推荐使用 Chrome、QQ 浏览器或手机自带浏览器</p>
   </div>
 
-  <script src="flutter_bootstrap.js" async></script>
-  
-  <!-- Communication between Flutter and model-viewer -->
   <script>
-    (function() {
-      var container = document.getElementById('model-viewer-container');
-      var viewer = document.getElementById('pet-model');
-      var isVisible = false;
-      
-      // 监听来自 model-viewer 的事件
-      viewer.addEventListener('load', function() {
-        window.postMessage({type: 'mv-load'}, '*');
-      });
-      viewer.addEventListener('error', function(e) {
-        window.postMessage({type: 'mv-error', error: 'Failed to load model'}, '*');
-      });
-      viewer.addEventListener('click', function() {
-        window.postMessage({type: 'mv-tap'}, '*');
-      });
-      
-      // 监听来自 Flutter 的消息
-      window.addEventListener('message', function(event) {
-        if (!event.data || !event.data.type) return;
-        
-        if (event.data.type === 'show-model') {
-          container.classList.add('active');
-          if (event.data.animation) {
-            viewer.setAttribute('animation-name', event.data.animation);
-          }
-          isVisible = true;
-        } else if (event.data.type === 'hide-model') {
-          container.classList.remove('active');
-          isVisible = false;
-        } else if (event.data.type === 'set-animation') {
-          viewer.setAttribute('animation-name', event.data.animation);
-        } else if (event.data.type === 'pause-animation') {
-          viewer.setAttribute('paused', '');
-        } else if (event.data.type === 'resume-animation') {
-          viewer.removeAttribute('paused');
-        }
-      });
-    })();
+    // 微信浏览器检测
+    function isWeChat() {
+      var ua = navigator.userAgent.toLowerCase();
+      return ua.indexOf('micromessenger') !== -1;
+    }
+    if (isWeChat()) {
+      document.getElementById('wechat-guide').classList.add('show');
+    }
   </script>
+
+  <!-- Flutter 应用入口 -->
+  <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>

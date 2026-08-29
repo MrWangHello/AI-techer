@@ -1,9 +1,10 @@
-import 'dart:js' as js;
+import 'dart:html' as html;
 import 'package:flutter/material.dart';
 import 'model_viewer_widget.dart';
 import 'pet_data.dart';
 
 void main() {
+  registerModelViewer();
   runApp(const AIEnglishTeacherApp());
 }
 
@@ -1009,7 +1010,9 @@ class _StudyPageState extends State<StudyPage> {
   void _speakWord(String word) {
     // Use Web Speech API
     final script = "if('speechSynthesis' in window){const u=new SpeechSynthesisUtterance('$word');u.lang='en-US';u.rate=0.8;speechSynthesis.speak(u);}";
-    js.context.callMethod('eval', [script]);
+    final scriptEl = html.ScriptElement()..text = script;
+    html.document.body!.append(scriptEl);
+    scriptEl.remove();
   }
 
   @override
