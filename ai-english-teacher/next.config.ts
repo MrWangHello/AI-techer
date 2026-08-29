@@ -17,6 +17,8 @@ const nextConfig: NextConfig = {
   allowedDevOrigins: [
     "run-agent-*.remote-agent.svc.cluster.local",
     "*.remote-agent.svc.cluster.local",
+    "*.agent-sandbox-bj-a1-gw.traecontent.cn",
+    "*.traecontent.cn",
     "127.0.0.1",
     "localhost",
   ],

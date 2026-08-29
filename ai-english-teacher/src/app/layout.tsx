@@ -20,8 +20,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="zh-CN" className="h-full">
       <head>
-        {/* 加载 Live2D Cubism 2.1 Core - 不使用 async 确保加载顺序 */}
-        <script src={`${basePath}/live2d.min.js`} />
+        {/* 加载 Live2D Cubism 2.1 Core - 使用 async 避免阻塞渲染 */}
+        <script src={`${basePath}/live2d.min.js`} async />
       </head>
       <body className="h-full flex flex-col bg-[#fdf2f8] text-[#1f2937]">
         {children}

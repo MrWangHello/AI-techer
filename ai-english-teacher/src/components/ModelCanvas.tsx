@@ -57,6 +57,10 @@ export default function ModelCanvas({
   const [fallback, setFallback] = useState(false);
   const [loading, setLoading] = useState(true);
 
+  // 使用 ref 存储回调，避免每次渲染都创建新的引用
+  const callbacksRef = useRef({ onReady, onError, onTap });
+  callbacksRef.current = { onReady, onError, onTap };
+
   const doInit = useCallback(() => {
     if (initedRef.current || !containerRef.current) return;
     const container = containerRef.current;
@@ -120,12 +124,12 @@ export default function ModelCanvas({
                 model.motion(idx);
               }
             } catch (_) {}
-            onTap?.();
+            callbacksRef.current.onTap?.();
           });
 
           app.stage.addChild(model);
           setLoading(false);
-          onReady?.();
+          callbacksRef.current.onReady?.();
 
           const onResize = () => {
             if (!container.isConnected) return;
@@ -145,17 +149,17 @@ export default function ModelCanvas({
           console.error("[Live2D] Model load error:", err);
           setLoading(false);
           setFallback(true);
-          onError?.(err.message || "模型加载失败");
+          callbacksRef.current.onError?.(err.message || "模型加载失败");
           initedRef.current = false;
         });
     } catch (e: any) {
       console.error("[Live2D] Init error:", e);
       setLoading(false);
       setFallback(true);
-      onError?.(e.message || "Live2D 初始化失败");
+      callbacksRef.current.onError?.(e.message || "Live2D 初始化失败");
       initedRef.current = false;
     }
-  }, [onReady, onError, onTap]);
+  }, []); // 空依赖 - 通过 ref 访问最新回调
 
   useEffect(() => {
     // 如果 Live2D Core 未加载，发出警告并使用 fallback
@@ -176,7 +180,7 @@ export default function ModelCanvas({
             console.warn("[Live2D] Core not loaded after 5s, using fallback");
             setLoading(false);
             setFallback(true);
-            onError?.("Live2D 核心库加载超时");
+            callbacksRef.current.onError?.("Live2D 核心库加载超时");
           }
         }, 100);
       }
