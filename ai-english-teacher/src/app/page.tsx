@@ -22,7 +22,7 @@ import {
   ACHIEVEMENTS,
   PetData,
 } from "@/lib/pet-data";
-import { speak } from "@/lib/speech";
+import { speak, warmUpSpeech } from "@/lib/speech";
 import { AgentResponse } from "@/lib/mock-agent";
 import { WORDS } from "@/lib/words";
 
@@ -30,7 +30,9 @@ type Tab = "home" | "pet" | "study" | "settings";
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
-  const [pet, setPet] = useState<PetData>(loadPetData);
+  // 使用默认值初始化（SSR 和客户端第一次渲染一致），useEffect 中再加载 localStorage 数据
+  const [pet, setPet] = useState<PetData>({ ...loadPetData() });
+  const [petLoaded, setPetLoaded] = useState(false);
   const [modelReady, setModelReady] = useState(false);
   const [modelError, setModelError] = useState<string | null>(null);
   const [agentEmotion, setAgentEmotion] = useState<"happy" | "sad" | "surprised" | "neutral" | "thinking">("neutral");
@@ -46,10 +48,28 @@ export default function HomePage() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [studyingMinutes, setStudyingMinutes] = useState(0);
 
-  // 保存宠物数据
+  // 客户端加载 localStorage 数据，避免 hydration 不匹配
   useEffect(() => {
-    savePetData(pet);
-  }, [pet]);
+    setPet(loadPetData());
+    setPetLoaded(true);
+  }, []);
+
+  // 保存宠物数据（仅在客户端加载后保存）
+  useEffect(() => {
+    if (petLoaded) {
+      savePetData(pet);
+    }
+  }, [pet, petLoaded]);
+
+  // 首次用户交互时预热语音引擎
+  useEffect(() => {
+    const handleFirstClick = () => {
+      warmUpSpeech();
+      document.removeEventListener("click", handleFirstClick);
+    };
+    document.addEventListener("click", handleFirstClick, { once: true });
+    return () => document.removeEventListener("click", handleFirstClick);
+  }, []);
 
   // 学习计时器
   useEffect(() => {
@@ -368,26 +388,13 @@ export default function HomePage() {
           <ModelCanvas
             onReady={() => setModelReady(true)}
             onError={(err) => setModelError(err)}
+            onTap={() => {
+              setAgentEmotion("happy");
+              speak("嘿嘿，别戳我！");
+            }}
             mood={agentEmotion}
             action={agentAction}
           />
-          {!modelReady && !modelError && (
-            <div className="absolute inset-0 flex items-center justify-center bg-pink-50">
-              <div className="text-center">
-                <div className="animate-pulse text-4xl mb-2">🐱</div>
-                <p className="text-sm text-gray-400">Bella 正在加载中...</p>
-              </div>
-            </div>
-          )}
-          {modelError && (
-            <div className="absolute inset-0 flex items-center justify-center bg-pink-50">
-              <div className="text-center">
-                <div className="text-4xl mb-2">😿</div>
-                <p className="text-sm text-red-400">模型加载失败</p>
-                <p className="text-xs text-gray-400 mt-1">{modelError}</p>
-              </div>
-            </div>
-          )}
         </div>
       </div>
 

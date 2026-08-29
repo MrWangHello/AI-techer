@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import type { Viewport } from "next";
 import "./globals.css";
 
+const basePath = process.env.DEPLOY_TARGET === "github-pages" ? "/AI-techer" : "";
+
 export const metadata: Metadata = {
   title: "AI 英语老师 - Bella",
   description: "AI 驱动的英语学习宠物，语音互动更轻松",
@@ -18,8 +20,8 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <html lang="zh-CN" className="h-full">
       <head>
-        {/* 预加载 Live2D Cubism 2.1 Core */}
-        <script src="/AI-techer/live2d.min.js" async />
+        {/* 加载 Live2D Cubism 2.1 Core - 不使用 async 确保加载顺序 */}
+        <script src={`${basePath}/live2d.min.js`} />
       </head>
       <body className="h-full flex flex-col bg-[#fdf2f8] text-[#1f2937]">
         {children}
