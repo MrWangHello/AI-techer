@@ -90,7 +90,13 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
   placeholder.appendChild(overlay);
 
   var mv = document.createElement('model-viewer');
-  mv.setAttribute('src', '${widget.src}');
+  // 使用绝对路径确保在 GitHub Pages 等子路径部署时能正确加载
+  var baseHref = document.querySelector('base') ? document.querySelector('base').getAttribute('href') : '/';
+  var src = '${widget.src}';
+  if (baseHref && baseHref !== '/') {
+    src = baseHref + src;
+  }
+  mv.setAttribute('src', src);
   mv.setAttribute('style', 'width:100%;height:100%;');
   ${widget.cameraControls ? "mv.setAttribute('camera-controls', '');" : ""}
   ${widget.autoRotate ? "mv.setAttribute('auto-rotate', '');mv.setAttribute('rotation-per-second', '10deg');" : ""}
