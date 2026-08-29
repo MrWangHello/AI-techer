@@ -1,9 +1,8 @@
 import 'dart:html' as html;
-import 'dart:js' as js;
-import 'dart:ui_web' as ui_web;
 import 'package:flutter/material.dart';
 
 /// 3D GLB 模型查看器 Widget
+/// 通过 postMessage 控制静态嵌入的 model-viewer 元素
 class ModelViewerWidget extends StatefulWidget {
   final String src;
   final String? animationName;
@@ -31,129 +30,24 @@ class ModelViewerWidget extends StatefulWidget {
 }
 
 class _ModelViewerWidgetState extends State<ModelViewerWidget> {
-  static int _counter = 0;
-  late final String _overlayId;
-  late final String _viewType;
-  html.DivElement? _placeholderElement;
   html.EventListener? _messageListener;
+  bool _modelLoaded = false;
 
   @override
   void initState() {
     super.initState();
-    _overlayId = 'mv-${_counter++}';
-    _viewType = 'model-viewer-$_overlayId';
     
-    // 注册平台视图
-    ui_web.platformViewRegistry.registerViewFactory(_viewType, (int viewId) {
-      _placeholderElement = html.DivElement()
-        ..setAttribute('data-mv-placeholder', _overlayId)
-        ..style.width = '100%'
-        ..style.height = '100%'
-        ..style.position = 'relative'
-        ..style.overflow = 'hidden'
-        ..style.borderRadius = '24px'
-        ..style.background = widget.backgroundColor;
-      
-      // 延迟创建 overlay，确保元素已插入 DOM
-      Future.delayed(const Duration(milliseconds: 500), () {
-        if (mounted) _createOverlay();
-      });
-      
-      return _placeholderElement!;
-    });
-  }
-
-  void _createOverlay() {
-    if (!mounted || _placeholderElement == null) return;
-
-    final script = '''
-(function() {
-  var old = document.getElementById('$_overlayId');
-  if (old) old.remove();
-
-  var placeholders = document.querySelectorAll('div[data-mv-placeholder="$_overlayId"]');
-  var placeholder = placeholders.length > 0 ? placeholders[0] : null;
-
-  if (!placeholder) {
-    console.error('Model viewer placeholder not found: $_overlayId');
-    return;
-  }
-
-  var overlay = document.createElement('div');
-  overlay.id = '$_overlayId';
-  overlay.style.cssText = 'position:absolute;' +
-    'top:0;left:0;' +
-    'width:100%;height:100%;' +
-    'z-index:10;' +
-    'pointer-events:auto;';
-  
-  placeholder.appendChild(overlay);
-
-  // 等待 model-viewer 自定义元素注册完成
-  var createModelViewer = function() {
-    var mv = document.createElement('model-viewer');
-    // 使用绝对路径确保在 GitHub Pages 等子路径部署时能正确加载
-    var baseHref = document.querySelector('base') ? document.querySelector('base').getAttribute('href') : '/';
-    var src = '${widget.src}';
-    if (baseHref && baseHref !== '/') {
-      src = baseHref + src;
-    }
-    mv.setAttribute('src', src);
-    mv.setAttribute('style', 'width:100%;height:100%;');
-    ${widget.cameraControls ? "mv.setAttribute('camera-controls', '');" : ""}
-    ${widget.autoRotate ? "mv.setAttribute('auto-rotate', '');mv.setAttribute('rotation-per-second', '10deg');" : ""}
-    mv.setAttribute('shadow-intensity', '${widget.shadowIntensity}');
-    ${widget.animationName != null ? "mv.setAttribute('animation-name', '${widget.animationName}');" : ""}
-    mv.setAttribute('camera-orbit', '0deg 75deg 105%');
-    mv.setAttribute('field-of-view', '30deg');
-
-    mv.addEventListener('load', function() {
-      window.postMessage({type: 'mv-load', id: '$_overlayId'}, '*');
-    });
-    mv.addEventListener('error', function(e) {
-      console.error('Model viewer error:', e);
-      window.postMessage({type: 'mv-error', id: '$_overlayId', error: 'Failed to load model'}, '*');
-    });
-    mv.addEventListener('click', function() {
-      window.postMessage({type: 'mv-tap', id: '$_overlayId'}, '*');
-    });
-
-    overlay.appendChild(mv);
-    window['$_overlayId'] = {overlay: overlay, mv: mv};
-  };
-
-  // 检查 model-viewer 是否已注册，如果未注册则等待
-  if (customElements.get('model-viewer')) {
-    createModelViewer();
-  } else {
-    customElements.whenDefined('model-viewer').then(function() {
-      createModelViewer();
-    }).catch(function(err) {
-      console.error('Failed to register model-viewer:', err);
-      window.postMessage({type: 'mv-error', id: '$_overlayId', error: 'model-viewer not registered'}, '*');
-    });
-    
-    // 设置超时保护（10秒）
-    setTimeout(function() {
-      if (!customElements.get('model-viewer')) {
-        console.error('model-viewer registration timeout');
-        window.postMessage({type: 'mv-error', id: '$_overlayId', error: 'model-viewer registration timeout'}, '*');
-      }
-    }, 10000);
-  }
-})();
-''';
-    js.context.callMethod('eval', [script]);
-
-    // 添加消息监听器（只添加一次）
+    // 监听来自静态 model-viewer 的消息
     _messageListener = (html.Event event) {
       final messageEvent = event as html.MessageEvent;
       final data = messageEvent.data;
-      if (data is Map && data['id'] == _overlayId) {
+      
+      if (data is Map) {
         if (data['type'] == 'mv-load') {
+          _modelLoaded = true;
           widget.onModelReady?.call();
+          if (mounted) setState(() {});
         } else if (data['type'] == 'mv-error') {
-          // 错误时不调用 onModelReady，让加载遮罩保持显示
           debugPrint('Model viewer error: ${data['error']}');
         } else if (data['type'] == 'mv-tap') {
           widget.onTap?.call();
@@ -161,27 +55,38 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
       }
     };
     html.window.addEventListener('message', _messageListener!);
+    
+    // 发送消息显示 model-viewer
+    Future.delayed(const Duration(milliseconds: 100), () {
+      if (mounted) {
+        html.window.postMessage({
+          'type': 'show-model',
+          'animation': widget.animationName ?? 'Idle',
+        }, '*');
+      }
+    });
   }
 
   /// 切换动画
   void setAnimation(String name) {
-    js.context.callMethod('eval', [
-      "if(window['$_overlayId']&&window['$_overlayId'].mv)window['$_overlayId'].mv.setAttribute('animation-name','$name');"
-    ]);
+    html.window.postMessage({
+      'type': 'set-animation',
+      'animation': name,
+    }, '*');
   }
 
   /// 暂停动画
   void pauseAnimation() {
-    js.context.callMethod('eval', [
-      "if(window['$_overlayId']&&window['$_overlayId'].mv)window['$_overlayId'].mv.setAttribute('paused','');"
-    ]);
+    html.window.postMessage({
+      'type': 'pause-animation',
+    }, '*');
   }
 
   /// 恢复动画
   void resumeAnimation() {
-    js.context.callMethod('eval', [
-      "if(window['$_overlayId']&&window['$_overlayId'].mv)window['$_overlayId'].mv.removeAttribute('paused');"
-    ]);
+    html.window.postMessage({
+      'type': 'resume-animation',
+    }, '*');
   }
 
   @override
@@ -191,15 +96,37 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
       html.window.removeEventListener('message', _messageListener!);
     }
     
-    // 清理 DOM 元素
-    js.context.callMethod('eval', [
-      "var el=document.getElementById('$_overlayId');if(el)el.remove();delete window['$_overlayId'];"
-    ]);
+    // 隐藏 model-viewer
+    html.window.postMessage({
+      'type': 'hide-model',
+    }, '*');
+    
     super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    return HtmlElementView(viewType: _viewType);
+    return Container(
+      width: double.infinity,
+      height: double.infinity,
+      decoration: BoxDecoration(
+        color: widget.backgroundColor == 'transparent' 
+            ? Colors.transparent 
+            : Color(int.parse(widget.backgroundColor.replaceAll('#', '0xFF'))),
+        borderRadius: BorderRadius.circular(24),
+      ),
+      child: _modelLoaded 
+          ? null 
+          : Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  CircularProgressIndicator(),
+                  SizedBox(height: 16),
+                  Text('3D 模型加载中...'),
+                ],
+              ),
+            ),
+    );
   }
 }

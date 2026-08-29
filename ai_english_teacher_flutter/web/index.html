@@ -59,21 +59,44 @@
   
   <!-- Communication between Flutter and model-viewer -->
   <script>
-    window.addEventListener('message', function(event) {
-      const container = document.getElementById('model-viewer-container');
-      const viewer = document.getElementById('pet-model');
+    (function() {
+      var container = document.getElementById('model-viewer-container');
+      var viewer = document.getElementById('pet-model');
+      var isVisible = false;
       
-      if (event.data.type === 'show-model') {
-        container.classList.add('active');
-        if (event.data.animation) {
+      // 监听来自 model-viewer 的事件
+      viewer.addEventListener('load', function() {
+        window.postMessage({type: 'mv-load'}, '*');
+      });
+      viewer.addEventListener('error', function(e) {
+        window.postMessage({type: 'mv-error', error: 'Failed to load model'}, '*');
+      });
+      viewer.addEventListener('click', function() {
+        window.postMessage({type: 'mv-tap'}, '*');
+      });
+      
+      // 监听来自 Flutter 的消息
+      window.addEventListener('message', function(event) {
+        if (!event.data || !event.data.type) return;
+        
+        if (event.data.type === 'show-model') {
+          container.classList.add('active');
+          if (event.data.animation) {
+            viewer.setAttribute('animation-name', event.data.animation);
+          }
+          isVisible = true;
+        } else if (event.data.type === 'hide-model') {
+          container.classList.remove('active');
+          isVisible = false;
+        } else if (event.data.type === 'set-animation') {
           viewer.setAttribute('animation-name', event.data.animation);
+        } else if (event.data.type === 'pause-animation') {
+          viewer.setAttribute('paused', '');
+        } else if (event.data.type === 'resume-animation') {
+          viewer.removeAttribute('paused');
         }
-      } else if (event.data.type === 'hide-model') {
-        container.classList.remove('active');
-      } else if (event.data.type === 'set-animation') {
-        viewer.setAttribute('animation-name', event.data.animation);
-      }
-    });
+      });
+    })();
   </script>
 </body>
 </html>
