@@ -80,26 +80,15 @@
   </style>
 </head>
 <body>
-  <!-- 微信浏览器引导页面 -->
-  <div id="wechat-guide">
+  <!-- 微信浏览器引导页面（默认隐藏，仅在微信移动端显示） -->
+  <div id="wechat-guide" style="display:none;">
     <h2>&#128274; 请在浏览器中打开</h2>
     <p>当前页面在微信中无法正常显示 3D 内容。<br>
     请点击右上角 <strong>"..."</strong>，选择<br>
     <strong>"在浏览器中打开"</strong> 获得最佳体验。</p>
-    <a class="btn" href="#" onclick="document.getElementById('wechat-guide').classList.remove('show'); return false;">我已了解，继续访问</a>
+    <a class="btn" href="#" onclick="document.getElementById('wechat-guide').style.display='none'; return false;">我已了解，继续访问</a>
     <p class="tip">推荐使用 Chrome、QQ 浏览器或手机自带浏览器</p>
   </div>
-
-  <script>
-    // 微信浏览器检测
-    function isWeChat() {
-      var ua = navigator.userAgent.toLowerCase();
-      return ua.indexOf('micromessenger') !== -1;
-    }
-    if (isWeChat()) {
-      document.getElementById('wechat-guide').classList.add('show');
-    }
-  </script>
 
   <!-- Flutter 应用入口 -->
   <script>
