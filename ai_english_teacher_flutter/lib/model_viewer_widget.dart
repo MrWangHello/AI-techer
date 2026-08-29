@@ -1,8 +1,9 @@
 import 'dart:html' as html;
+import 'dart:js' as js;
 import 'package:flutter/material.dart';
 
 /// 3D GLB 模型查看器 Widget
-/// 通过 postMessage 控制静态嵌入的 model-viewer 元素
+/// 通过直接操作 DOM 控制静态嵌入的 model-viewer 元素
 class ModelViewerWidget extends StatefulWidget {
   final String src;
   final String? animationName;
@@ -56,39 +57,66 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
     };
     html.window.addEventListener('message', _messageListener!);
     
-    // 延迟发送消息显示 model-viewer
+    // 延迟显示 model-viewer，直接操作 DOM
     Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
-        debugPrint('发送 show-model 消息');
-        final message = {
-          'type': 'show-model',
-          'animation': widget.animationName ?? 'Idle',
-        };
-        html.window.postMessage(message, '*');
+        debugPrint('显示 model-viewer');
+        _showModelViewer();
       }
     });
   }
 
+  void _showModelViewer() {
+    // 直接在主页面 DOM 中操作
+    js.context.callMethod('eval', [
+      '''
+      (function() {
+        var container = document.getElementById('model-viewer-container');
+        var viewer = document.getElementById('pet-model');
+        if (container) {
+          container.classList.add('active');
+        }
+        if (viewer && '${widget.animationName ?? 'Idle'}') {
+          viewer.setAttribute('animation-name', '${widget.animationName ?? 'Idle'}');
+        }
+        console.log('Model viewer shown');
+      })();
+      '''
+    ]);
+  }
+
+  void _hideModelViewer() {
+    js.context.callMethod('eval', [
+      '''
+      (function() {
+        var container = document.getElementById('model-viewer-container');
+        if (container) {
+          container.classList.remove('active');
+        }
+      })();
+      '''
+    ]);
+  }
+
   /// 切换动画
   void setAnimation(String name) {
-    html.window.postMessage({
-      'type': 'set-animation',
-      'animation': name,
-    }, '*');
+    js.context.callMethod('eval', [
+      "var v=document.getElementById('pet-model');if(v)v.setAttribute('animation-name','$name');"
+    ]);
   }
 
   /// 暂停动画
   void pauseAnimation() {
-    html.window.postMessage({
-      'type': 'pause-animation',
-    }, '*');
+    js.context.callMethod('eval', [
+      "var v=document.getElementById('pet-model');if(v)v.setAttribute('paused','');"
+    ]);
   }
 
   /// 恢复动画
   void resumeAnimation() {
-    html.window.postMessage({
-      'type': 'resume-animation',
-    }, '*');
+    js.context.callMethod('eval', [
+      "var v=document.getElementById('pet-model');if(v)v.removeAttribute('paused');"
+    ]);
   }
 
   @override
@@ -99,9 +127,7 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
     }
     
     // 隐藏 model-viewer
-    html.window.postMessage({
-      'type': 'hide-model',
-    }, '*');
+    _hideModelViewer();
     
     super.dispose();
   }
