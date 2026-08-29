@@ -25,8 +25,9 @@ void registerModelViewer() {
       ..style.borderRadius = '24px';
 
     // 监听模型加载完成事件
-    html.window.addEventListener('message', (e) {
-      final data = e.data;
+    html.window.addEventListener('message', (html.Event e) {
+      final msgEvent = e as html.MessageEvent;
+      final data = msgEvent.data;
       if (data is Map && data['type'] == 'three-loaded') {
         _onModelViewerEvent?.call('load', null);
       }
