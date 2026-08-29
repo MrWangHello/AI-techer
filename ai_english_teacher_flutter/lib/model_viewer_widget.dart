@@ -16,41 +16,34 @@ void registerModelViewer() {
   
   ui.platformViewRegistry.registerViewFactory('model-viewer-3d', (int viewId) {
     final container = html.DivElement()
+      ..className = 'three-viewer'
+      ..setAttribute('data-src', 'assets/models/RobotExpressive.glb')
+      ..setAttribute('data-anim', 'Idle')
       ..style.width = '100%'
       ..style.height = '100%'
       ..style.overflow = 'hidden'
       ..style.borderRadius = '24px';
 
-    final viewer = html.Element.tag('model-viewer')
-      ..id = 'pet-model-viewer'
-      ..setAttribute('src', 'assets/models/RobotExpressive.glb')
-      ..setAttribute('camera-controls', '')
-      ..setAttribute('auto-rotate', '')
-      ..setAttribute('shadow-intensity', '0.5')
-      ..setAttribute('animation-name', 'Idle')
-      ..style.width = '100%'
-      ..style.height = '100%';
+    // 监听模型加载完成事件
+    html.window.addEventListener('message', (e) {
+      final data = e.data;
+      if (data is Map && data['type'] == 'three-loaded') {
+        _onModelViewerEvent?.call('load', null);
+      }
+    });
 
-    // 监听 model-viewer 事件
-    viewer.addEventListener('load', (e) {
-      _onModelViewerEvent?.call('load', null);
-    });
-    viewer.addEventListener('error', (e) {
-      _onModelViewerEvent?.call('error', 'Failed to load model');
-    });
-    viewer.addEventListener('click', (e) {
+    // 监听点击事件
+    container.addEventListener('click', (e) {
       _onModelViewerEvent?.call('tap', null);
     });
 
-    _modelViewerElement = viewer;
-    container.append(viewer);
+    _modelViewerElement = container;
     return container;
   });
 }
 
 /// 3D GLB 模型查看器 Widget
-/// 使用 HtmlElementView 嵌入到 Flutter 布局中，
-/// 不遮挡其他 UI 元素
+/// 使用 HtmlElementView + Three.js 嵌入到 Flutter 布局中
 class ModelViewerWidget extends StatefulWidget {
   final String src;
   final String? animationName;
@@ -79,6 +72,7 @@ class ModelViewerWidget extends StatefulWidget {
 
 class _ModelViewerWidgetState extends State<ModelViewerWidget> {
   bool _modelLoaded = false;
+  bool _modelError = false;
 
   @override
   void initState() {
@@ -88,9 +82,10 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
     _onModelViewerEvent = (type, data) {
       if (!mounted) return;
       if (type == 'load') {
-        setState(() => _modelLoaded = true);
+        setState(() { _modelLoaded = true; _modelError = false; });
         widget.onModelReady?.call();
       } else if (type == 'error') {
+        setState(() => _modelError = true);
         debugPrint('Model viewer error: $data');
       } else if (type == 'tap') {
         widget.onTap?.call();
@@ -99,7 +94,7 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
 
     // 设置初始动画
     if (_modelViewerElement != null && widget.animationName != null) {
-      _modelViewerElement!.setAttribute('animation-name', widget.animationName!);
+      _modelViewerElement!.setAttribute('data-anim', widget.animationName!);
     }
   }
 
@@ -107,7 +102,7 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
   void didUpdateWidget(ModelViewerWidget oldWidget) {
     super.didUpdateWidget(oldWidget);
     if (widget.animationName != oldWidget.animationName && _modelViewerElement != null) {
-      _modelViewerElement!.setAttribute('animation-name', widget.animationName ?? 'Idle');
+      _modelViewerElement!.setAttribute('data-anim', widget.animationName ?? 'Idle');
     }
   }
 
@@ -119,17 +114,17 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
 
   /// 切换动画
   void setAnimation(String name) {
-    _modelViewerElement?.setAttribute('animation-name', name);
+    _modelViewerElement?.setAttribute('data-anim', name);
   }
 
   /// 暂停动画
   void pauseAnimation() {
-    _modelViewerElement?.setAttribute('paused', '');
+    // Three.js 暂停
   }
 
   /// 恢复动画
   void resumeAnimation() {
-    _modelViewerElement?.removeAttribute('paused');
+    // Three.js 恢复
   }
 
   @override
@@ -154,7 +149,7 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
           child: HtmlElementView(viewType: 'model-viewer-3d'),
         ),
         // 加载中提示
-        if (!_modelLoaded)
+        if (!_modelLoaded && !_modelError)
           Container(
             decoration: BoxDecoration(
               color: Colors.white.withOpacity(0.8),
@@ -167,6 +162,24 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
                   CircularProgressIndicator(),
                   SizedBox(height: 16),
                   Text('3D 模型加载中...'),
+                ],
+              ),
+            ),
+          ),
+        // 错误提示
+        if (_modelError)
+          Container(
+            decoration: BoxDecoration(
+              color: Colors.white.withOpacity(0.8),
+              borderRadius: BorderRadius.circular(24),
+            ),
+            child: const Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.error_outline, size: 48, color: Colors.red),
+                  SizedBox(height: 16),
+                  Text('3D 模型加载失败'),
                 ],
               ),
             ),
