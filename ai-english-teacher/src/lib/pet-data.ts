@@ -8,6 +8,12 @@ export interface PetData {
   checkInStreak: number;
   learnedWords: string[];
   petName: string;
+  totalStudyTime: number;       // 总学习分钟数
+  quizCorrect: number;          // 测验正确数
+  quizTotal: number;            // 测验总数
+  achievements: string[];       // 已获得的成就
+  petColor: string;             // 宠物颜色主题
+  voiceSpeed: number;           // 语音速度 0.5-2.0
 }
 
 const STORAGE_KEY = "bella_pet_data";
@@ -22,6 +28,12 @@ const DEFAULT_PET: PetData = {
   checkInStreak: 0,
   learnedWords: [],
   petName: "Bella",
+  totalStudyTime: 0,
+  quizCorrect: 0,
+  quizTotal: 0,
+  achievements: [],
+  petColor: "pink",
+  voiceSpeed: 1.0,
 };
 
 export function loadPetData(): PetData {
@@ -126,4 +138,77 @@ export function getHungerEmoji(hunger: number): string {
   if (hunger >= 40) return "😶";
   if (hunger >= 20) return "😰";
   return "🫠";
+}
+
+// ===== 成就系统 =====
+export const ACHIEVEMENTS: { id: string; name: string; icon: string; desc: string; check: (data: PetData) => boolean }[] = [
+  { id: "first_learn", name: "初学乍练", icon: "📖", desc: "学习第一个单词", check: (d) => d.learnedWords.length >= 1 },
+  { id: "ten_words", name: "初露锋芒", icon: "🌟", desc: "学会10个单词", check: (d) => d.learnedWords.length >= 10 },
+  { id: "all_words", name: "学富五车", icon: "🏆", desc: "学会所有单词", check: (d) => d.learnedWords.length >= 20 },
+  { id: "level_5", name: "小有成就", icon: "⭐", desc: "达到5级", check: (d) => d.level >= 5 },
+  { id: "level_10", name: "宠物大师", icon: "👑", desc: "达到10级", check: (d) => d.level >= 10 },
+  { id: "streak_7", name: "坚持不懈", icon: "🔥", desc: "连续签到7天", check: (d) => d.checkInStreak >= 7 },
+  { id: "quiz_master", name: "测验达人", icon: "🎯", desc: "正确回答10道题", check: (d) => d.quizCorrect >= 10 },
+  { id: "rich_pet", name: "腰缠万贯", icon: "💰", desc: "拥有100金币", check: (d) => d.coins >= 100 },
+  { id: "study_hour", name: "学海无涯", icon: "⏰", desc: "累计学习30分钟", check: (d) => d.totalStudyTime >= 30 },
+  { id: "happy_pet", name: "快乐宠物", icon: "😄", desc: "心情值达到100", check: (d) => d.mood >= 100 },
+];
+
+export function checkAchievements(data: PetData): { newAchievements: string[]; updated: PetData } {
+  const newOnes: string[] = [];
+  let updated = { ...data };
+  for (const ach of ACHIEVEMENTS) {
+    if (!updated.achievements.includes(ach.id) && ach.check(updated)) {
+      newOnes.push(ach.id);
+      updated.achievements = [...updated.achievements, ach.id];
+      updated.coins += 20; // 成就奖励金币
+    }
+  }
+  return { newAchievements: newOnes, updated };
+}
+
+// 给宠物洗澡
+export function bathePet(data: PetData): PetData {
+  return {
+    ...data,
+    mood: Math.min(100, data.mood + 10),
+  };
+}
+
+// 宠物睡觉（恢复心情）
+export function sleepPet(data: PetData): PetData {
+  return {
+    ...data,
+    mood: Math.min(100, data.mood + 20),
+    hunger: Math.max(0, data.hunger - 5),
+  };
+}
+
+// 记录测验结果
+export function recordQuizResult(data: PetData, correct: boolean): PetData {
+  const updated = { ...data, quizTotal: data.quizTotal + 1 };
+  if (correct) {
+    updated.quizCorrect = data.quizCorrect + 1;
+    updated.coins += 3;
+  }
+  return updated;
+}
+
+// 记录学习时间
+export function addStudyTime(data: PetData, minutes: number): PetData {
+  return { ...data, totalStudyTime: data.totalStudyTime + minutes };
+}
+
+// 获取等级所需经验
+export function expForLevel(level: number): number {
+  return level * 100;
+}
+
+// 获取等级称号
+export function getLevelTitle(level: number): string {
+  if (level >= 10) return "宠物大师";
+  if (level >= 7) return "资深饲养员";
+  if (level >= 5) return "优秀伙伴";
+  if (level >= 3) return "初级饲养员";
+  return "新手主人";
 }

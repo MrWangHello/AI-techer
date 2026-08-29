@@ -7,9 +7,10 @@ import { Volume2, Check, X } from "lucide-react";
 
 interface StudyCardsProps {
   onWordLearned?: (word: Word) => void;
+  onQuizResult?: (correct: boolean) => void;
 }
 
-export default function StudyCards({ onWordLearned }: StudyCardsProps) {
+export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsProps) {
   const [mode, setMode] = useState<"learn" | "quiz">("learn");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
@@ -67,6 +68,7 @@ export default function StudyCards({ onWordLearned }: StudyCardsProps) {
       setScore((s) => s + 1);
       onWordLearned?.(word);
     }
+    onQuizResult?.(isCorrect);
     setTimeout(() => {
       setQuizResult(null);
       setQuizIndex((i) => i + 1);

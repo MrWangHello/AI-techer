@@ -1,7 +1,10 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  allowedDevOrigins: [
+    "run-agent-*.remote-agent.svc.cluster.local",
+    "*.remote-agent.svc.cluster.local",
+  ],
 };
 
 export default nextConfig;

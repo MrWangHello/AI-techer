@@ -13,7 +13,7 @@ export function initSpeech(): boolean {
 }
 
 // 播报文本（TTS）
-export function speak(text: string, onEnd?: () => void): void {
+export function speak(text: string, onEnd?: () => void, speed?: number): void {
   if (!speechSynth) {
     if (!initSpeech()) return;
   }
@@ -22,7 +22,7 @@ export function speak(text: string, onEnd?: () => void): void {
 
   const utterance = new SpeechSynthesisUtterance(text);
   utterance.lang = "zh-CN";
-  utterance.rate = 1.0;
+  utterance.rate = speed ?? 1.0;
   utterance.pitch = 1.1;
   utterance.volume = 1;
 

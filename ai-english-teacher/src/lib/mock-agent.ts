@@ -100,6 +100,87 @@ const RULES: { keywords: string[]; response: AgentResponse }[] = [
       reply: "不客气！和你聊天我很开心！",
     },
   },
+  {
+    keywords: ["洗澡", "洗", "干净", "bath", "clean"],
+    response: {
+      intent: "bathe",
+      emotion: "happy",
+      action: "none",
+      reply: "洗澡澡好舒服！香喷喷的！",
+    },
+  },
+  {
+    keywords: ["睡", "困", "休息", "sleep", "tired", "rest"],
+    response: {
+      intent: "sleep",
+      emotion: "neutral",
+      action: "none",
+      reply: "好的，我休息一下~ 养足精神再陪你学习！",
+    },
+  },
+  {
+    keywords: ["唱歌", "歌", "唱", "sing", "song"],
+    response: {
+      intent: "sing",
+      emotion: "happy",
+      action: "none",
+      reply: "啦啦啦~ 🎵 你是我天边最美的云彩~ 我唱得怎么样？",
+    },
+  },
+  {
+    keywords: ["开心", "高兴", "happy", "glad"],
+    response: {
+      intent: "cheer_up",
+      emotion: "happy",
+      action: "play",
+      reply: "我也很开心！有你在真好！我们一起来学英语吧！",
+    },
+  },
+  {
+    keywords: ["伤心", "难过", "哭", "sad", "cry"],
+    response: {
+      intent: "comfort",
+      emotion: "sad",
+      action: "none",
+      reply: "别难过啦~ 我陪你！来学个单词开心一下好不好？",
+    },
+  },
+  {
+    keywords: ["名字", "叫什么", "name", "who are you"],
+    response: {
+      intent: "introduce",
+      emotion: "happy",
+      action: "greeting",
+      reply: "我叫 Bella！是你的英语学习小伙伴！很高兴认识你！",
+    },
+  },
+  {
+    keywords: ["天气", "weather", "冷", "热", "暖"],
+    response: {
+      intent: "weather",
+      emotion: "thinking",
+      action: "none",
+      reply: "天气很好呢！不过我更关心你今天想学什么英语单词~",
+    },
+  },
+  {
+    keywords: ["多少级", "level", "等级", "几级"],
+    response: {
+      intent: "show_level",
+      emotion: "happy",
+      action: "none",
+      reply: "我现在的等级是通过和你一起学习提升的！要继续加油哦！",
+    },
+  },
+  {
+    keywords: ["成就", "勋章", "achievement", "badge"],
+    response: {
+      intent: "show_achievements",
+      emotion: "happy",
+      action: "none",
+      reply: "去宠物页面可以查看所有成就！你已经很棒了！",
+    },
+  },
 ];
 
 // 默认回复（没有匹配到关键词时）
