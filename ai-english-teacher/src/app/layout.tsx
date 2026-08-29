@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import type { Viewport } from "next";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -18,7 +19,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
     <html lang="zh-CN" className="h-full">
       <head>
         {/* 预加载 Live2D Cubism 2.1 Core */}
-        <script src="/live2d.min.js" async />
+        <script src="/AI-techer/live2d.min.js" async />
       </head>
       <body className="h-full flex flex-col bg-[#fdf2f8] text-[#1f2937]">
         {children}
