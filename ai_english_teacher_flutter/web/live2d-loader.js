@@ -1,65 +1,63 @@
 /**
  * Live2D Model Renderer using PixiJS + pixi-live2d-display
- * 替换 Three.js 3D 渲染，支持 Live2D 角色（猫宠/人物老师）
  * 
  * 功能:
  * 1. 加载 Live2D 模型（Tororo 白猫 / Koharu 小春）
  * 2. 语音驱动嘴型同步（ParamMouthOpenY）
  * 3. 眼睛追踪鼠标（ParamAngleX/Y）
  * 4. 点击交互触发随机动作
- * 5. 通过 data-anim 属性切换动作
- * 
- * 全局API:
- *   window.initAllLive2DViewers()  - 手动初始化所有容器
- *   window._live2dLoaded           - 全局标记，模型是否已加载过
+ * 5. 自动检测 .live2d-viewer 容器并初始化
  */
 (function() {
   'use strict';
 
-  window._live2dLoaded = false;
-  var initializedContainers = new WeakSet();
-  var appCache = {}; // container -> { app, model, config }
+  console.log('[Live2D] Loader initiated');
 
   // ======== 模型配置 ========
   var MODELS = {
-    tororo: {
-      name: 'Tororo 白猫',
-      url: 'https://cdn.jsdelivr.net/npm/live2d-widget-model-tororo@1.0.5/assets/tororo.model.json',
-      scale: 0.5,
-      offsetY: 200,
-      type: 'pet',
-    },
-    koharu: {
-      name: 'Koharu 小春',
-      url: 'https://cdn.jsdelivr.net/npm/live2d-widget-model-koharu@1.0.5/assets/koharu.model.json',
-      scale: 0.34,
-      offsetY: 150,
-      type: 'teacher',
-    },
+    tororo: { name: 'Tororo 白猫', url: 'https://cdn.jsdelivr.net/npm/live2d-widget-model-tororo@1.0.5/assets/tororo.model.json', scale: 0.5, offsetY: 200, type: 'pet' },
+    koharu: { name: 'Koharu 小春', url: 'https://cdn.jsdelivr.net/npm/live2d-widget-model-koharu@1.0.5/assets/koharu.model.json', scale: 0.34, offsetY: 150, type: 'teacher' },
   };
 
-  // ======== 初始化 Live2D 查看器 ========
-  function initViewer(container) {
-    if (initializedContainers.has(container)) return;
-    if (typeof PIXI === 'undefined' || typeof PIXI.live2d === 'undefined') {
-      // 库还没加载，稍后重试
-      setTimeout(function() { initViewer(container); }, 500);
+  window._live2dLoaded = false;
+  var initializedContainers = new WeakSet();
+  var appCache = {};
+  var lipSyncData = {};
+
+  // ======== 等待 PixiJS 和 Live2D 库就绪 ========
+  function waitForLibs(callback, retries) {
+    retries = retries || 0;
+    if (typeof PIXI !== 'undefined' && PIXI.live2d) {
+      callback();
       return;
     }
+    if (retries > 30) { // 最多等 15 秒
+      console.error('[Live2D] Libraries failed to load after 30 retries');
+      return;
+    }
+    setTimeout(function() { waitForLibs(callback, retries + 1); }, 500);
+  }
 
+  // ======== 初始化一个查看器 ========
+  function initViewer(container) {
+    if (initializedContainers.has(container)) return;
     var w = container.clientWidth;
     var h = container.clientHeight;
     if (w === 0 || h === 0) {
+      // 容器还没渲染好，延迟重试
       setTimeout(function() { initViewer(container); }, 300);
       return;
     }
-
     initializedContainers.add(container);
 
     var modelKey = container.getAttribute('data-model') || 'tororo';
     var config = MODELS[modelKey] || MODELS.tororo;
+    var containerId = container.getAttribute('data-id') || 'l2d-' + Math.random().toString(36).slice(2, 8);
+    container.setAttribute('data-id', containerId);
 
-    // 创建 PixiJS Application
+    console.log('[Live2D] Initializing viewer:', containerId, 'model:', modelKey);
+
+    // 创建 PixiJS 应用
     var app = new PIXI.Application({
       width: w,
       height: h,
@@ -68,21 +66,24 @@
       resolution: Math.min(window.devicePixelRatio || 1, 2),
       autoDensity: true,
     });
+    // 确保 canvas 填满容器
+    app.view.style.width = '100%';
+    app.view.style.height = '100%';
+    app.view.style.position = 'absolute';
+    app.view.style.top = '0';
+    app.view.style.left = '0';
     container.appendChild(app.view);
+    container.style.position = 'relative';
+    container.style.overflow = 'hidden';
 
     // 加载模型
     var Live2DModel = PIXI.live2d.Live2DModel;
     Live2DModel.from(config.url, { autoInteract: false })
       .then(function(model) {
-        appCache[container.getAttribute('data-id') || container.id || 'default'] = {
-          app: app,
-          model: model,
-          config: config,
-        };
+        appCache[containerId] = { app: app, model: model, config: config };
 
-        // 自适应缩放和位置 - 确保模型居中显示完整
+        // 自适应缩放和居中
         positionModel(model, app, config, w, h);
-
         app.stage.addChild(model);
 
         // 点击交互
@@ -92,81 +93,99 @@
             var idx = Math.floor(Math.random() * motions.length);
             model.motion(idx);
           }
-          // 触发 Flutter 事件
           container.dispatchEvent(new CustomEvent('live2d-tap', { bubbles: true }));
         });
+
+        // 鼠标追踪
+        setupEyeTracking(container, app, model);
+
+        // 嘴型同步数据
+        lipSyncData[containerId] = { active: false, smoothVol: 0, audioCtx: null, analyser: null, stream: null };
 
         // 标记加载完成
         window._live2dLoaded = true;
         container.setAttribute('data-loaded', 'true');
         container.removeAttribute('data-error');
         container.dispatchEvent(new CustomEvent('live2d-loaded', { bubbles: true }));
+        console.log('[Live2D] Model loaded successfully:', containerId);
 
-        // 启动动画循环（嘴型同步）
-        startLipSync(container, model);
-
-        // 启动眼睛追踪
-        setupEyeTracking(container, app, model);
-
-        // 监听模型切换
-        watchModelChanges(container);
-
-        // 监听窗口大小变化
-        setupResizeHandler(container, app, model, config);
+        // 窗口自适应
+        if (window.ResizeObserver) {
+          var ro = new ResizeObserver(function() {
+            var nw = container.clientWidth, nh = container.clientHeight;
+            if (nw > 0 && nh > 0) {
+              app.renderer.resize(nw, nh);
+              positionModel(model, app, config, nw, nh);
+            }
+          });
+          ro.observe(container);
+        }
       })
       .catch(function(err) {
-        console.error('Live2D model load error:', err);
+        console.error('[Live2D] Model load error:', err);
         container.setAttribute('data-error', 'true');
         container.dispatchEvent(new CustomEvent('live2d-error', { bubbles: true }));
+        // 5 秒后重试
+        setTimeout(function() {
+          if (container.getAttribute('data-loaded') !== 'true') {
+            delete appCache[containerId];
+            initializedContainers.delete(container);
+            initViewer(container);
+          }
+        }, 5000);
       });
   }
 
-  // ======== 模型位置自适应（居中全屏） ========
   function positionModel(model, app, config, w, h) {
-    // 计算缩放：让模型在容器中居中显示，高度占满80%
     var scaleX = (w / model.width) * config.scale * 2.5;
     var scaleY = (h / model.height) * config.scale * 2.5;
-    var scale = Math.min(scaleX, scaleY);
-
-    // 限制最大缩放，防止溢出
-    scale = Math.min(scale, 1.2);
-
+    var scale = Math.min(scaleX, scaleY, 1.2);
     model.scale.set(scale);
-
-    // 居中：模型中心对准容器中心
     var modelW = model.width * scale;
     var modelH = model.height * scale;
-    model.x = (w - modelW) / 2;
-    model.y = (h - modelH) / 2 + (config.offsetY || 0);
+    model.x = Math.max(0, (w - modelW) / 2);
+    model.y = Math.max(0, (h - modelH) / 2 + (config.offsetY || 0));
+  }
 
-    // 对于宠物模型，让它稍微靠下一点，显示完整
-    if (config.type === 'pet') {
-      model.y = Math.min(model.y, h - modelH * 0.6);
+  function setupEyeTracking(container, app, model) {
+    var canvas = app.view;
+    canvas.addEventListener('mousemove', function(e) {
+      if (!model.internalModel || !model.internalModel.coreModel) return;
+      var rect = canvas.getBoundingClientRect();
+      var x = (e.clientX - rect.left) / rect.width;
+      var y = (e.clientY - rect.top) / rect.height;
+      try {
+        model.internalModel.coreModel.setParameterValueById('ParamAngleX', (x - 0.5) * 60);
+        model.internalModel.coreModel.setParameterValueById('ParamAngleY', (y - 0.5) * 30);
+      } catch(e) {}
+    });
+  }
+
+  // ======== 麦克风控制 ========
+  window.toggleLive2dMic = function(containerId) {
+    if (!containerId) {
+      var c = document.querySelector('.live2d-viewer');
+      if (c) containerId = c.getAttribute('data-id') || '';
     }
-  }
-
-  // ======== 嘴型同步（基于麦克风音量） ========
-  var lipSyncData = {};
-
-  function startLipSync(container, model) {
-    var containerId = container.getAttribute('data-id') || container.id || 'default';
-    lipSyncData[containerId] = { active: false, smoothVol: 0, audioCtx: null, analyser: null, stream: null };
-  }
-
-  function toggleMic(containerId) {
+    if (!containerId || !lipSyncData[containerId]) {
+      // 模型还没加载完，延迟重试
+      if (containerId) {
+        console.log('[Live2D] Mic toggle: waiting for model to load...');
+        setTimeout(function() { window.toggleLive2dMic(containerId); }, 1000);
+      }
+      return;
+    }
     var data = lipSyncData[containerId];
-    if (!data) return;
     if (data.active) {
       stopMic(containerId);
     } else {
       startMic(containerId);
     }
-  }
+  };
 
   function startMic(containerId) {
     var data = lipSyncData[containerId];
-    if (!data) return;
-    if (data.audioCtx) return;
+    if (!data || data.audioCtx) return;
     try {
       data.audioCtx = new (window.AudioContext || window.webkitAudioContext)();
       data.analyser = data.audioCtx.createAnalyser();
@@ -177,220 +196,73 @@
           var src = data.audioCtx.createMediaStreamSource(stream);
           src.connect(data.analyser);
           data.active = true;
-          var container = findContainer(containerId);
+          var container = document.querySelector('[data-id="' + containerId + '"]');
           if (container) container.setAttribute('data-mic', 'active');
-          // 动画循环由外部驱动
+          console.log('[Live2D] Mic activated');
+          runLipSync(containerId);
         })
         .catch(function(err) {
-          console.warn('Mic access denied:', err);
+          console.warn('[Live2D] Mic access denied:', err);
+          data.audioCtx.close();
           data.audioCtx = null;
           data.analyser = null;
         });
     } catch (e) {
-      console.warn('AudioContext error:', e);
+      console.warn('[Live2D] AudioContext error:', e);
     }
   }
 
   function stopMic(containerId) {
     var data = lipSyncData[containerId];
     if (!data) return;
-    if (data.stream) {
-      data.stream.getTracks().forEach(function(t) { t.stop(); });
-      data.stream = null;
-    }
-    if (data.audioCtx) {
-      data.audioCtx.close();
-      data.audioCtx = null;
-    }
+    if (data.stream) { data.stream.getTracks().forEach(function(t) { t.stop(); }); data.stream = null; }
+    if (data.audioCtx) { data.audioCtx.close(); data.audioCtx = null; }
     data.analyser = null;
     data.active = false;
     data.smoothVol = 0;
-    var container = findContainer(containerId);
+    var container = document.querySelector('[data-id="' + containerId + '"]');
     if (container) container.removeAttribute('data-mic');
   }
 
-  function findContainer(containerId) {
-    return document.querySelector('[data-id="' + containerId + '"], #' + containerId + ', .live2d-viewer');
-  }
-
-  // ======== 全局嘴型同步更新循环 ========
-  var lipSyncRunning = false;
-  function runGlobalLipSync() {
-    if (lipSyncRunning) return;
-    lipSyncRunning = true;
-    function update() {
-      var anyActive = false;
-      for (var cid in lipSyncData) {
-        var data = lipSyncData[cid];
-        if (!data || !data.active || !data.analyser) continue;
-        anyActive = true;
-        var buf = new Uint8Array(data.analyser.frequencyBinCount);
-        data.analyser.getByteFrequencyData(buf);
-        var sum = 0;
-        for (var i = 0; i < buf.length; i++) sum += buf[i];
-        var avg = sum / buf.length / 255;
-        data.smoothVol = data.smoothVol * 0.7 + avg * 0.3;
-
-        // 找到对应模型，驱动嘴型
-        var container = findContainer(cid);
-        if (container) {
-          var cache = appCache[container.getAttribute('data-id') || container.id || 'default'];
-          if (cache && cache.model && cache.model.internalModel && cache.model.internalModel.coreModel) {
-            try {
-              var mouthVal = Math.min(1, data.smoothVol * 3);
-              cache.model.internalModel.coreModel.setParameterValueById('ParamMouthOpenY', mouthVal);
-            } catch(e) { /* 忽略 */ }
-          }
-        }
-      }
-      if (anyActive) {
-        requestAnimationFrame(update);
-      } else {
-        lipSyncRunning = false;
-      }
-    }
-    update();
-  }
-
-  // ======== 眼睛追踪 ========
-  function setupEyeTracking(container, app, model) {
-    var canvas = app.view;
-    canvas.addEventListener('mousemove', function(e) {
-      if (!model.internalModel || !model.internalModel.coreModel) return;
-      var rect = canvas.getBoundingClientRect();
-      var x = (e.clientX - rect.left) / rect.width;
-      var y = (e.clientY - rect.top) / rect.height;
-      try {
-        var angleX = (x - 0.5) * 60;
-        var angleY = (y - 0.5) * 30;
-        model.internalModel.coreModel.setParameterValueById('ParamAngleX', angleX);
-        model.internalModel.coreModel.setParameterValueById('ParamAngleY', angleY);
-      } catch(e) { /* 忽略 */ }
-    });
-  }
-
-  // ======== 监听模型切换 ========
-  function watchModelChanges(container) {
-    if (!window.MutationObserver) return;
-    var observer = new MutationObserver(function(mutations) {
-      for (var i = 0; i < mutations.length; i++) {
-        if (mutations[i].attributeName === 'data-model') {
-          var newModel = container.getAttribute('data-model');
-          switchModel(container, newModel);
-        }
-      }
-    });
-    observer.observe(container, { attributes: true, attributeFilter: ['data-model'] });
-  }
-
-  function switchModel(container, key) {
-    var config = MODELS[key];
-    if (!config) return;
-    var cache = appCache[container.getAttribute('data-id') || container.id || 'default'];
-    if (!cache) return;
-    var oldModel = cache.model;
-    if (oldModel) {
-      cache.app.stage.removeChild(oldModel);
-      oldModel.destroy();
-    }
-    cache.config = config;
-    var Live2DModel = PIXI.live2d.Live2DModel;
-    Live2DModel.from(config.url, { autoInteract: false })
-      .then(function(model) {
-        cache.model = model;
-        var w = container.clientWidth || cache.app.screen.width;
-        var h = container.clientHeight || cache.app.screen.height;
-        positionModel(model, cache.app, config, w, h);
-        cache.app.stage.addChild(model);
-        model.on('pointerdown', function() {
-          var motions = model.internalModel.motionManager.definitions;
-          if (motions && motions.length > 0) {
-            var idx = Math.floor(Math.random() * motions.length);
-            model.motion(idx);
-          }
-          container.dispatchEvent(new CustomEvent('live2d-tap', { bubbles: true }));
-        });
-        setupEyeTracking(container, cache.app, model);
-        container.setAttribute('data-loaded', 'true');
-        container.dispatchEvent(new CustomEvent('live2d-loaded', { bubbles: true }));
-      });
-  }
-
-  // ======== 窗口自适应 ========
-  function setupResizeHandler(container, app, model, config) {
-    if (window.ResizeObserver) {
-      var ro = new ResizeObserver(function() {
-        var w = container.clientWidth;
-        var h = container.clientHeight;
-        if (w > 0 && h > 0) {
-          app.renderer.resize(w, h);
-          positionModel(model, app, config, w, h);
-        }
-      });
-      ro.observe(container);
-    }
-  }
-
-  // ======== 公开 API ========
-  window.toggleLive2dMic = function(containerId) {
+  function runLipSync(containerId) {
     var data = lipSyncData[containerId];
-    if (!data) {
-      // 如果没有初始化，尝试从容器获取
-      var container = document.querySelector('[data-id="' + containerId + '"], .live2d-viewer');
-      if (container) {
-        initViewer(container);
-        startLipSync(container, null);
-        // 延迟启动
-        setTimeout(function() { toggleMic(containerId); }, 500);
-      }
-      return;
-    }
-    toggleMic(containerId);
-    runGlobalLipSync();
-  };
+    if (!data || !data.active) return;
+    var buf = new Uint8Array(data.analyser.frequencyBinCount);
+    data.analyser.getByteFrequencyData(buf);
+    var sum = 0;
+    for (var i = 0; i < buf.length; i++) sum += buf[i];
+    var avg = sum / buf.length / 255;
+    data.smoothVol = data.smoothVol * 0.7 + avg * 0.3;
 
+    var cache = appCache[containerId];
+    if (cache && cache.model && cache.model.internalModel && cache.model.internalModel.coreModel) {
+      try {
+        cache.model.internalModel.coreModel.setParameterValueById('ParamMouthOpenY', Math.min(1, data.smoothVol * 3));
+      } catch(e) {}
+    }
+    requestAnimationFrame(function() { runLipSync(containerId); });
+  }
+
+  // ======== 模型切换 ========
   window.setLive2dModel = function(containerId, modelKey) {
     var container = document.querySelector('[data-id="' + containerId + '"], .live2d-viewer');
-    if (container) {
-      container.setAttribute('data-model', modelKey);
-    }
+    if (container) container.setAttribute('data-model', modelKey);
   };
 
-  window.getLive2dModelName = function() {
-    var container = document.querySelector('.live2d-viewer');
-    if (container) {
-      var key = container.getAttribute('data-model') || 'tororo';
-      var config = MODELS[key];
-      return config ? config.name : 'Tororo 白猫';
-    }
-    return 'Tororo 白猫';
-  };
-
-  // ======== 初始化所有查看器 ========
-  function initAll() {
+  // ======== 扫描并初始化所有容器 ========
+  function scanAndInit() {
     var viewers = document.querySelectorAll('.live2d-viewer');
+    console.log('[Live2D] Scanning for viewers, found:', viewers.length);
     for (var i = 0; i < viewers.length; i++) {
       (function(el) {
-        // 设置唯一 ID
-        if (!el.id && !el.getAttribute('data-id')) {
-          el.setAttribute('data-id', 'live2d-' + i);
-        }
-        setTimeout(function() { initViewer(el); }, 300);
+        setTimeout(function() { initViewer(el); }, 100);
       })(viewers[i]);
     }
   }
 
-  window.initAllLive2DViewers = initAll;
-
-  // 等 DOM 准备好后初始化
-  if (document.readyState === 'loading') {
-    document.addEventListener('DOMContentLoaded', function() { setTimeout(initAll, 500); });
-  } else {
-    setTimeout(initAll, 500);
-  }
-
-  // MutationObserver 检测动态添加的 .live2d-viewer 容器
-  if (window.MutationObserver) {
+  // ======== 设置 MutationObserver 监听动态添加的容器 ========
+  function setupObserver() {
+    if (!window.MutationObserver) return;
     var observer = new MutationObserver(function(mutations) {
       for (var i = 0; i < mutations.length; i++) {
         var nodes = mutations[i].addedNodes;
@@ -398,7 +270,9 @@
           var node = nodes[j];
           if (node.nodeType === 1) {
             if (node.classList && node.classList.contains('live2d-viewer')) {
-              setTimeout(function() { initViewer(node); }, 100);
+              (function(el) {
+                setTimeout(function() { initViewer(el); }, 100);
+              })(node);
             }
             var nested = node.querySelectorAll ? node.querySelectorAll('.live2d-viewer') : [];
             for (var k = 0; k < nested.length; k++) {
@@ -410,10 +284,36 @@
     });
     if (document.body) {
       observer.observe(document.body, { childList: true, subtree: true });
+      console.log('[Live2D] MutationObserver active');
     } else {
       document.addEventListener('DOMContentLoaded', function() {
         observer.observe(document.body, { childList: true, subtree: true });
       });
     }
   }
+
+  // ======== 启动 ========
+  waitForLibs(function() {
+    console.log('[Live2D] Libraries ready, setting up...');
+    setupObserver();
+    scanAndInit();
+    // 持续扫描：Flutter 可能延迟创建容器
+    var scanInterval = setInterval(function() {
+      var viewers = document.querySelectorAll('.live2d-viewer');
+      var allDone = true;
+      for (var i = 0; i < viewers.length; i++) {
+        if (!initializedContainers.has(viewers[i])) {
+          allDone = false;
+          initViewer(viewers[i]);
+        }
+      }
+      if (allDone && viewers.length > 0) {
+        clearInterval(scanInterval);
+      }
+    }, 1000);
+    // 最多扫描 60 秒
+    setTimeout(function() { clearInterval(scanInterval); }, 60000);
+  });
+
+  console.log('[Live2D] Loader script complete');
 })();

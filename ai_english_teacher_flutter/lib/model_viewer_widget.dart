@@ -102,9 +102,11 @@ class ModelViewerWidget extends StatefulWidget {
   /// 静态方法：切换麦克风
   static void toggleMic() {
     if (!kIsWeb) return;
-    if (_live2dElement != null) {
-      final containerId = _live2dElement!.getAttribute('data-id') ?? '';
-      js.context.callMethod('toggleLive2dMic', [containerId]);
+    // 直接调用 JS 的 toggleLive2dMic，不传 ID 让它自动查找
+    try {
+      js.context.callMethod('toggleLive2dMic', []);
+    } catch (e) {
+      debugPrint('toggleMic error: $e');
     }
   }
 

@@ -313,7 +313,10 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
           IconButton(
             icon: const Icon(Icons.mic),
             tooltip: '语音对话',
-            onPressed: () => _showBubble("Hi! I'm Bella! Let's chat! 🎤"),
+            onPressed: () {
+              ModelViewerWidget.toggleMic();
+              _showBubble("Hi! I'm Bella! Let's chat! 🎤");
+            },
           ),
         ],
       ),

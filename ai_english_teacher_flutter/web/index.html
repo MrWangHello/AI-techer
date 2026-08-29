@@ -25,7 +25,6 @@
       overflow: hidden;
       background: #f5f0eb;
     }
-    /* 加载中动画 */
     #loading-screen {
       position: fixed;
       top: 0;
@@ -61,7 +60,6 @@
     @keyframes spin {
       to { transform: rotate(360deg); }
     }
-    /* 微信浏览器引导遮罩 */
     #wechat-guide {
       display: none;
       position: fixed;
@@ -82,16 +80,8 @@
       align-items: center;
       justify-content: center;
     }
-    #wechat-guide h2 {
-      font-size: 24px;
-      margin-bottom: 20px;
-    }
-    #wechat-guide p {
-      font-size: 16px;
-      line-height: 1.6;
-      margin-bottom: 30px;
-      opacity: 0.9;
-    }
+    #wechat-guide h2 { font-size: 24px; margin-bottom: 20px; }
+    #wechat-guide p { font-size: 16px; line-height: 1.6; margin-bottom: 30px; opacity: 0.9; }
     #wechat-guide .btn {
       display: inline-block;
       padding: 14px 40px;
@@ -102,12 +92,7 @@
       font-size: 18px;
       font-weight: bold;
     }
-    #wechat-guide .tip {
-      margin-top: 20px;
-      font-size: 14px;
-      opacity: 0.7;
-    }
-    /* Live2D 容器基础样式 */
+    #wechat-guide .tip { margin-top: 20px; font-size: 14px; opacity: 0.7; }
     .live2d-viewer canvas {
       display: block;
       width: 100% !important;
@@ -116,13 +101,11 @@
   </style>
 </head>
 <body>
-  <!-- 加载中动画 -->
   <div id="loading-screen">
     <div class="spinner"></div>
     <p>加载中...</p>
   </div>
 
-  <!-- 微信浏览器引导页面 -->
   <div id="wechat-guide" style="display:none;">
     <h2>&#128274; 请在浏览器中打开</h2>
     <p>当前页面在微信中无法正常显示互动内容。<br>
@@ -132,114 +115,158 @@
     <p class="tip">推荐使用 Chrome、QQ 浏览器或手机自带浏览器</p>
   </div>
 
-  <!-- Live2D 相关库 - 异步加载，不阻塞渲染 -->
-  <!-- Live2D Cubism 2 Core -->
-  <script defer src="https://cdn.jsdelivr.net/gh/dylanNew/live2d/webgl/Live2D/lib/live2d.min.js"></script>
-  <!-- Live2D Cubism 4 Core -->
-  <script defer src="https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js"></script>
-  <!-- PixiJS v6 -->
-  <script defer src="https://cdn.jsdelivr.net/npm/pixi.js@6.5.10/dist/browser/pixi.min.js"></script>
-  <!-- pixi-live2d-display (支持 Cubism 2 & 4) -->
-  <script defer src="https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/index.min.js"></script>
-  <!-- 自定义 Live2D 加载器 -->
-  <script defer src="live2d-loader.js"></script>
+  <!-- ======== Live2D 库（同步加载，确保 Flutter 启动前就绪） ======== -->
+  <script>
+  // 标记：Live2D 加载器是否就绪
+  window.__live2dReady = false;
+  // 加载队列
+  var __l2dScripts = [
+    'https://cdn.jsdelivr.net/gh/dylanNew/live2d/webgl/Live2D/lib/live2d.min.js',
+    'https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js',
+    'https://cdn.jsdelivr.net/npm/pixi.js@6.5.10/dist/browser/pixi.min.js',
+    'https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/index.min.js',
+  ];
+  var __l2dLoaded = 0;
+  function __l2dOnLoad() {
+    __l2dLoaded++;
+    if (__l2dLoaded >= __l2dScripts.length) {
+      window.__live2dReady = true;
+      // 触发 live2d-ready 事件
+      document.dispatchEvent(new Event('live2d-ready'));
+      // 加载 live2d-loader.js
+      var loader = document.createElement('script');
+      loader.src = 'live2d-loader.js';
+      loader.async = false;
+      document.body.appendChild(loader);
+    }
+  }
+  // 开始加载
+  for (var i = 0; i < __l2dScripts.length; i++) {
+    var s = document.createElement('script');
+    s.src = __l2dScripts[i];
+    s.async = false;
+    s.onload = __l2dOnLoad;
+    s.onerror = function() { console.warn('Live2D lib load failed, retrying...'); };
+    document.head.appendChild(s);
+  }
+  </script>
 
   <script>
-    // 页面加载完成后隐藏 loading 动画
-    window.addEventListener('load', function() {
-      var loading = document.getElementById('loading-screen');
-      if (loading) {
-        setTimeout(function() {
-          loading.classList.add('hidden');
-          setTimeout(function() { loading.style.display = 'none'; }, 500);
-        }, 3000);
-      }
-    });
-    // Live2D 模型加载完成后提前隐藏 loading 动画
-    document.addEventListener('live2d-loaded', function() {
-      var loading = document.getElementById('loading-screen');
-      if (loading) {
-        loading.classList.add('hidden');
-        setTimeout(function() { loading.style.display = 'none'; }, 500);
-      }
-    });
+  // ======== 手机端语音修复（用户手势解锁音频 + QQ 浏览器兼容） ========
+  (function() {
+    var audioUnlocked = false;
+    var speechReady = false;
 
-    // ======== 手机端语音修复 ========
-    // 手机浏览器（尤其是 iOS Safari）需要用户手势才能激活音频
-    // 通过一次性点击事件唤醒 AudioContext 和 SpeechSynthesis
-    (function() {
-      var audioUnlocked = false;
-      function unlockAudio() {
-        if (audioUnlocked) return;
-        audioUnlocked = true;
-        // 1. 创建并立即恢复 AudioContext
-        try {
-          var ctx = new (window.AudioContext || window.webkitAudioContext)();
-          if (ctx.state === 'suspended') {
-            ctx.resume();
-          }
-          // 播放一个极短的静音来解锁音频
-          var osc = ctx.createOscillator();
-          var gain = ctx.createGain();
-          gain.gain.value = 0.001;
-          osc.connect(gain);
-          gain.connect(ctx.destination);
-          osc.start(0);
-          osc.stop(0.001);
-        } catch(e) {}
-        // 2. 预激活 SpeechSynthesis
+    function unlockAudio() {
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+      // 1. 解锁 AudioContext
+      try {
+        var ctx = new (window.AudioContext || window.webkitAudioContext)();
+        if (ctx.state === 'suspended') ctx.resume();
+        var osc = ctx.createOscillator();
+        var gain = ctx.createGain();
+        gain.gain.value = 0.001;
+        osc.connect(gain);
+        gain.connect(ctx.destination);
+        osc.start(0);
+        osc.stop(0.001);
+      } catch(e) {}
+      // 2. 预激活 SpeechSynthesis（QQ 浏览器需要多次尝试）
+      function trySpeech() {
+        if (speechReady) return;
         try {
           if ('speechSynthesis' in window) {
-            // 空的 utterance 来激活
-            var u = new SpeechSynthesisUtterance('');
+            var u = new SpeechSynthesisUtterance(' ');
             u.volume = 0;
             speechSynthesis.speak(u);
-            // 取消空语音
             setTimeout(function() {
               speechSynthesis.cancel();
+              speechReady = true;
             }, 100);
           }
         } catch(e) {}
-        // 3. 移除所有监听器
-        document.removeEventListener('click', unlockAudio);
-        document.removeEventListener('touchstart', unlockAudio);
-        document.removeEventListener('keydown', unlockAudio);
       }
-      // 监听用户手势
-      document.addEventListener('click', unlockAudio);
-      document.addEventListener('touchstart', unlockAudio);
-      document.addEventListener('keydown', unlockAudio);
-    })();
-
-    // ======== 增强版语音朗读（兼容手机端） ========
-    window.speakWord = function(word, lang) {
-      lang = lang || 'en-US';
+      trySpeech();
+      // QQ 浏览器可能需要多次尝试
+      setTimeout(trySpeech, 500);
+      setTimeout(trySpeech, 1000);
+      // 预加载语音列表
       if ('speechSynthesis' in window) {
-        // 先取消所有正在播放的语音
+        speechSynthesis.getVoices();
+        speechSynthesis.onvoiceschanged = function() { speechSynthesis.getVoices(); };
+      }
+      document.removeEventListener('click', unlockAudio);
+      document.removeEventListener('touchstart', unlockAudio);
+      document.removeEventListener('keydown', unlockAudio);
+    }
+    document.addEventListener('click', unlockAudio);
+    document.addEventListener('touchstart', unlockAudio);
+    document.addEventListener('keydown', unlockAudio);
+    // 页面加载完也尝试（但可能被浏览器限制）
+    setTimeout(unlockAudio, 3000);
+  })();
+
+  // ======== 语音朗读（兼容手机端 + QQ 浏览器） ========
+  window.speakWord = function(word, lang) {
+    lang = lang || 'en-US';
+    if ('speechSynthesis' in window) {
+      try {
         window.speechSynthesis.cancel();
-        // 创建 utterance
         var u = new SpeechSynthesisUtterance(word);
         u.lang = lang;
         u.rate = 0.85;
         u.pitch = 1.0;
         u.volume = 1.0;
-        // 尝试获取中文语音引擎（如果 lang 是中文）
         if (lang === 'zh-CN') {
           var voices = window.speechSynthesis.getVoices();
           var zhVoice = voices.find(function(v) { return v.lang.indexOf('zh') === 0; });
           if (zhVoice) u.voice = zhVoice;
         }
-        // 延时播放（iOS 需要）
-        setTimeout(function() {
-          window.speechSynthesis.speak(u);
-        }, 50);
-      } else {
-        console.warn('SpeechSynthesis not supported');
+        // 延时+重试：QQ 浏览器需要多次尝试
+        var retries = 0;
+        function doSpeak() {
+          try {
+            window.speechSynthesis.speak(u);
+          } catch(e) {
+            if (retries < 3) {
+              retries++;
+              setTimeout(doSpeak, 300);
+            }
+          }
+        }
+        setTimeout(doSpeak, 200);
+        return true;
+      } catch(e) {
+        console.warn('speakWord error:', e);
+        return false;
       }
-    };
+    }
+    // QQ 浏览器等不支持 speechSynthesis 的降级
+    console.warn('SpeechSynthesis not available in this browser');
+    return false;
+  };
+
+  // ======== 页面加载完成隐藏 loading ========
+  window.addEventListener('load', function() {
+    var loading = document.getElementById('loading-screen');
+    if (loading) {
+      setTimeout(function() {
+        loading.classList.add('hidden');
+        setTimeout(function() { loading.style.display = 'none'; }, 500);
+      }, 2000);
+    }
+  });
+  document.addEventListener('live2d-loaded', function() {
+    var loading = document.getElementById('loading-screen');
+    if (loading) {
+      loading.classList.add('hidden');
+      setTimeout(function() { loading.style.display = 'none'; }, 500);
+    }
+  });
   </script>
 
-  <!-- Flutter 应用入口 -->
-  <script src="flutter_bootstrap.js" async></script>
+  <!-- Flutter 应用入口（使用 defer，确保在 live2d-loader.js 之后执行） -->
+  <script src="flutter_bootstrap.js" defer></script>
 </body>
 </html>
