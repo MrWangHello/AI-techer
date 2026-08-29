@@ -56,13 +56,15 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
     };
     html.window.addEventListener('message', _messageListener!);
     
-    // 发送消息显示 model-viewer
-    Future.delayed(const Duration(milliseconds: 100), () {
+    // 延迟发送消息显示 model-viewer
+    Future.delayed(const Duration(milliseconds: 500), () {
       if (mounted) {
-        html.window.postMessage({
+        debugPrint('发送 show-model 消息');
+        final message = {
           'type': 'show-model',
           'animation': widget.animationName ?? 'Idle',
-        }, '*');
+        };
+        html.window.postMessage(message, '*');
       }
     });
   }
