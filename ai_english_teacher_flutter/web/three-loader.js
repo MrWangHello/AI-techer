@@ -108,6 +108,9 @@
 
         container.setAttribute('data-loaded', 'true');
         console.log('3D model loaded:', src);
+
+        // 通知 Flutter 模型加载完成（通过 postMessage）
+        window.postMessage({ type: 'three-loaded' }, '*');
       },
       function(xhr) {
         if (xhr.lengthComputable) {
