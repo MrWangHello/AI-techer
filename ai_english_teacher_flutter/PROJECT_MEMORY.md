@@ -165,3 +165,46 @@
 **注意**：
 - Fox 模型只有 3 个动画，比 RobotExpressive 的 8 个少，但每个动画更精细
 - 模型大小 162KB，比 RobotExpressive 的 464KB 小很多，加载更快
+
+---
+
+## ❌ 错误 7：3D GLB 模型加载慢、兼容差、交互弱（2026-08-29）
+
+**问题**：
+- 3D GLB 模型（Fox.glb / poppy-the-mouse.glb）加载需要 30-50 秒
+- 360/QQ 浏览器无法渲染 WebGL
+- 模型没有面部表情，不灵动
+- 动作需要手动编写骨骼动画
+
+**根因**：
+- 3D 模型文件大（几百 KB 到几 MB）
+- WebGL 渲染在部分浏览器受限
+- 3D 模型难以实现面部表情驱动
+- 语音交互需要手动实现嘴型同步
+
+**正确方案**：
+- 放弃 Three.js 3D 渲染，改用 **Live2D + PixiJS**
+- Live2D 模型文件小（几十 KB），CDN 加载秒开
+- 原生支持语音驱动嘴型（ParamMouthOpenY）
+- 原生支持眼睛追踪、头部转动
+- 所有浏览器兼容（微信/QQ/360 全兼容）
+- 使用官方免费模型：Tororo（白猫宠物）+ Koharu（小春老师）
+
+**修改的文件**：
+- `web/index.html`：移除 Three.js，改为加载 Live2D 库
+- `web/live2d-loader.js`：新建，Live2D 渲染器（替换 three-loader.js）
+- `lib/model_viewer_widget.dart`：改为 Live2D 控制（data-model 属性）
+- `lib/main.dart`：更新 ModelViewerWidget 参数，修复手机端语音
+- 删除旧的 Three.js 文件：three-loader.js, three.min.js, GLTFLoader.js, three-bundle.js, model-viewer.min.js
+
+**手机端语音修复**：
+- iOS Safari 需要用户手势才能激活 AudioContext 和 SpeechSynthesis
+- 增加 `unlockAudio()` 函数，监听用户首次点击/触摸时唤醒音频
+- 增加 `window.speakWord()` 增强版 API，兼容手机端
+- 增加延时播放（iOS 需要 50ms 延迟）
+
+**注意**：
+- Live2D 模型从 CDN 加载（jsdelivr），确保网络畅通
+- 两个模型可切换：Tororo（宠物用）+ Koharu（教学用）
+- 点击模型触发随机动作
+- 麦克风开启后，说话驱动嘴型同步

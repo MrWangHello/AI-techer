@@ -1,4 +1,5 @@
 import 'dart:html' as html;
+import 'dart:js' as js;
 import 'package:flutter/material.dart';
 import 'model_viewer_widget.dart';
 import 'pet_data.dart';
@@ -152,8 +153,8 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
   String get _moodEmoji => widget.petData.petMoodEmoji;
 
   void _playAnim(String name) {
-    // 直接更新动画，不重建 Widget（移除 ValueKey 后不再需要 setState 切换）
-    ModelViewerWidget.setAnimation(name);
+    // Live2D 模型自动处理动画，不需要手动切换
+    // 通过点击模型触发随机动作，通过麦克风驱动嘴型
     setState(() => _currentAnimation = name);
   }
 
@@ -388,11 +389,10 @@ class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
                         ),
                       ),
                     ),
-                  // 3D 模型填满整个卡片区域，使用 Positioned.fill
+                  // Live2D 模型填满整个卡片区域，使用 Positioned.fill
                   Positioned.fill(
                     child: ModelViewerWidget(
-                      src: 'assets/models/poppy-the-mouse.glb',
-                      animationName: _currentAnimation,
+                      modelKey: 'tororo',
                       autoRotate: true,
                       cameraControls: true,
                       shadowIntensity: 0.5,
@@ -1005,11 +1005,20 @@ class _StudyPageState extends State<StudyPage> {
   }
 
   void _speakWord(String word) {
-    // Use Web Speech API
-    final script = "if('speechSynthesis' in window){const u=new SpeechSynthesisUtterance('$word');u.lang='en-US';u.rate=0.8;speechSynthesis.speak(u);}";
-    final scriptEl = html.ScriptElement()..text = script;
-    html.document.body!.append(scriptEl);
-    scriptEl.remove();
+    try {
+      // 使用增强版 JS API（已在 index.html 中定义），兼容手机端
+      js.context.callMethod('speakWord', [word, 'en-US']);
+    } catch (_) {
+      // 降级：直接使用 dart:html Web Speech API
+      try {
+        final u = html.SpeechSynthesisUtterance(word);
+        u.lang = 'en-US';
+        u.rate = 0.85;
+        html.window.speechSynthesis?.speak(u);
+      } catch (e) {
+        debugPrint('SpeechSynthesis error: $e');
+      }
+    }
   }
 
   @override
