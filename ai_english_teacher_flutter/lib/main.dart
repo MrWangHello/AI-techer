@@ -30,7 +30,7 @@ class MainShell extends StatefulWidget {
 }
 
 class _MainShellState extends State<MainShell> {
-  int _currentIndex = 2; // Start on pet page
+  int _currentIndex = 2;
 
   final List<Widget> _pages = const [
     HomePage(),
@@ -70,18 +70,186 @@ class PetPage extends StatefulWidget {
   State<PetPage> createState() => _PetPageState();
 }
 
-class _PetPageState extends State<PetPage> {
+class _PetPageState extends State<PetPage> with SingleTickerProviderStateMixin {
   String _currentAnimation = 'Idle';
   bool _modelLoaded = false;
 
-  // RobotExpressive animations
+  // Pet stats
+  int _exp = 60;
+  int _hunger = 80;
+  int _mood = 90;
+  int _level = 3;
+  int _totalInteractions = 0;
+
+  // Speech bubble
+  String? _bubbleText;
+  String _moodEmoji = '😊';
+
+  late AnimationController _bubbleAnim;
+
   final List<String> _animations = [
     'Idle', 'Wave', 'Dance', 'Jump',
     'Yes', 'No', 'ThumbsUp', 'Punch',
   ];
 
+  final Map<String, String> _animLabels = {
+    'Idle': '休息', 'Wave': '挥手', 'Dance': '跳舞', 'Jump': '跳跃',
+    'Yes': '点头', 'No': '摇头', 'ThumbsUp': '点赞', 'Punch': '出拳',
+  };
+
+  final Map<String, IconData> _animIcons = {
+    'Idle': Icons.person, 'Wave': Icons.waving_hand, 'Dance': Icons.music_note,
+    'Jump': Icons.arrow_upward, 'Yes': Icons.check_circle, 'No': Icons.cancel,
+    'ThumbsUp': Icons.thumb_up, 'Punch': Icons.fitness_center,
+  };
+
+  // Pet dialogue lines
+  final List<String> _tapLines = [
+    'Hey! That tickles! 😄',
+    'Hehe, stop it! 🤭',
+    'I love playing with you! ',
+    "Let's learn English together! 📚",
+    'You are my best friend! 🌟',
+    'Can you teach me a new word? ',
+    'I feel so happy today! 🎉',
+    'Wow, you clicked me! 😆',
+  ];
+
+  final List<String> _feedLines = [
+    'Yummy! Thank you! 🍕',
+    'Delicious! More please! 😋',
+    'My tummy is full! ',
+    "That's the best food ever! 🍰",
+  ];
+
+  final List<String> _playLines = [
+    'So much fun! 🎮',
+    'Again! Again! 🎪',
+    'Wheee! I love this! 🎢',
+    "You're the best playmate! 🎯",
+  ];
+
+  final List<String> _studyLines = [
+    "Let's learn English! 📖",
+    'I know a new word! 🎓',
+    'Teach me more! ',
+    'Learning is fun! ✨',
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _bubbleAnim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 300),
+    );
+  }
+
+  @override
+  void dispose() {
+    _bubbleAnim.dispose();
+    super.dispose();
+  }
+
   void _playAnim(String name) {
     setState(() => _currentAnimation = name);
+  }
+
+  void _showBubble(String text) {
+    setState(() {
+      _bubbleText = text;
+      _bubbleAnim.forward(from: 0);
+    });
+    Future.delayed(const Duration(seconds: 3), () {
+      if (mounted) {
+        _bubbleAnim.reverse();
+        Future.delayed(const Duration(milliseconds: 300), () {
+          if (mounted) setState(() => _bubbleText = null);
+        });
+      }
+    });
+  }
+
+  String _randomFrom(List<String> list) {
+    return list[DateTime.now().millisecondsSinceEpoch % list.length];
+  }
+
+  void _onPetTap() {
+    _playAnim('Wave');
+    _showBubble(_randomFrom(_tapLines));
+    _addMood(2);
+    _addExp(1);
+  }
+
+  void _onFeed() {
+    _playAnim('ThumbsUp');
+    _showBubble(_randomFrom(_feedLines));
+    _addHunger(15);
+    _addMood(5);
+    _addExp(5);
+    _totalInteractions++;
+    _checkLevelUp();
+  }
+
+  void _onPlay() {
+    _playAnim('Dance');
+    _showBubble(_randomFrom(_playLines));
+    _addMood(15);
+    _addHunger(-5);
+    _addExp(8);
+    _totalInteractions++;
+    _checkLevelUp();
+  }
+
+  void _onStudy() {
+    _playAnim('Yes');
+    _showBubble(_randomFrom(_studyLines));
+    _addExp(15);
+    _addMood(3);
+    _totalInteractions++;
+    _checkLevelUp();
+  }
+
+  void _addExp(int delta) {
+    setState(() {
+      _exp = (_exp + delta).clamp(0, 100);
+    });
+  }
+
+  void _addHunger(int delta) {
+    setState(() {
+      _hunger = (_hunger + delta).clamp(0, 100);
+    });
+  }
+
+  void _addMood(int delta) {
+    setState(() {
+      _mood = (_mood + delta).clamp(0, 100);
+      _updateMoodEmoji();
+    });
+  }
+
+  void _updateMoodEmoji() {
+    if (_mood >= 80) {
+      _moodEmoji = '😊';
+    } else if (_mood >= 60) {
+      _moodEmoji = '😐';
+    } else if (_mood >= 40) {
+      _moodEmoji = '😟';
+    } else {
+      _moodEmoji = '😢';
+    }
+  }
+
+  void _checkLevelUp() {
+    if (_exp >= 100) {
+      setState(() {
+        _exp = 0;
+        _level++;
+      });
+      _playAnim('Jump');
+      _showBubble('🎉 Level Up! Now Lv.$_level!');
+    }
   }
 
   @override
@@ -91,7 +259,10 @@ class _PetPageState extends State<PetPage> {
         title: const Text('我的伙伴'),
         centerTitle: true,
         actions: [
-          IconButton(icon: const Icon(Icons.mic), onPressed: () {}),
+          IconButton(
+            icon: const Icon(Icons.mic),
+            onPressed: () => _showBubble("Hi! I'm Bella! Let's chat! "),
+          ),
         ],
       ),
       body: SingleChildScrollView(
@@ -111,7 +282,7 @@ class _PetPageState extends State<PetPage> {
               ),
               child: Stack(
                 children: [
-                  // Status indicator
+                  // Mood indicator
                   Positioned(
                     top: 12,
                     left: 12,
@@ -122,28 +293,71 @@ class _PetPageState extends State<PetPage> {
                         shape: BoxShape.circle,
                         boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
                       ),
-                      child: const Text('😊', style: TextStyle(fontSize: 20)),
+                      child: Text(_moodEmoji, style: const TextStyle(fontSize: 20)),
                     ),
                   ),
+                  // Level badge
+                  Positioned(
+                    top: 12,
+                    right: 12,
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: Colors.amber,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 4)],
+                      ),
+                      child: Text(
+                        'Lv.$_level',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontWeight: FontWeight.bold,
+                          fontSize: 14,
+                        ),
+                      ),
+                    ),
+                  ),
+                  // Speech bubble
+                  if (_bubbleText != null)
+                    Positioned(
+                      top: 60,
+                      left: 20,
+                      right: 20,
+                      child: FadeTransition(
+                        opacity: _bubbleAnim,
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                          decoration: BoxDecoration(
+                            color: Colors.white,
+                            borderRadius: BorderRadius.circular(16),
+                            boxShadow: [BoxShadow(color: Colors.black12, blurRadius: 8)],
+                          ),
+                          child: Text(
+                            _bubbleText!,
+                            textAlign: TextAlign.center,
+                            style: const TextStyle(fontSize: 15, fontWeight: FontWeight.w500),
+                          ),
+                        ),
+                      ),
+                    ),
                   // 3D Model
                   Center(
                     child: ModelViewerWidget(
+                      key: ValueKey(_currentAnimation),
                       src: 'https://modelviewer.dev/shared-assets/models/RobotExpressive.glb',
-                      animationName: 'Idle',
+                      animationName: _currentAnimation,
                       autoRotate: true,
                       cameraControls: true,
                       shadowIntensity: 0.5,
                       backgroundColor: 'transparent',
                       onModelReady: () {
-                        debugPrint('Model loaded!');
                         setState(() => _modelLoaded = true);
                       },
+                      onTap: _onPetTap,
                     ),
                   ),
-                  // Loading overlay with timeout
-                  if (!_modelLoaded)
-                    _LoadingOverlay(),
-                  // Name & Level
+                  if (!_modelLoaded) _LoadingOverlay(),
+                  // Name
                   Positioned(
                     bottom: 16,
                     left: 0,
@@ -156,12 +370,13 @@ class _PetPageState extends State<PetPage> {
                             fontSize: 28,
                             fontWeight: FontWeight.bold,
                             color: Colors.grey.shade800,
+                            shadows: [Shadow(color: Colors.white, blurRadius: 4)],
                           ),
                         ),
                         Text(
-                          'Lv. 3',
+                          'Tap me to interact! ',
                           style: TextStyle(
-                            fontSize: 16,
+                            fontSize: 12,
                             color: Colors.grey.shade600,
                           ),
                         ),
@@ -173,33 +388,26 @@ class _PetPageState extends State<PetPage> {
             ),
 
             // Stats
-            _buildStatCard('经验值', 60, 100, Colors.blue),
+            _buildStatCard('经验值', _exp, 100, Colors.blue, Icons.star),
             const SizedBox(height: 12),
-            _buildStatCard('饱腹度', 80, 100, Colors.orange),
+            _buildStatCard('饱腹度', _hunger, 100, Colors.orange, Icons.restaurant),
             const SizedBox(height: 12),
-            _buildStatCard('心情', 90, 100, Colors.pink),
+            _buildStatCard('心情', _mood, 100, Colors.pink, Icons.favorite),
             const SizedBox(height: 20),
 
-            // Animation Control Buttons
+            // Animation Buttons
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Wrap(
                 spacing: 10,
                 runSpacing: 10,
                 alignment: WrapAlignment.center,
-                children: [
-                  _animBtn('Idle', Icons.person, () => _playAnim('Idle')),
-                  _animBtn('Wave', Icons.waving_hand, () => _playAnim('Wave')),
-                  _animBtn('Dance', Icons.music_note, () => _playAnim('Dance')),
-                  _animBtn('Jump', Icons.arrow_upward, () => _playAnim('Jump')),
-                  _animBtn('Yes', Icons.check, () => _playAnim('Yes')),
-                  _animBtn('No', Icons.close, () => _playAnim('No')),
-                  _animBtn('ThumbsUp', Icons.thumb_up, () => _playAnim('ThumbsUp')),
-                  _animBtn('Punch', Icons.fitness_center, () => _playAnim('Punch')),
-                ],
+                children: _animations.map((name) {
+                  return _animBtn(name, _animIcons[name]!, _animLabels[name]!, () => _playAnim(name));
+                }).toList(),
               ),
             ),
-            const SizedBox(height: 24),
+            const SizedBox(height: 20),
 
             // Action Buttons
             Padding(
@@ -207,27 +415,25 @@ class _PetPageState extends State<PetPage> {
               child: Row(
                 children: [
                   Expanded(
-                    child: _actionBtn(Icons.restaurant, '喂食', Colors.orange, () {
-                      _playAnim('ThumbsUp');
-                      _showSnackBar('Yummy! Thank you!');
-                    }),
+                    child: _actionBtn(Icons.restaurant, '喂食', Colors.orange, _onFeed, '+15 饱腹'),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _actionBtn(Icons.sports_esports, '玩耍', Colors.blue, () {
-                      _playAnim('Dance');
-                      _showSnackBar('So much fun!');
-                    }),
+                    child: _actionBtn(Icons.sports_esports, '玩耍', Colors.blue, _onPlay, '+15 心情'),
                   ),
                   const SizedBox(width: 12),
                   Expanded(
-                    child: _actionBtn(Icons.school, '学习', Colors.green, () {
-                      _playAnim('Yes');
-                      _showSnackBar("Let's learn English!");
-                    }),
+                    child: _actionBtn(Icons.school, '学习', Colors.green, _onStudy, '+15 经验'),
                   ),
                 ],
               ),
+            ),
+            const SizedBox(height: 12),
+
+            // Interaction counter
+            Text(
+              '今日互动 $_totalInteractions 次',
+              style: TextStyle(color: Colors.grey.shade500, fontSize: 13),
             ),
             const SizedBox(height: 30),
           ],
@@ -236,7 +442,7 @@ class _PetPageState extends State<PetPage> {
     );
   }
 
-  Widget _buildStatCard(String label, int value, int max, Color color) {
+  Widget _buildStatCard(String label, int value, int max, Color color, IconData icon) {
     return Container(
       margin: const EdgeInsets.symmetric(horizontal: 16),
       padding: const EdgeInsets.all(16),
@@ -251,8 +457,14 @@ class _PetPageState extends State<PetPage> {
           Row(
             mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              Text('$value / $max', style: TextStyle(color: Colors.grey.shade600)),
+              Row(
+                children: [
+                  Icon(icon, size: 20, color: color),
+                  const SizedBox(width: 8),
+                  Text(label, style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
+                ],
+              ),
+              Text('$value / $max', style: TextStyle(color: Colors.grey.shade600, fontWeight: FontWeight.w500)),
             ],
           ),
           const SizedBox(height: 8),
@@ -270,11 +482,12 @@ class _PetPageState extends State<PetPage> {
     );
   }
 
-  Widget _animBtn(String label, IconData icon, VoidCallback onTap) {
-    final isActive = _currentAnimation == label;
+  Widget _animBtn(String key, IconData icon, String label, VoidCallback onTap) {
+    final isActive = _currentAnimation == key;
     return Material(
       color: isActive ? Colors.pink.shade100 : Colors.white,
       borderRadius: BorderRadius.circular(12),
+      elevation: isActive ? 2 : 0,
       child: InkWell(
         onTap: onTap,
         borderRadius: BorderRadius.circular(12),
@@ -299,7 +512,7 @@ class _PetPageState extends State<PetPage> {
     );
   }
 
-  Widget _actionBtn(IconData icon, String label, Color color, VoidCallback onTap) {
+  Widget _actionBtn(IconData icon, String label, Color color, VoidCallback onTap, String bonus) {
     return Material(
       color: color.withOpacity(0.1),
       borderRadius: BorderRadius.circular(16),
@@ -307,26 +520,17 @@ class _PetPageState extends State<PetPage> {
         onTap: onTap,
         borderRadius: BorderRadius.circular(16),
         child: Container(
-          padding: const EdgeInsets.symmetric(vertical: 16),
+          padding: const EdgeInsets.symmetric(vertical: 14),
           child: Column(
             children: [
               Icon(icon, color: color, size: 28),
-              const SizedBox(height: 6),
-              Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold)),
+              const SizedBox(height: 4),
+              Text(label, style: TextStyle(color: color, fontWeight: FontWeight.bold, fontSize: 14)),
+              const SizedBox(height: 2),
+              Text(bonus, style: TextStyle(color: color.withOpacity(0.7), fontSize: 11)),
             ],
           ),
         ),
-      ),
-    );
-  }
-
-  void _showSnackBar(String msg) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        duration: const Duration(seconds: 2),
-        behavior: SnackBarBehavior.floating,
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -343,11 +547,8 @@ class _LoadingOverlayState extends State<_LoadingOverlay> {
   @override
   void initState() {
     super.initState();
-    // 10 秒后显示降级提示
     Future.delayed(const Duration(seconds: 10), () {
-      if (mounted) {
-        setState(() => _timeout = true);
-      }
+      if (mounted) setState(() => _timeout = true);
     });
   }
 
@@ -366,15 +567,9 @@ class _LoadingOverlayState extends State<_LoadingOverlay> {
             ] else ...[
               const Icon(Icons.pets, size: 64, color: Colors.pink),
               const SizedBox(height: 12),
-              const Text(
-                '3D 模型加载中...',
-                style: TextStyle(color: Colors.pink, fontSize: 16),
-              ),
+              const Text('3D 模型加载中...', style: TextStyle(color: Colors.pink, fontSize: 16)),
               const SizedBox(height: 8),
-              const Text(
-                '请确保网络连接正常',
-                style: TextStyle(color: Colors.grey, fontSize: 12),
-              ),
+              const Text('请确保网络连接正常', style: TextStyle(color: Colors.grey, fontSize: 12)),
               const SizedBox(height: 16),
               ElevatedButton(
                 onPressed: () => setState(() => _timeout = false),
@@ -388,7 +583,7 @@ class _LoadingOverlayState extends State<_LoadingOverlay> {
   }
 }
 
-// ==================== Other Pages (Placeholders) ====================
+// ==================== Other Pages ====================
 
 class HomePage extends StatelessWidget {
   const HomePage({super.key});

@@ -3,9 +3,6 @@ import 'dart:js' as js;
 import 'package:flutter/material.dart';
 
 /// 3D GLB 模型查看器 Widget
-///
-/// 使用 JS 创建绝对定位的覆盖层，精确匹配 Flutter 容器尺寸，
-/// 不遮挡页面上其他 UI 元素。
 class ModelViewerWidget extends StatefulWidget {
   final String src;
   final String? animationName;
@@ -14,6 +11,7 @@ class ModelViewerWidget extends StatefulWidget {
   final double shadowIntensity;
   final String backgroundColor;
   final VoidCallback? onModelReady;
+  final VoidCallback? onTap;
 
   const ModelViewerWidget({
     super.key,
@@ -24,6 +22,7 @@ class ModelViewerWidget extends StatefulWidget {
     this.shadowIntensity = 0.5,
     this.backgroundColor = 'transparent',
     this.onModelReady,
+    this.onTap,
   });
 
   @override
@@ -38,7 +37,6 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
   void initState() {
     super.initState();
     _overlayId = 'mv-${_counter++}';
-    // 延迟创建，确保 Flutter 布局完成
     Future.delayed(const Duration(milliseconds: 1200), () {
       if (mounted) _createOverlay();
     });
@@ -52,7 +50,6 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
   var old = document.getElementById('$_overlayId');
   if (old) old.remove();
 
-  // 找到 Flutter 渲染的占位 div（通过 data 属性定位）
   var placeholders = document.querySelectorAll('div[data-mv-placeholder="$_overlayId"]');
   var placeholder = placeholders.length > 0 ? placeholders[0] : null;
 
@@ -91,6 +88,9 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
   mv.addEventListener('error', function(e) {
     window.parent.postMessage({type: 'mv-error', id: '$_overlayId'}, '*');
   });
+  mv.addEventListener('click', function() {
+    window.parent.postMessage({type: 'mv-tap', id: '$_overlayId'}, '*');
+  });
 
   overlay.appendChild(mv);
   document.body.appendChild(overlay);
@@ -103,14 +103,35 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
       final data = (event as html.MessageEvent).data;
       if (data is Map && data['id'] == _overlayId) {
         if (data['type'] == 'mv-load') {
-          print('Model loaded!');
           widget.onModelReady?.call();
         } else if (data['type'] == 'mv-error') {
-          print('Model error');
           widget.onModelReady?.call();
+        } else if (data['type'] == 'mv-tap') {
+          widget.onTap?.call();
         }
       }
     }));
+  }
+
+  /// 切换动画
+  void setAnimation(String name) {
+    js.context.callMethod('eval', [
+      "if(window['$_overlayId']&&window['$_overlayId'].mv)window['$_overlayId'].mv.setAttribute('animation-name','$name');"
+    ]);
+  }
+
+  /// 暂停动画
+  void pauseAnimation() {
+    js.context.callMethod('eval', [
+      "if(window['$_overlayId']&&window['$_overlayId'].mv)window['$_overlayId'].mv.setAttribute('paused','');"
+    ]);
+  }
+
+  /// 恢复动画
+  void resumeAnimation() {
+    js.context.callMethod('eval', [
+      "if(window['$_overlayId']&&window['$_overlayId'].mv)window['$_overlayId'].mv.removeAttribute('paused');"
+    ]);
   }
 
   @override
@@ -123,7 +144,6 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
 
   @override
   Widget build(BuildContext context) {
-    // 占位容器，JS 通过 data 属性找到它来定位覆盖层
     return Container(
       width: double.infinity,
       height: double.infinity,
