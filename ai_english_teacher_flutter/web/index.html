@@ -1,60 +1,25 @@
 <!DOCTYPE html>
 <html>
 <head>
-  <!--
-    If you are serving your web app in a path other than the root, change the
-    href value below to reflect the base path you are serving from.
-
-    The path provided below has to start and end with a slash "/" in order for
-    it to work correctly.
-
-    For more details:
-    * https://developer.mozilla.org/en-US/docs/Web/HTML/Element/base
-
-    This is a placeholder for base href that will be replaced by the value of
-    the `--base-href` argument provided to `flutter build`.
-  -->
   <base href="$FLUTTER_BASE_HREF">
 
   <meta charset="UTF-8">
   <meta content="IE=Edge" http-equiv="X-UA-Compatible">
-  <meta name="description" content="A new Flutter project.">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <meta name="description" content="AI English Teacher - 3D Pet Companion">
 
-  <!-- iOS meta tags & icons -->
   <meta name="apple-mobile-web-app-capable" content="yes">
   <meta name="apple-mobile-web-app-status-bar-style" content="black">
-  <meta name="apple-mobile-web-app-title" content="ai_english_teacher">
+  <meta name="apple-mobile-web-app-title" content="AI English Teacher">
   <link rel="apple-touch-icon" href="icons/Icon-192.png">
 
-  <!-- Favicon -->
   <link rel="icon" type="image/png" href="favicon.png"/>
 
   <title>AI English Teacher</title>
   <link rel="manifest" href="manifest.json">
-  <!-- Google model-viewer for 3D GLB rendering -->
-  <script type="module">
-    // 尝试多个 CDN 源，确保加载成功
-    const cdnUrls = [
-      'https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js',
-      'https://cdn.jsdelivr.net/npm/@google/model-viewer@3.5.0/dist/model-viewer.min.js',
-      'https://cdn.bootcdn.net/ajax/libs/model-viewer/3.5.0/model-viewer.min.js'
-    ];
-    
-    async function loadModelViewer() {
-      for (const url of cdnUrls) {
-        try {
-          await import(url);
-          console.log('model-viewer loaded from:', url);
-          return;
-        } catch (e) {
-          console.warn('Failed to load from', url, e);
-        }
-      }
-      console.error('All CDN sources failed to load model-viewer');
-    }
-    
-    loadModelViewer();
-  </script>
+
+  <!-- Load model-viewer synchronously BEFORE Flutter boots -->
+  <script type="module" src="https://unpkg.com/@google/model-viewer@3.5.0/dist/model-viewer.min.js"></script>
 </head>
 <body>
   <script src="flutter_bootstrap.js" async></script>

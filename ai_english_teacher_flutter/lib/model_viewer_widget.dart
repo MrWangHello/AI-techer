@@ -3,8 +3,6 @@ import 'dart:ui' as ui;
 import 'package:flutter/material.dart';
 
 /// 3D GLB 模型查看器 Widget（基于 Google model-viewer Web Component）
-///
-/// 不依赖任何第三方 WebView 包，直接用 dart:html 嵌入 <model-viewer> 元素。
 class ModelViewerWidget extends StatefulWidget {
   final String src;
   final String? animationName;
@@ -45,31 +43,36 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
     ui.platformViewRegistry.registerViewFactory(
       _viewType,
       (int viewId) {
-        final el = html.Element.tag('model-viewer')
+        // 使用 document.createElement 确保创建的是 custom element
+        final el = html.document.createElement('model-viewer') as html.Element
           ..setAttribute('src', widget.src)
-          ..setAttribute('camera-controls', '')
-          ..setAttribute('shadow-intensity',
-              widget.shadowIntensity.toString())
           ..setAttribute('style',
               'width: 100%; height: 100%; background-color: ${widget.backgroundColor};');
+
+        if (widget.cameraControls) {
+          el.setAttribute('camera-controls', '');
+        }
 
         if (widget.autoRotate) {
           el.setAttribute('auto-rotate', '');
           el.setAttribute('rotation-per-second', '10deg');
         }
 
+        el.setAttribute('shadow-intensity', widget.shadowIntensity.toString());
+
         if (widget.animationName != null) {
           el.setAttribute('animation-name', widget.animationName!);
         }
 
-        // Listen for model load event
+        // 监听模型加载完成事件
         el.addEventListener('load', (event) {
+          print('Model loaded successfully: ${widget.src}');
           widget.onModelReady?.call();
         });
 
-        // Listen for error event
+        // 监听错误事件
         el.addEventListener('error', (event) {
-          print('Model viewer error: $event');
+          print('Model load error: $event');
           // 即使出错也触发回调，避免 Loading 遮罩一直显示
           widget.onModelReady?.call();
         });
