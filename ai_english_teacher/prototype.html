@@ -4,6 +4,15 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>AI English Teacher - 界面原型</title>
+    <!-- Three.js for 3D character -->
+    <script type="importmap">
+    {
+        "imports": {
+            "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js",
+            "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"
+        }
+    }
+    </script>
     <style>
         * {
             margin: 0;
@@ -937,8 +946,6 @@
             width: 220px;
             height: 320px;
             position: relative;
-            transform-style: preserve-3d;
-            animation: petFloat 4s ease-in-out infinite, petBreathe 3s ease-in-out infinite;
             cursor: pointer;
             transition: transform 0.3s;
             display: flex;
@@ -946,17 +953,22 @@
             justify-content: center;
         }
 
-        .pet-3d-image {
+        #pet3DCanvas {
             width: 100%;
             height: 100%;
-            object-fit: contain;
             border-radius: 20px;
             filter: drop-shadow(0 8px 24px rgba(255, 182, 193, 0.4));
-            transition: filter 0.3s;
         }
 
-        .pet-3d-model:hover .pet-3d-image {
+        .pet-3d-model:hover #pet3DCanvas {
             filter: drop-shadow(0 12px 32px rgba(255, 182, 193, 0.6));
+        }
+
+        .pet-3d-loading {
+            position: absolute;
+            color: #FF69B4;
+            font-size: 14px;
+            text-align: center;
         }
 
         .pet-3d-model.bounce {
@@ -2785,7 +2797,8 @@
                 
                 <div class="pet-3d-scene">
                     <div class="pet-3d-model" id="pet3DModel" onclick="interactWithPet()">
-                        <img src="assets/images/princess_pet.jpg?v=2" alt="Bella" class="pet-3d-image" id="petImage">
+                        <canvas id="pet3DCanvas"></canvas>
+                        <div class="pet-3d-loading" id="pet3DLoading">Loading 3D...</div>
                     </div>
                     <div class="pet-3d-shadow"></div>
                 </div>
@@ -3607,10 +3620,9 @@
             const behaviors = [
                 { action: 'dance', speech: 'Let\'s dance!', probability: 0.2 },
                 { action: 'wave', speech: 'Hi there!', probability: 0.2 },
-                { action: 'spin', speech: 'Wheee!', probability: 0.15 },
-                { action: 'nod', speech: 'Yes yes!', probability: 0.15 },
-                { action: 'bounce', speech: 'Jump jump!', probability: 0.15 },
-                { action: 'happy', speech: 'I\'m so happy!', probability: 0.15 }
+                { action: 'jump', speech: 'Jump jump!', probability: 0.2 },
+                { action: 'yes', speech: 'Yes yes!', probability: 0.2 },
+                { action: 'thumbsup', speech: 'Great job!', probability: 0.2 }
             ];
             
             // 根据概率选择行为
@@ -3626,17 +3638,21 @@
                 }
             }
             
-            // 执行动作
-            pet.classList.add(selectedBehavior.action);
+            // 执行3D动画
+            if (window.playPetAnimation) {
+                window.playPetAnimation(selectedBehavior.action);
+            }
             showPetSpeech(selectedBehavior.speech);
             
             // 播放音效
             playSound(400 + Math.random() * 200, 0.2, 'sine');
             
-            // 移除动画类
+            // 2秒后回到idle
             setTimeout(() => {
-                pet.classList.remove(selectedBehavior.action);
-            }, 1500);
+                if (window.playPetAnimation) {
+                    window.playPetAnimation('idle');
+                }
+            }, 2500);
         }
         
         function stopPetAutoBehavior() {
@@ -3758,9 +3774,10 @@
         }
 
         function triggerPetBounce() {
-            const pet = document.getElementById('pet3DModel');
-            
-            pet.classList.add('bounce');
+            // 播放3D跳跃动画
+            if (window.playPetAnimation) {
+                window.playPetAnimation('jump');
+            }
             
             // 随机说一句话
             const phrases = [
@@ -3778,9 +3795,12 @@
             // 显示爱心
             showHeartAnimation();
             
+            // 2秒后回到idle
             setTimeout(() => {
-                pet.classList.remove('bounce');
-            }, 800);
+                if (window.playPetAnimation) {
+                    window.playPetAnimation('idle');
+                }
+            }, 2000);
         }
 
         // 宠物主动说话系统
@@ -3791,10 +3811,15 @@
                 const randomActions = [
                     () => showPetSpeech('Let\'s learn something new!'),
                     () => {
-                        const pet = document.getElementById('pet3DModel');
-                        pet.classList.add('excited');
+                        if (window.playPetAnimation) {
+                            window.playPetAnimation('dance');
+                        }
                         showPetSpeech('I\'m so happy!');
-                        setTimeout(() => pet.classList.remove('excited'), 2000);
+                        setTimeout(() => {
+                            if (window.playPetAnimation) {
+                                window.playPetAnimation('idle');
+                            }
+                        }, 2000);
                     },
                     () => showPetSpeech('Do you want to play?'),
                     () => {
@@ -3865,6 +3890,182 @@
                 }, 200);
             });
         });
+    </script>
+
+    <!-- Three.js 3D Character Module -->
+    <script type="module">
+        import * as THREE from 'three';
+        import { GLTFLoader } from 'three/addons/loaders/GLTFLoader.js';
+
+        // 3D Scene setup
+        let scene, camera, renderer, mixer, model, clock;
+        let currentAction = null;
+        let actions = {};
+        const canvas = document.getElementById('pet3DCanvas');
+        const loadingEl = document.getElementById('pet3DLoading');
+
+        // Animation clip name mapping for RobotExpressive
+        const clipMap = {
+            idle: 'Idle',
+            walk: 'Walking',
+            run: 'Running',
+            dance: 'Dance',
+            jump: 'Jump',
+            yes: 'Yes',
+            no: 'No',
+            wave: 'Wave',
+            punch: 'Punch',
+            thumbsup: 'ThumbsUp',
+            standing: 'Standing',
+            sitting: 'Sitting',
+            death: 'Death'
+        };
+
+        function init3DScene() {
+            if (!canvas) return;
+
+            clock = new THREE.Clock();
+
+            // Scene
+            scene = new THREE.Scene();
+            scene.background = null; // transparent
+
+            // Camera
+            const aspect = canvas.clientWidth / canvas.clientHeight;
+            camera = new THREE.PerspectiveCamera(45, aspect, 0.1, 100);
+            camera.position.set(0, 1.5, 4);
+            camera.lookAt(0, 1, 0);
+
+            // Renderer
+            renderer = new THREE.WebGLRenderer({
+                canvas: canvas,
+                antialias: true,
+                alpha: true
+            });
+            renderer.setSize(canvas.clientWidth, canvas.clientHeight);
+            renderer.setPixelRatio(Math.min(window.devicePixelRatio, 2));
+            renderer.shadowMap.enabled = true;
+            renderer.outputColorSpace = THREE.SRGBColorSpace;
+            renderer.toneMapping = THREE.ACESFilmicToneMapping;
+            renderer.toneMappingExposure = 1.2;
+
+            // Lights
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+
+            const dirLight = new THREE.DirectionalLight(0xffffff, 1.5);
+            dirLight.position.set(3, 5, 4);
+            dirLight.castShadow = true;
+            scene.add(dirLight);
+
+            const fillLight = new THREE.DirectionalLight(0xffb6c1, 0.4);
+            fillLight.position.set(-3, 2, -2);
+            scene.add(fillLight);
+
+            // Load GLB model
+            const loader = new GLTFLoader();
+            loader.load(
+                'assets/models/RobotExpressive.glb',
+                (gltf) => {
+                    model = gltf.scene;
+                    model.traverse((child) => {
+                        if (child.isMesh) {
+                            child.castShadow = true;
+                            child.receiveShadow = true;
+                        }
+                    });
+
+                    // Scale and position the model
+                    const box = new THREE.Box3().setFromObject(model);
+                    const size = box.getSize(new THREE.Vector3());
+                    const scale = 2.5 / size.y; // Scale to fit ~2.5 units tall
+                    model.scale.setScalar(scale);
+
+                    // Center the model
+                    const center = box.getCenter(new THREE.Vector3());
+                    model.position.x = -center.x * scale;
+                    model.position.z = -center.z * scale;
+
+                    scene.add(model);
+
+                    // Setup animations
+                    mixer = new THREE.AnimationMixer(model);
+                    gltf.animations.forEach((clip) => {
+                        const action = mixer.clipAction(clip);
+                        actions[clip.name] = action;
+                    });
+
+                    // Log available animations
+                    console.log('Available animations:', Object.keys(actions));
+
+                    // Play idle animation
+                    playAnimation('idle');
+
+                    // Hide loading text
+                    if (loadingEl) loadingEl.style.display = 'none';
+
+                    // Start render loop
+                    animate();
+                },
+                (progress) => {
+                    console.log('Loading:', (progress.loaded / progress.total * 100).toFixed(0) + '%');
+                },
+                (error) => {
+                    console.error('Failed to load 3D model:', error);
+                    if (loadingEl) loadingEl.textContent = '3D load failed';
+                }
+            );
+
+            // Handle resize
+            window.addEventListener('resize', onCanvasResize);
+        }
+
+        function onCanvasResize() {
+            if (!canvas || !renderer || !camera) return;
+            const w = canvas.clientWidth;
+            const h = canvas.clientHeight;
+            if (canvas.width !== w || canvas.height !== h) {
+                renderer.setSize(w, h, false);
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+            }
+        }
+
+        function playAnimation(name) {
+            const clipName = clipMap[name];
+            if (!clipName || !actions[clipName]) {
+                console.warn('Animation not found:', name, clipName);
+                return;
+            }
+
+            if (currentAction) {
+                currentAction.fadeOut(0.3);
+            }
+
+            const action = actions[clipName];
+            action.reset().fadeIn(0.3).play();
+            currentAction = action;
+        }
+
+        function animate() {
+            requestAnimationFrame(animate);
+            if (mixer) mixer.update(clock.getDelta());
+            if (renderer && scene && camera) {
+                onCanvasResize();
+                renderer.render(scene, camera);
+            }
+        }
+
+        // Expose functions to global scope for interaction
+        window.playPetAnimation = playAnimation;
+        window.init3DScene = init3DScene;
+
+        // Initialize when DOM is ready
+        if (document.readyState === 'loading') {
+            document.addEventListener('DOMContentLoaded', init3DScene);
+        } else {
+            init3DScene();
+        }
     </script>
 </body>
 </html>
