@@ -79,6 +79,19 @@
 
 ---
 
+## 错误 7：Flutter Service Worker 缓存旧版 index.html
+
+**时间**：2026-08-29
+**现象**：部署了新的 index.html（引用 three.min.js），但浏览器加载的仍是旧版（引用 model-viewer.min.js）
+**根本原因**：Flutter 的 Service Worker 缓存了旧版 index.html，浏览器加载缓存而非网络最新版本
+**正确方案**：在 index.html 中 flutter_bootstrap.js 之前添加清除 Service Worker 缓存和 Cache Storage 的代码
+**教训**：
+- Flutter Web 的 Service Worker 会缓存 index.html，导致新版本无法生效
+- 每次重大更新都需要强制清除缓存
+- 浏览器 Agent 验证时看到的是缓存页面，不是最新部署
+
+---
+
 ## 通用规则（从以上错误总结）
 
 1. **修改后必须用浏览器 Agent 验证**，不能只靠代码审查
@@ -87,3 +100,4 @@
 4. **不要移除 import 后遗留引用**，全局搜索确认
 5. **Flutter Web 嵌入 Web 组件用 HtmlElementView**，不要用 position:fixed 覆盖层
 6. **本地化所有第三方资源**，不依赖 CDN（国内访问不稳定）
+7. **Flutter Service Worker 会缓存 index.html**，重大更新需清除缓存

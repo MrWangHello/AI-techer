@@ -102,6 +102,26 @@
   </script>
 
   <!-- Flutter 应用入口 -->
+  <script>
+    // 清除旧的 Service Worker 缓存，强制加载新版本
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.getRegistrations().then(function(registrations) {
+        for (var i = 0; i < registrations.length; i++) {
+          registrations[i].unregister();
+        }
+      });
+    }
+    // 清除所有相关缓存
+    if ('caches' in window) {
+      caches.keys().then(function(names) {
+        for (var i = 0; i < names.length; i++) {
+          if (names[i].indexOf('flutter') !== -1 || names[i].indexOf('AI-techer') !== -1) {
+            caches.delete(names[i]);
+          }
+        }
+      });
+    }
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
