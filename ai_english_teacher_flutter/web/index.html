@@ -122,9 +122,8 @@
   // 加载队列
   var __l2dScripts = [
     'https://cdn.jsdelivr.net/gh/dylanNew/live2d/webgl/Live2D/lib/live2d.min.js',
-    'https://cubism.live2d.com/sdk-web/cubismcore/live2dcubismcore.min.js',
     'https://cdn.jsdelivr.net/npm/pixi.js@6.5.10/dist/browser/pixi.min.js',
-    'https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/index.min.js',
+    'https://cdn.jsdelivr.net/npm/pixi-live2d-display@0.4.0/dist/cubism2.min.js',
   ];
   var __l2dLoaded = 0;
   function __l2dOnLoad() {
@@ -146,7 +145,7 @@
     s.src = __l2dScripts[i];
     s.async = false;
     s.onload = __l2dOnLoad;
-    s.onerror = function() { console.warn('Live2D lib load failed, retrying...'); };
+    s.onerror = function() { console.warn('Live2D lib load failed, skipping...'); __l2dOnLoad(); };
     document.head.appendChild(s);
   }
   </script>
