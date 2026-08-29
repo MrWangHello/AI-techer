@@ -89,35 +89,58 @@ class _ModelViewerWidgetState extends State<ModelViewerWidget> {
   
   placeholder.appendChild(overlay);
 
-  var mv = document.createElement('model-viewer');
-  // 使用绝对路径确保在 GitHub Pages 等子路径部署时能正确加载
-  var baseHref = document.querySelector('base') ? document.querySelector('base').getAttribute('href') : '/';
-  var src = '${widget.src}';
-  if (baseHref && baseHref !== '/') {
-    src = baseHref + src;
+  // 等待 model-viewer 自定义元素注册完成
+  var createModelViewer = function() {
+    var mv = document.createElement('model-viewer');
+    // 使用绝对路径确保在 GitHub Pages 等子路径部署时能正确加载
+    var baseHref = document.querySelector('base') ? document.querySelector('base').getAttribute('href') : '/';
+    var src = '${widget.src}';
+    if (baseHref && baseHref !== '/') {
+      src = baseHref + src;
+    }
+    mv.setAttribute('src', src);
+    mv.setAttribute('style', 'width:100%;height:100%;');
+    ${widget.cameraControls ? "mv.setAttribute('camera-controls', '');" : ""}
+    ${widget.autoRotate ? "mv.setAttribute('auto-rotate', '');mv.setAttribute('rotation-per-second', '10deg');" : ""}
+    mv.setAttribute('shadow-intensity', '${widget.shadowIntensity}');
+    ${widget.animationName != null ? "mv.setAttribute('animation-name', '${widget.animationName}');" : ""}
+    mv.setAttribute('camera-orbit', '0deg 75deg 105%');
+    mv.setAttribute('field-of-view', '30deg');
+
+    mv.addEventListener('load', function() {
+      window.postMessage({type: 'mv-load', id: '$_overlayId'}, '*');
+    });
+    mv.addEventListener('error', function(e) {
+      console.error('Model viewer error:', e);
+      window.postMessage({type: 'mv-error', id: '$_overlayId', error: 'Failed to load model'}, '*');
+    });
+    mv.addEventListener('click', function() {
+      window.postMessage({type: 'mv-tap', id: '$_overlayId'}, '*');
+    });
+
+    overlay.appendChild(mv);
+    window['$_overlayId'] = {overlay: overlay, mv: mv};
+  };
+
+  // 检查 model-viewer 是否已注册，如果未注册则等待
+  if (customElements.get('model-viewer')) {
+    createModelViewer();
+  } else {
+    customElements.whenDefined('model-viewer').then(function() {
+      createModelViewer();
+    }).catch(function(err) {
+      console.error('Failed to register model-viewer:', err);
+      window.postMessage({type: 'mv-error', id: '$_overlayId', error: 'model-viewer not registered'}, '*');
+    });
+    
+    // 设置超时保护（10秒）
+    setTimeout(function() {
+      if (!customElements.get('model-viewer')) {
+        console.error('model-viewer registration timeout');
+        window.postMessage({type: 'mv-error', id: '$_overlayId', error: 'model-viewer registration timeout'}, '*');
+      }
+    }, 10000);
   }
-  mv.setAttribute('src', src);
-  mv.setAttribute('style', 'width:100%;height:100%;');
-  ${widget.cameraControls ? "mv.setAttribute('camera-controls', '');" : ""}
-  ${widget.autoRotate ? "mv.setAttribute('auto-rotate', '');mv.setAttribute('rotation-per-second', '10deg');" : ""}
-  mv.setAttribute('shadow-intensity', '${widget.shadowIntensity}');
-  ${widget.animationName != null ? "mv.setAttribute('animation-name', '${widget.animationName}');" : ""}
-  mv.setAttribute('camera-orbit', '0deg 75deg 105%');
-  mv.setAttribute('field-of-view', '30deg');
-
-  mv.addEventListener('load', function() {
-    window.postMessage({type: 'mv-load', id: '$_overlayId'}, '*');
-  });
-  mv.addEventListener('error', function(e) {
-    console.error('Model viewer error:', e);
-    window.postMessage({type: 'mv-error', id: '$_overlayId', error: 'Failed to load model'}, '*');
-  });
-  mv.addEventListener('click', function() {
-    window.postMessage({type: 'mv-tap', id: '$_overlayId'}, '*');
-  });
-
-  overlay.appendChild(mv);
-  window['$_overlayId'] = {overlay: overlay, mv: mv};
 })();
 ''';
     js.context.callMethod('eval', [script]);
