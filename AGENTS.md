@@ -28,8 +28,10 @@
 ## 已知限制
 
 - MP4 自带实心背景，CSS 无法完全透明化；彻底方案需透明通道视频
-- TTS 音色取决于手机系统语音包
-- STT 在 QQ/UC 浏览器不稳定，已提供文字输入降级
+- TTS 音色取决于手机系统语音包 / 浏览器（Chrome、Edge 微软音色等）
+- STT 在 QQ/UC 浏览器不稳定；**荣耀/华为无 GMS 时即装 Chrome 也常失败** → 用文字输入
+- STT 通常需联网（Chrome 常走 Google 云端），非纯离线
+- **不是 Google 专属**：网站用 Web Speech API，Edge 浏览器同样可用；Edge-TTS 云端服务已放弃
 - `agentEmotion` 触发后保持，不会自动恢复 neutral
 
 ## 文档索引
@@ -38,15 +40,16 @@
 |------|------|
 | [`docs/ARCHITECTURE.md`](ai-english-teacher/docs/ARCHITECTURE.md) | 完整架构：宠物 mood 映射、语音方案、部署、排错 |
 | [`docs/VOICE_UX_PLAN.md`](ai-english-teacher/docs/VOICE_UX_PLAN.md) | **规划稿**：全局悬浮语音入口 + 指令词体系 |
-| [`docs/BROWSER_COMPAT_PLAN.md`](ai-english-teacher/docs/BROWSER_COMPAT_PLAN.md) | **规划稿**：浏览器兼容 + 双通道文字输入降级 |
+| [`docs/BROWSER_COMPAT_PLAN.md`](ai-english-teacher/docs/BROWSER_COMPAT_PLAN.md) | 浏览器兼容 + 双通道降级 + **用户 FAQ（§11）** |
 | 本文件 | 项目记忆与变更摘要 |
 
 ## 语音方案（2026-08-30 确定）
 
-- **TTS**：浏览器原生 `SpeechSynthesis`，预热时缓存中/英音色
-- **STT**：`SpeechRecognition`，Chrome 最佳
-- **降级**：STT 不可用 → 文字输入；TTS 不可用 → 提示用 Chrome
-- **已移除**：Edge-TTS（国内 403 + Sec-MS-GEC）
+- **TTS**：浏览器原生 `SpeechSynthesis`，预热时缓存中/英音色（Chrome / Edge / Safari 等）
+- **STT**：`SpeechRecognition`，Chromium 系最佳（Chrome、Edge）；**不绑定 Google 账号**
+- **降级**：STT 不可用或失败 → VoiceChatBar 自动切 ⌨️ 文字；TTS 失败 → ReplyBar 仍显示文字
+- **已移除**：Edge-TTS 云端 API（国内 403；与 Edge **浏览器** 无关）
+- **FAQ**：荣耀无 GMS、小米对比、Edge 是否可用 → 见 `BROWSER_COMPAT_PLAN.md` §11
 
 ## 宠物 mood 速查
 

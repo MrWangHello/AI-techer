@@ -111,11 +111,12 @@ mood 切换时，新视频还在下载，但旧视频的 blob URL 已被应用�
 
 | 功能 | API | 说明 |
 |------|-----|------|
-| TTS 朗读 | `SpeechSynthesis` | 浏览器原生，无后端 |
-| STT 识别 | `SpeechRecognition` / `webkitSpeechRecognition` | Chrome 最佳 |
-| 降级 | 文字输入 | STT 不可用时 VoiceController 显示输入框 |
+| TTS 朗读 | `SpeechSynthesis` | 浏览器原生，无后端；音色由系统/浏览器提供（Google/微软/苹果） |
+| STT 识别 | `SpeechRecognition` / `webkitSpeechRecognition` | Chromium 系最佳（Chrome、Edge）；**非 Google 专属** |
+| 降级 | 文字输入 | VoiceChatBar：STT 不可用或失败 → 自动切 ⌨️ 文字模式 |
 
-**已移除：** Edge-TTS + Cloudflare Worker（国内 403，Worker 缺少 Sec-MS-GEC）
+**已移除：** Edge-TTS + Cloudflare Worker（国内 403，Worker 缺少 Sec-MS-GEC）  
+**注意：** Edge-TTS 是微软**云端 API**，与 **Microsoft Edge 浏览器** 不是同一概念；Edge 浏览器可正常使用 Web Speech API。
 
 ### 3.2 为什么 Chrome 音色有时会变
 
@@ -140,13 +141,31 @@ Chrome 的 `speechSynthesis.getVoices()` 首次调用可能返回空数组，`on
 
 ### 3.3 浏览器兼容性
 
-| 浏览器 | TTS | STT |
-|--------|-----|-----|
-| Chrome Android | ✅ | ✅（需联网） |
-| Chrome Desktop | ✅ | ✅ |
-| Safari iOS | ✅ | 部分 |
-| QQ 浏览器 | ✅ TTS | 部分 STT |
-| Firefox | ✅ TTS | ❌ 默认关闭 |
+> 详细 FAQ（荣耀/小米、Edge vs Google 等）见 [BROWSER_COMPAT_PLAN.md §11](./BROWSER_COMPAT_PLAN.md#11-用户-faq常见疑问)
+
+| 浏览器 | TTS | STT | 说明 |
+|--------|-----|-----|------|
+| Chrome Android | ✅ | ✅（需联网，常走 Google 云端） | Android 推荐 |
+| Chrome Desktop | ✅ | ✅ | 推荐 |
+| **Edge Desktop** | ✅（微软音色） | ✅ | **Windows 推荐** |
+| Edge Android | ✅ | ⚠️ 看机型 | 同 Chromium |
+| Safari iOS | ✅ | 部分 | 语音 + 文字 |
+| QQ / UC 浏览器 | ✅ TTS | ⚠️ STT 不稳定 | 文字为主 |
+| Firefox | ✅ TTS | ❌ 无 STT API | 纯文字 |
+| 微信内置 | 部分 | ❌ 常拒权限 | 纯文字，引导外链浏览器 |
+| **荣耀/华为（无 GMS）** | ⚠️ | ❌ 装 Chrome 也常失败 | 缺 Google 移动服务，请用文字输入 |
+
+**架构关系：**
+
+```
+网站 speech.ts → Web Speech API（标准接口）→ 浏览器/vendor 实现
+                                              ├─ Chrome：Google 云端 STT + 系统音色
+                                              ├─ Edge：微软音色 TTS + Chromium STT
+                                              ├─ Safari：Apple 语音
+                                              └─ Firefox：仅 TTS，无 STT
+```
+
+网站**不绑定 Google**；能否语音取决于浏览器 + 系统服务，不是网站配置项。
 
 ### 3.4 关键函数
 
@@ -185,15 +204,18 @@ DEPLOY_TARGET=github-pages npm run build
 ## 5. 常见问题排查
 
 ### TTS 无声音
-1. 确认使用 Chrome 浏览器
+1. 确认使用 **Chrome 或 Edge** 等支持 Web Speech 的浏览器（不限于 Chrome）
 2. 检查手机系统设置 → 无障碍 → 文字转语音，是否安装了中文/英文语音包
 3. 设置页查看「语音合成: ✅ 支持」
 4. 首次点击需用户手势触发（warmUpSpeech）
+5. **荣耀/华为无 GMS**：TTS 也可能受限，ReplyBar 仍显示文字回复
 
 ### STT 无法识别
 1. 确认麦克风权限已允许
-2. 需要网络连接（Chrome STT 走 Google 服务）
-3. 不支持时改用文字输入框
+2. 需要网络连接（Chrome STT 通常走 Google 云端；Edge 走 Chromium 识别链路）
+3. **荣耀/华为**：即使用 Chrome，缺 GMS 时 STT 常失败 → 点底部 ⌨️ 用文字输入
+4. **Firefox**：不支持 STT，请直接用文字模式
+5. 不支持或失败时 VoiceChatBar 会自动切文字输入
 
 ### 宠物视频不切换
 1. 确认触发了会改变 emotion 的操作（见 2.2 表格）
@@ -213,4 +235,5 @@ DEPLOY_TARGET=github-pages npm run build
 | 2026-08-30 | 移除 Edge-TTS，改用 Web Speech API |
 | 2026-08-30 | 视频压缩 960→480，7.8MB→470KB |
 | 2026-08-30 | Cat3D：poster、prefetch、CSS mask、Tab keep-alive |
-| 2026-08-30 | 修复 mood 切换竞态、睡觉→sad、TTS 音色缓存、背景色匹配 |
+| 2026-08-30 | 全局 VoiceChatBar + VoiceReplyBar，类微信/豆包双模输入 |
+| 2026-08-30 | 文档：浏览器语音 FAQ（荣耀/小米、Edge vs Google） |

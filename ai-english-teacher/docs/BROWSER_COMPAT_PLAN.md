@@ -1,8 +1,8 @@
 # 浏览器语音兼容与文字输入降级方案
 
-> 状态：**规划稿**（待评审后实施）
+> 状态：**Phase 1 已实施**（VoiceChatBar + VoiceReplyBar）；Phase 2/3 待做
 > 关联：[VOICE_UX_PLAN.md](./VOICE_UX_PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-> 撰写日期：2026-08-30
+> 撰写日期：2026-08-30 · FAQ 补充：2026-08-30
 
 ---
 
@@ -16,39 +16,46 @@
 
 ---
 
-## 2. 现状代码分析
+## 2. 现状代码分析（Phase 1 已实施）
 
-### 2.1 当前降级逻辑（VoiceController.tsx）
+### 2.1 当前降级逻辑（VoiceChatBar.tsx）
 
 ```tsx
-{sttSupported ? (
-  <button>🎤 麦克风</button>      // STT 可用 → 只显示麦克风
+// 左侧 ⌨️/🎤 始终可见，一键切换语音 / 键盘模式
+{mode === "voice" ? (
+  <button>点击说话</button>
 ) : (
-  <input + Send />                 // STT 不可用 → 才显示文字输入
+  <input + Send />
 )}
-```
 
-**问题：二选一设计，导致多种场景没有打字入口：**
+// STT 不可用 → 默认文字模式
+if (!isSTTSupported()) setMode("text");
+
+// STT 运行时失败 → 自动切文字 + 提示
+onError(err) { switchToText(); showHint(...); }
+```
 
 | 场景 | `isSTTSupported()` | 实际体验 | 有无打字入口 |
 |------|-------------------|----------|-------------|
-| Chrome 手机 | ✅ true | 正常 | ❌ 无（只有麦） |
-| Firefox | ❌ false | 无法语音识别 | ✅ 有 |
-| QQ 浏览器 | ✅ true（API 存在） | STT 常失败/不稳定 | ❌ 无（只有麦，失败只报错） |
-| 微信内置浏览器 | 可能 true | 麦克风权限被拒 | ❌ 无 |
-| Chrome 但拒绝麦克风权限 | ✅ true | 点击麦 → 报错 | ❌ 无 |
-| VM / 沙箱环境 | ✅ true | TTS synthesis-failed | ❌ 无 |
+| Chrome 手机 | ✅ true | 正常 | ✅ 点 ⌨️ 切换 |
+| Edge 桌面 | ✅ true | 通常正常（微软音色） | ✅ 点 ⌨️ 切换 |
+| Firefox | ❌ false | 无法语音识别 | ✅ 默认文字模式 |
+| QQ 浏览器 | ✅ true（API 存在） | STT 常失败/不稳定 | ✅ 失败后自动切文字 |
+| 微信内置浏览器 | 可能 true | 麦克风权限被拒 | ✅ 失败后自动切文字 |
+| 荣耀/华为无 GMS | 可能 true | STT 运行时失败 | ✅ 失败后自动切文字 |
+| VM / 沙箱环境 | ✅ true | TTS 可能失败 | ✅ 文字 + ReplyBar |
 
-**结论：只有「API 完全不存在」才显示输入框；「API 存在但运行时失败」的用户被卡住。**
+**结论：Phase 1 已实现「语音优先、文字兜底」，两种入口始终可用。**
 
 ### 2.2 语音入口位置
 
-`VoiceController` 仅在 **宠物 Tab** 底部。其他 Tab 完全没有语音/文字入口。
+`VoiceChatBar` 固定在 **所有 Tab** 底部导航上方，全局可用。  
+`VoiceController.tsx` 已废弃（逻辑由 VoiceChatBar 接管），可后续删除。
 
 ### 2.3 TTS 降级
 
-TTS 不可用时：`handleAgentReply` 仍执行 Agent 逻辑，但 `speak()` 跳过，只显示一行 amber 提示。  
-**文字回复**依赖 `lastReply` 气泡，且 **只在宠物 Tab 显示** — 其他 Tab 连看都看不到。
+TTS 不可用时：`handleAgentReply` 仍执行 Agent 逻辑，`speak()` 跳过。  
+**文字回复**由全局 `VoiceReplyBar` 显示，任意 Tab 可见。
 
 ---
 
@@ -296,10 +303,10 @@ export function isSTTSupported(): boolean { ... }      // 保持
 
 ### Phase 1 — 双通道 UI（与 VOICE_UX_PLAN Phase 1 合并）
 
-- [ ] 全局 `VoiceFAB` + `VoiceInputBar`（⌨️ 始终可见）
-- [ ] STT 失败 / 权限拒绝 → 自动展开输入条
-- [ ] `VoiceReplyBar` 全局显示，TTS 失败仍可见文字回复
-- [ ] `BrowserHintBanner` 非 Chrome 提示
+- [x] 全局 `VoiceChatBar`（⌨️/🎤 双模式，类微信/豆包）
+- [x] STT 失败 / 权限拒绝 → 自动切文字输入
+- [x] `VoiceReplyBar` 全局显示，TTS 失败仍可见文字回复
+- [ ] `BrowserHintBanner` 非 Chrome / 华为荣耀专项提示
 
 ### Phase 2
 
@@ -319,7 +326,10 @@ export function isSTTSupported(): boolean { ... }      // 保持
 | 问题 | 结论 |
 |------|------|
 | 能否包装 Chrome API 给其他浏览器？ | **不能**，只能 UI 降级或云端替代 |
-| 打字入口为什么没有？ | 当前仅 `!isSTTSupported` 才显示，且只在宠物 Tab |
+| 是否只能用 Google 语音？ | **不是**。网站调用 Web Speech API，由**各浏览器**接入 Google / 微软 / 苹果 / 系统本地引擎 |
+| Microsoft Edge 浏览器能用吗？ | **能**。Edge（Chromium）同样支持 Web Speech API，Windows 上 TTS 常用微软音色，体验良好 |
+| Edge-TTS 和 Edge 浏览器是一回事吗？ | **不是**。Edge 浏览器 = 客户端；Edge-TTS = 微软云端朗读 API（项目已放弃，国内 403） |
+| 打字入口为什么没有？ | Phase 1 已修复：VoiceChatBar 全局 ⌨️ 切换 |
 | 最佳兼容方案？ | **语音+文字双入口始终可见** + 运行时失败自动切文字 |
 | 是否需要云端？ | Phase 1 不需要；全浏览器语音才需要 |
 
@@ -327,12 +337,98 @@ export function isSTTSupported(): boolean { ... }      // 保持
 
 ## 10. 附录：各浏览器实际表现速查
 
-| 浏览器 | TTS | STT | 建议输入方式 |
-|--------|-----|-----|-------------|
-| Chrome Android | ✅ | ✅ | 语音为主 |
-| Chrome Desktop | ✅ | ✅ | 语音为主 |
-| Safari iOS | ✅ | 部分 | 语音 + 文字 |
-| QQ 浏览器 | ✅ | ⚠️ 不稳定 | **文字为主**，语音备选 |
-| UC 浏览器 | 部分 | ⚠️ | **文字为主** |
-| Firefox | ✅ | ❌ | **纯文字** |
-| 微信内置 | 部分 | ❌ 常拒权限 | **纯文字** + 引导外链 Chrome |
+| 浏览器 | TTS | STT | 背后引擎（典型） | 建议输入方式 |
+|--------|-----|-----|------------------|-------------|
+| Chrome Android | ✅ | ✅（需联网） | Google 云端 STT + 系统/Google 音色 | 语音为主 |
+| Chrome Desktop | ✅ | ✅ | Google 云端 STT | 语音为主 |
+| **Edge Desktop** | ✅ | ✅ | **微软音色** TTS；STT 走 Chromium 识别链路 | **语音为主，Windows 推荐** |
+| Edge Android | ✅ | ⚠️ 看机型 | 同 Chromium，依赖系统服务 | 语音 + 文字 |
+| Safari iOS | ✅ | 部分 | Apple 语音 | 语音 + 文字 |
+| QQ 浏览器 | ✅ | ⚠️ 不稳定 | 混合/受限 | **文字为主** |
+| UC 浏览器 | 部分 | ⚠️ | 混合/受限 | **文字为主** |
+| Firefox | ✅ | ❌ | 本地 TTS，无 STT API | **纯文字** |
+| 微信内置 | 部分 | ❌ 常拒权限 | 受限 WebView | **纯文字** + 引导「浏览器打开」 |
+| **荣耀/华为（无 GMS）** | ⚠️ | ❌ 即装 Chrome 也常失败 | 缺 Google 移动服务 | **纯文字** |
+
+> 文档写「Chrome 最佳」指 **Android 移动端** 兼容面最广，**不等于只能用 Chrome**。Windows 上 Edge 同样推荐。
+
+---
+
+## 11. 用户 FAQ（常见疑问）
+
+### Q1：荣耀/华为手机装了 Chrome，为什么语音还是不行？小米却可以
+
+**不是网站 bug，是手机系统环境差异。**
+
+Chrome 的语音识别（STT）**不是纯本地**，流程大致为：
+
+```
+麦克风 → Chrome → 云端语音服务（通常 Google）→ 返回文字
+```
+
+因此除了安装 Chrome，还需要：
+
+| 条件 | 小米（常见） | 荣耀/华为（常见） |
+|------|-------------|-------------------|
+| 已安装 Chrome | ✅ | ✅ |
+| Google 移动服务 GMS | ✅ 多数可装 | ❌ 2019 后很多机型官方不支持 |
+| 可连 Google 语音后端 | ✅ 相对容易 | ❌ 常缺失或被限制 |
+| Chrome 语音实际可用 | ✅ | ❌ 常报「无 Google 搜索引擎/语音服务不可用」 |
+
+**结论：装了 Chrome APK ≠ 具备 Google 语音能力。** 小米往往能装完整 GMS；荣耀/华为即使用 Chrome，STT 仍可能在运行时失败。此时请用底部 **⌨️ 键盘文字输入**。
+
+部分独立后的新荣耀海外版若预装 GMS，语音**有可能**可用，因机型差异大，需实测。
+
+### Q2：是不是只能用 Google 语音？微软 Edge 可以吗？
+
+**不是只能用 Google。** 本项目不绑定任何厂商，只调用浏览器标准 **Web Speech API**：
+
+```
+网站 speech.ts
+    ↓
+SpeechSynthesis / SpeechRecognition（浏览器标准接口）
+    ↓
+各浏览器自己的实现（Google / 微软 / 苹果 / 系统本地）
+```
+
+| 产品 | 能否用于本项目 | 说明 |
+|------|----------------|------|
+| **Microsoft Edge 浏览器** | ✅ 推荐 | Chromium 内核，Windows 上 TTS 常用微软中文音色 |
+| Google Chrome 浏览器 | ✅ 推荐 | Android 上兼容面最广 |
+| **Edge-TTS 云端服务** | ❌ 已放弃 | 与 Edge 浏览器无关；国内 403，见 ARCHITECTURE.md |
+
+**Edge 浏览器打开同一链接即可**，无需改代码。
+
+### Q3：为什么网站不能「包装一下」让 Firefox / QQ / 荣耀也用 Google 语音？
+
+Web Speech API 是**浏览器内核 + 系统服务**能力，网页 JavaScript **无法**：
+
+- 把 Firefox 的调用转发给 Chrome 的实现
+- 在缺 GMS 的荣耀机上「借用」Google 云端
+- 用 iframe 或 UA 伪装骗过能力检测
+
+可行路径只有：
+
+1. **UI 降级**（已做）：文字输入 + ReplyBar 文字回复
+2. **换支持语音的浏览器/设备**：Chrome、Edge、带 GMS 的 Android
+3. **云端 STT/TTS**（未来 Phase 3）：腾讯云/百度 ASR+TTS，经 Worker 代理，可覆盖全浏览器，但需账号与费用
+
+### Q4：TTS 朗读和 STT 识别，分别依赖什么？
+
+| 功能 | API | 典型依赖 | 离线？ |
+|------|-----|----------|--------|
+| TTS 朗读 | `SpeechSynthesis` | 系统已安装语音包 / 浏览器音色 | 部分可离线 |
+| STT 识别 | `SpeechRecognition` | **通常需联网** + 浏览器厂商云端 | 否（Chrome 走 Google 云端） |
+
+TTS 失败：检查系统「文字转语音」是否安装中文包；设置页看「语音合成: ✅/❌」。  
+STT 失败：检查麦克风权限、网络；不支持则切 ⌨️ 文字模式。
+
+### Q5：各场景一句话建议
+
+| 你的环境 | 建议 |
+|----------|------|
+| Windows 电脑 | **Edge 或 Chrome**，语音一般可用 |
+| 小米等可装 GMS 的 Android | Chrome / Edge |
+| 荣耀/华为、QQ 浏览器、微信内打开 | **⌨️ 文字输入** |
+| Firefox | 可朗读，**不能语音输入**，请打字 |
+| 必须要荣耀上也「说话学习」 | 需 Phase 3 云端语音（腾讯云/百度），非当前静态站能力 |
