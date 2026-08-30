@@ -364,26 +364,45 @@ export function startListening(
     recognition = new SpeechRecognition();
     recognition.lang = "zh-CN";
     recognition.continuous = false;
-    recognition.interimResults = false;
+    recognition.interimResults = true;
     recognition.maxAlternatives = 1;
 
     const current = recognition;
+    let tapRetry = 0;
+    let lastTranscript = "";
+    let resultDelivered = false;
 
     recognition.onresult = (event: any) => {
       if (current !== recognition) return;
-      const transcript = event.results[0]?.[0]?.transcript?.trim();
-      isListening = false;
-      if (transcript) onResult(transcript);
-      else onError?.("没有检测到语音");
+      let final = "";
+      let interim = "";
+      for (let i = 0; i < event.results.length; i++) {
+        const piece = event.results[i][0]?.transcript ?? "";
+        if (event.results[i].isFinal) final += piece;
+        else interim += piece;
+      }
+      lastTranscript = (final || interim).trim();
+      if (final.trim() && !resultDelivered) {
+        resultDelivered = true;
+        isListening = false;
+        onResult(final.trim());
+      }
     };
 
     recognition.onerror = (event: any) => {
       if (current !== recognition) return;
-      isListening = false;
-      if (intentionalStop && event.error === "aborted") {
+      if (intentionalStop && (event.error === "aborted" || event.error === "no-speech")) {
         intentionalStop = false;
         return;
       }
+      if (event.error === "network" && tapRetry < 1) {
+        tapRetry += 1;
+        try {
+          recognition.start();
+          return;
+        } catch (_) {}
+      }
+      isListening = false;
       intentionalStop = false;
       const errorMap: Record<string, string> = {
         "no-speech": "没有检测到语音，请再试一次",
@@ -402,6 +421,16 @@ export function startListening(
       if (current !== recognition) return;
       isListening = false;
       intentionalStop = false;
+      if (resultDelivered) {
+        onEnd?.();
+        return;
+      }
+      if (lastTranscript.trim()) {
+        resultDelivered = true;
+        onResult(lastTranscript.trim());
+      } else {
+        onError?.("没有检测到语音，请再试一次");
+      }
       onEnd?.();
     };
 
@@ -581,7 +610,7 @@ export function endHoldListening(
       submitNow();
     }
     clearHoldEndTimer();
-    holdEndTimer = setTimeout(submitNow, 600);
+    holdEndTimer = setTimeout(submitNow, 900);
   } else {
     submitNow();
   }

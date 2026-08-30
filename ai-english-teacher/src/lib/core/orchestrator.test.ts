@@ -22,6 +22,14 @@ describe("handleUserMessage navigation", () => {
     expect(res.navigate).toBe("study");
     expect(res.contentCard?.type).toBe("text");
   });
+
+  it("routes 猫是什么 to wiki with content", async () => {
+    const res = await handleUserMessage({ text: "猫是什么", channel: "web" });
+    expect(res.intent).toBe("wiki");
+    expect(res.studySection).toBe("explore.wiki");
+    expect(res.reply.length).toBeGreaterThan(10);
+    expect(res.reply).not.toContain("暂时不可用");
+  });
 });
 
 describe("handleUserMessage math", () => {

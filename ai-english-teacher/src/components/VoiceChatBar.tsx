@@ -24,7 +24,7 @@ interface VoiceChatBarProps {
   voiceSpeed?: number;
 }
 
-const HOLD_DELAY_MS = 400;
+const HOLD_DELAY_MS = 320;
 
 export default function VoiceChatBar({
   onAgentResponse,
@@ -48,6 +48,8 @@ export default function VoiceChatBar({
   const holdMode = useRef(false);
   const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const interimRef = useRef("");
+  const voiceBtnRef = useRef<HTMLButtonElement>(null);
+  const pointerIdRef = useRef<number | null>(null);
 
   const stopListeningUi = useCallback(() => {
     if (pressTimer.current) {
@@ -159,13 +161,14 @@ export default function VoiceChatBar({
 
   /** 点击说话（更稳定，恢复原有模式） */
   const startTapVoice = useCallback(() => {
-    if (thinking || speaking || listening) return;
+    if (thinking || speaking) return;
     if (!sttAvailable) {
       switchToText();
       showHint("语音识别不可用，已切换为文字输入");
       return;
     }
 
+    stopListening();
     stopSpeaking();
     setListening(true);
     setInterimText("");
@@ -191,7 +194,6 @@ export default function VoiceChatBar({
     );
   }, [
     sttAvailable,
-    listening,
     thinking,
     speaking,
     onTranscript,
@@ -224,7 +226,8 @@ export default function VoiceChatBar({
       (err) => {
         if (!isMounted.current) return;
         stopListeningUi();
-        showHint(err);
+        const soft = ["没有检测到语音", "被中断", "网络不稳定"].some((s) => err.includes(s));
+        showHint(soft ? `${err}（再点一次试试）` : err);
       }
     );
   }, [thinking, speaking, sttAvailable, switchToText, showHint, stopListeningUi]);
@@ -251,11 +254,22 @@ export default function VoiceChatBar({
     );
   }, [onTranscript, handleAgentReply, showHint]);
 
+  const releasePointer = useCallback((e: React.PointerEvent) => {
+    pointerIdRef.current = null;
+    try {
+      voiceBtnRef.current?.releasePointerCapture(e.pointerId);
+    } catch (_) {}
+  }, []);
+
   const onVoicePressStart = useCallback(
     (e: React.PointerEvent) => {
-      e.preventDefault();
       if (thinking || speaking) return;
+      e.preventDefault();
       holdMode.current = false;
+      pointerIdRef.current = e.pointerId;
+      try {
+        voiceBtnRef.current?.setPointerCapture(e.pointerId);
+      } catch (_) {}
       if (pressTimer.current) clearTimeout(pressTimer.current);
       pressTimer.current = setTimeout(() => {
         pressTimer.current = null;
@@ -268,6 +282,7 @@ export default function VoiceChatBar({
   const onVoicePressEnd = useCallback(
     (e: React.PointerEvent) => {
       e.preventDefault();
+      releasePointer(e);
       if (pressTimer.current) {
         clearTimeout(pressTimer.current);
         pressTimer.current = null;
@@ -280,7 +295,22 @@ export default function VoiceChatBar({
         finishHold();
       }
     },
-    [startTapVoice, finishHold, thinking, speaking]
+    [startTapVoice, finishHold, thinking, speaking, releasePointer]
+  );
+
+  const onVoicePressCancel = useCallback(
+    (e: React.PointerEvent) => {
+      releasePointer(e);
+      if (pressTimer.current) {
+        clearTimeout(pressTimer.current);
+        pressTimer.current = null;
+        return;
+      }
+      if (holdMode.current) {
+        stopListeningUi();
+      }
+    },
+    [releasePointer, stopListeningUi]
   );
 
   const busy = listening || speaking || thinking;
@@ -298,7 +328,7 @@ export default function VoiceChatBar({
           type="button"
           onClick={toggleMode}
           disabled={busy}
-          className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-gray-400 hover:text-pink-500 hover:bg-pink-50 active:scale-95 transition-all disabled:opacity-40"
+          className="shrink-0 w-11 h-11 flex items-center justify-center rounded-full text-gray-400 hover:text-pink-500 hover:bg-pink-50 active:scale-95 transition-all disabled:opacity-40"
           aria-label={mode === "voice" ? "切换到键盘输入" : "切换到语音输入"}
         >
           {mode === "voice" ? <Keyboard className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
@@ -306,14 +336,15 @@ export default function VoiceChatBar({
 
         {mode === "voice" ? (
           <button
+            ref={voiceBtnRef}
             type="button"
             onPointerDown={onVoicePressStart}
             onPointerUp={onVoicePressEnd}
-            onPointerCancel={onVoicePressEnd}
+            onPointerCancel={onVoicePressCancel}
             onContextMenu={(e) => e.preventDefault()}
             disabled={speaking || thinking}
             className={`
-              flex-1 h-10 rounded-full flex items-center justify-center gap-2
+              flex-1 min-h-12 h-12 rounded-full flex items-center justify-center gap-2
               text-sm font-medium transition-all select-none touch-none
               ${
                 holding
