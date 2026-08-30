@@ -1,6 +1,7 @@
 import allWords from "@/data/words.json";
 import type { AgentResponse } from "@/lib/core/types";
 import { withStudyNav } from "@/lib/skills/nav-skills";
+import { getKb } from "@/lib/kb/store";
 
 interface WordEntry {
   en: string;
@@ -66,15 +67,38 @@ const LOOKUP_STOPWORDS = new Set([
   "学习",
 ]);
 
+function lookupKbEntry(kind: "en" | "zh", key: string): WordEntry | null {
+  const kb = getKb();
+  const rows = [...(kb.dict ?? []), ...(kb.words ?? [])];
+  for (const row of rows) {
+    if (kind === "en" && row.en.toLowerCase() === key) {
+      return { en: row.en, zh: row.zh, sentence: row.sentence };
+    }
+    if (kind === "zh" && row.zh === key) {
+      return { en: row.en, zh: row.zh, sentence: row.sentence };
+    }
+  }
+  if (kind === "zh") {
+    for (const row of rows) {
+      if (key.includes(row.zh) || row.zh.includes(key)) {
+        return { en: row.en, zh: row.zh, sentence: row.sentence };
+      }
+    }
+  }
+  return null;
+}
+
 export function lookupLocalEn(en: string): WordEntry | null {
   const key = en.trim().toLowerCase();
   if (!key) return null;
-  return EN_INDEX.get(key) ?? null;
+  return lookupKbEntry("en", key) ?? EN_INDEX.get(key) ?? null;
 }
 
 export function lookupLocalZh(zh: string): WordEntry | null {
   const key = zh.trim();
   if (!key) return null;
+  const kbHit = lookupKbEntry("zh", key);
+  if (kbHit) return kbHit;
   const exact = ZH_INDEX.get(key);
   if (exact) return exact;
   for (const [k, w] of ZH_INDEX) {
@@ -147,7 +171,7 @@ function missResponse(query: string): AgentResponse {
       intent: "dict_miss",
       emotion: "thinking",
       action: "study",
-      reply: `词库里还没有「${query}」。试试「apple 什么意思」或「书本用英语怎么说」。`,
+      reply: `词库里还没有「${query}」。去设置里的知识库加一条，或试试「apple什么意思」。`,
     },
     "english.words"
   );

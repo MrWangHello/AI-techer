@@ -1,4 +1,5 @@
 import { parseStudySection, type StudySubject } from "@/lib/study-nav";
+import { getKb } from "@/lib/kb/store";
 
 /** 各学习分区语音指令引导（section = subject.sub） */
 export const SECTION_VOICE_HINTS: Record<string, string> = {
@@ -42,10 +43,13 @@ export const TAB_VOICE_HINTS: Record<string, string> = {
   home: "说「汉字」「口算」「讲故事」直达学习 ·「喂食」「玩耍」互动宠物 ·「帮助」看全部指令",
   pet: "说「喂食」「陪我玩」「洗澡」「睡觉」· 戳猫也会回应",
   study: "先选上方学科，再按下方提示说话 · 说「帮助」查看全部",
-  settings: "说「打开设置」到此页 · 可调整语音速度",
+  settings: "说「打开设置」到此页 · 可调语速 · 知识库可导入单词和故事",
 };
 
 export function getVoiceHintForSection(studySection: string): string {
+  const override = getKb().hints?.[studySection];
+  if (override) return override;
+
   const exact = SECTION_VOICE_HINTS[studySection];
   if (exact) return exact;
 

@@ -2,6 +2,7 @@ import jokes from "@/data/jokes.json";
 import stories from "@/data/stories.json";
 import chineseStories from "@/data/chinese-stories.json";
 import quotes from "@/data/quotes.json";
+import { getKb } from "@/lib/kb/store";
 
 export function pickRandomQuote(): string {
   const list = quotes as { text: string; from: string }[];
@@ -10,7 +11,9 @@ export function pickRandomQuote(): string {
 }
 
 export function pickRandomChineseStory(): { title: string; text: string } {
-  const list = chineseStories as { title: string; text: string }[];
+  const bundled = chineseStories as { title: string; text: string }[];
+  const extra = getKb().stories ?? [];
+  const list = extra.length ? [...bundled, ...extra] : bundled;
   return list[Math.floor(Math.random() * list.length)];
 }
 
@@ -29,9 +32,10 @@ export async function fetchHitokoto(category = "i"): Promise<string> {
 }
 
 export function pickRandomJoke(): string {
-  const list = jokes as { q: string; a: string }[];
-  const j = list[Math.floor(Math.random() * list.length)];
-  return `${j.q} ${j.a}`;
+  const bundled = (jokes as { q: string; a: string }[]).map((j) => `${j.q} ${j.a}`);
+  const extra = (getKb().jokes ?? []).map((j) => (typeof j === "string" ? j : `${j.q} ${j.a}`));
+  const list = extra.length ? [...bundled, ...extra] : bundled;
+  return list[Math.floor(Math.random() * list.length)];
 }
 
 /** 英文故事（英语模块用） */

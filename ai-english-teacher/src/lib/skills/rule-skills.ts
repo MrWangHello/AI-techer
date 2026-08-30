@@ -5,12 +5,12 @@ export const RULE_SKILLS: RuleEntry[] = [
   // nav.*
   {
     skillId: "nav.settings",
-    keywords: ["打开设置", "语音设置", "设置页", "settings", "配置", "选项", "设置"],
+    keywords: ["打开设置", "语音设置", "设置页", "settings", "配置", "选项", "设置", "知识库", "打开知识库", "内容库"],
     response: {
       intent: "nav_settings",
       emotion: "neutral",
       action: "none",
-      reply: "好的，打开设置页面~",
+      reply: "好的，打开设置。往下看「知识库」，可以导入单词和故事。",
       navigate: "settings",
     },
   },
@@ -62,7 +62,7 @@ export const RULE_SKILLS: RuleEntry[] = [
         "· 查词：书本用英语怎么说、apple什么意思\n" +
         "· 朗读：说完内容后说「朗读」，或点卡片 🔊\n" +
         "· 学习：汉字、拼音、口算、1加1等于几\n" +
-        "· 导航：回首页、看宠物、打开设置",
+        "· 导航：回首页、看宠物、打开设置、知识库",
     },
   },
   // study / quiz

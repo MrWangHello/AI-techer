@@ -13,6 +13,8 @@ import {
   parseStudySection,
   buildStudySection,
   SUBJECT_LABELS,
+  SUBJECT_PINYIN,
+  SUBJECT_EMOJI,
   CHINESE_SUB_LABELS,
   ENGLISH_SUB_LABELS,
   MATH_SUB_LABELS,
@@ -218,12 +220,18 @@ export default function StudyPanel({
           <button
             key={s}
             type="button"
+            aria-label={SUBJECT_LABELS[s]}
             onClick={() => setSubject(s)}
-            className={`shrink-0 px-3 py-1.5 rounded-full text-xs font-medium transition-all ${
-              subject === s ? "bg-pink-500 text-white shadow-sm" : "bg-white text-gray-500 border border-pink-100"
+            className={`shrink-0 min-h-11 px-3 py-1.5 rounded-2xl text-sm font-semibold transition-all leading-tight ${
+              subject === s ? "bg-pink-500 text-white shadow-sm" : "bg-white text-gray-600 border border-pink-100"
             }`}
           >
-            {SUBJECT_LABELS[s]}
+            <span className="block">
+              {SUBJECT_EMOJI[s]} {SUBJECT_LABELS[s]}
+            </span>
+            <span className={`block text-[11px] font-normal ${subject === s ? "text-pink-100" : "text-gray-400"}`}>
+              {SUBJECT_PINYIN[s]}
+            </span>
           </button>
         ))}
       </div>
@@ -237,8 +245,9 @@ export default function StudyPanel({
               type="button"
               title={SUB_TAB_VOICE_TIPS[key] ? `可说「${SUB_TAB_VOICE_TIPS[key]}」` : undefined}
               onClick={() => setSub(key)}
-              className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] ${
-                sub === key ? "bg-pink-100 text-pink-700 font-medium" : "text-gray-400"
+              aria-label={label}
+              className={`shrink-0 min-h-10 px-3 py-1.5 rounded-full text-sm ${
+                sub === key ? "bg-pink-100 text-pink-700 font-semibold" : "text-gray-500"
               }`}
             >
               {label}

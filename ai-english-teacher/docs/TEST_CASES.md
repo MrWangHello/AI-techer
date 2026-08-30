@@ -28,6 +28,8 @@
 | U-MATH-03 | 口算中说故事被拦截 | orchestrator |
 | U-MATH-04 | 键盘 1+0 再确定 | e2e features |
 | U-DICT-01 | 书本→book、apple→苹果 | local-dictionary |
+| U-KB-01 | 本机知识库「飞船→spaceship」 | local-dictionary / e2e kb-core |
+| U-CORE-01 | 帮助/导航/查词/口算/1加1/喂食 | e2e kb-core |
 | U-STT-01 | 美剧→美句 | normalize / orchestrator / e2e |
 | U-WIKI-01 | 猫/恐龙离线 | wiki.test / e2e |
 | U-HINT-01 | 各 section 有引导文案 | voice-hints.test |

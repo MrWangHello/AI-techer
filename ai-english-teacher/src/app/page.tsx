@@ -8,7 +8,9 @@ import VoiceReplyBar from "@/components/VoiceReplyBar";
 import PetStatus from "@/components/PetStatus";
 import StudyPanel from "@/components/StudyPanel";
 import VoiceHintBar from "@/components/VoiceHintBar";
+import KnowledgeBasePanel from "@/components/KnowledgeBasePanel";
 import { TAB_VOICE_HINTS } from "@/lib/voice-hints";
+import { initKnowledgeBase } from "@/lib/kb/store";
 import {
   loadPetData,
   savePetData,
@@ -79,6 +81,9 @@ export default function HomePage() {
     setSpeechSupported(isSpeechSupported());
     setSttSupported(isSTTSupported());
     setStudyWords(loadWordBatch());
+    void initKnowledgeBase().then(() => {
+      setStudyWords(loadWordBatch());
+    });
   }, []);
 
   // 保存宠物数据（仅在客户端加载后保存）
@@ -490,8 +495,8 @@ export default function HomePage() {
               onClick={() => (item.section ? goStudy(item.section) : setActiveTab("pet"))}
               className="bg-pink-50 rounded-xl p-3 hover:bg-pink-100 active:scale-95 transition-all text-center"
             >
-              <div className="text-xl mb-0.5">{item.icon}</div>
-              <div className="text-[10px] text-gray-500">{item.label}</div>
+              <div className="text-2xl mb-0.5">{item.icon}</div>
+              <div className="text-sm font-semibold text-gray-600">{item.label}</div>
             </button>
           ))}
         </div>
@@ -507,21 +512,21 @@ export default function HomePage() {
           className="bg-white rounded-2xl p-4 shadow-sm border border-pink-50 hover:shadow-md active:scale-95 transition-all"
         >
           <div className="text-2xl mb-1">🍖</div>
-          <div className="text-xs text-gray-500">喂食</div>
+          <div className="text-sm font-medium text-gray-600">喂食</div>
         </button>
         <button
           onClick={handlePlay}
           className="bg-white rounded-2xl p-4 shadow-sm border border-pink-50 hover:shadow-md active:scale-95 transition-all"
         >
           <div className="text-2xl mb-1">🎮</div>
-          <div className="text-xs text-gray-500">玩耍</div>
+          <div className="text-sm font-medium text-gray-600">玩耍</div>
         </button>
         <button
           onClick={() => goStudy("english.words")}
           className="bg-white rounded-2xl p-4 shadow-sm border border-pink-50 hover:shadow-md active:scale-95 transition-all"
         >
           <div className="text-2xl mb-1">📚</div>
-          <div className="text-xs text-gray-500">学习</div>
+          <div className="text-sm font-medium text-gray-600">学习</div>
         </button>
       </div>
 
@@ -719,6 +724,8 @@ export default function HomePage() {
   // 设置页内容
   const renderSettingsPage = () => (
     <div className="space-y-4">
+      <VoiceHintBar text={TAB_VOICE_HINTS.settings} />
+      <KnowledgeBasePanel />
       {/* 宠物改名 */}
       <div className="bg-white/80 rounded-2xl p-5 shadow-sm border border-pink-50">
         <h3 className="text-sm font-bold text-gray-600 mb-3">✏️ 宠物名称</h3>
@@ -855,7 +862,7 @@ export default function HomePage() {
       {/* 顶部状态栏 */}
       <header className="pt-3 pb-2 px-4 flex items-center justify-between">
         <div>
-          <h1 className="text-lg font-bold text-pink-600">
+          <h1 className="text-xl font-bold text-pink-600 tracking-wide">
             {activeTab === "home" && "🏠 首页"}
             {activeTab === "pet" && "🐱 我的宠物"}
             {activeTab === "study" && "📖 学习中心"}
@@ -934,13 +941,14 @@ export default function HomePage() {
           return (
             <button
               key={tab.key}
+              aria-label={tab.label}
               onClick={() => setActiveTab(tab.key)}
-              className={`flex flex-col items-center gap-0.5 px-4 py-1 rounded-xl transition-all ${
-                isActive ? "text-pink-500" : "text-gray-400 hover:text-gray-600"
+              className={`flex flex-col items-center gap-0.5 min-w-14 min-h-12 px-3 py-1.5 rounded-xl transition-all ${
+                isActive ? "text-pink-500" : "text-gray-500 hover:text-gray-700"
               }`}
             >
-              <Icon className={`w-5 h-5 ${isActive ? "fill-pink-100" : ""}`} />
-              <span className="text-[10px] font-medium">{tab.label}</span>
+              <Icon className={`w-6 h-6 ${isActive ? "fill-pink-100" : ""}`} />
+              <span className="text-sm font-semibold">{tab.label}</span>
             </button>
           );
         })}

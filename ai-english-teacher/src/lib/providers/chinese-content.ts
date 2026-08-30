@@ -4,6 +4,7 @@ import sentencesData from "@/data/sentences/grade1.json";
 import idiomsData from "@/data/idioms.json";
 import wordProblemsData from "@/data/word-problems/grade1.json";
 import englishSentences from "@/data/english-sentences/grade1.json";
+import { getKb } from "@/lib/kb/store";
 
 export interface PinyinItem {
   id: string;
@@ -69,7 +70,15 @@ export function pickRandomIdiom(): IdiomItem {
 }
 
 export function pickRandomWordProblem(): WordProblemItem {
-  return pick(wordProblemsData as WordProblemItem[]);
+  const bundled = wordProblemsData as WordProblemItem[];
+  const extra = (getKb().wordProblems ?? []).map((w) => ({
+    question: w.question,
+    answer: w.answer,
+    explain: w.explain,
+    emoji: w.emoji || "🧮",
+  }));
+  const list = extra.length ? [...bundled, ...extra] : bundled;
+  return pick(list);
 }
 
 export function pickRandomEnglishSentence(): EnglishSentenceItem {

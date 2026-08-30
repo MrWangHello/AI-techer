@@ -1,5 +1,10 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach } from "vitest";
 import { lookupDictionaryLocal, lookupLocalEn, lookupLocalZh } from "./local-dictionary";
+import { resetKbMemory, saveLocalPack } from "@/lib/kb/store";
+
+beforeEach(() => {
+  resetKbMemory();
+});
 
 describe("local dictionary", () => {
   it("looks up apple instantly without network", () => {
@@ -19,5 +24,14 @@ describe("local dictionary", () => {
   it("returns miss without throwing", () => {
     const res = lookupDictionaryLocal("xyzzy什么意思");
     expect(res?.intent).toBe("dict_miss");
+  });
+
+  it("hits knowledge-base dict without rebuild", () => {
+    saveLocalPack({ version: 1, dict: [{ zh: "火箭", en: "rocket", sentence: "A rocket flies." }] });
+    const res = lookupDictionaryLocal("火箭用英语怎么说");
+    expect(res?.intent).toBe("dict_hit");
+    expect(res?.reply).toContain("rocket");
+    expect(lookupLocalZh("火箭")?.en).toBe("rocket");
+    expect(lookupLocalEn("rocket")?.zh).toBe("火箭");
   });
 });

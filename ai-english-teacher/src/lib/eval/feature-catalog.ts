@@ -60,7 +60,7 @@ export const FEATURE_CASES: FeatureCase[] = [
     id: "nav.settings",
     name: "打开设置",
     tab: "global",
-    voicePhrases: ["打开设置", "设置页"],
+    voicePhrases: ["打开设置", "设置页", "知识库"],
     expected: { intent: "nav_settings", navigate: "settings" },
     tapFallback: true,
     offline: true,

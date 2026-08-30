@@ -50,6 +50,7 @@
 | study.checkin | 签到 | 签到 | 是 | 是 | ok |
 | pet.dressup | 装扮 | 装扮 | 否 | 是 | placeholder |
 | chat.greeting | 打招呼 | 你好 | 否 | 是 | ok |
+| kb.manage | 知识库 | 知识库、打开知识库 | 是（设置页） | 是 | ok |
 
 完整短语与期望 intent 以 `feature-catalog.ts` 为准。
 
@@ -60,7 +61,7 @@
 ### 3.1 英语
 
 - **单词卡**：`StudyCards`，词库 `words.json`（187）+ 换一批；朗读走 `voiceSpeed`
-- **词典**：本地同步查词，不请求外网；未收录立即 miss 提示
+- **词典**：本地同步查词，不请求外网；未收录立即 miss 提示；设置「知识库」或 `public/kb/pack.json` 可动态加词（见 `CONTENT_KB.md`）
 - **句子**：语音「每日英语」可走 API；点击子 Tab 用 `english-sentences/grade1.json`
 
 ### 3.2 语文

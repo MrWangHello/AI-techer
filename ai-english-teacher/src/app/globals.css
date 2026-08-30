@@ -17,10 +17,22 @@
   --font-sans: "PingFang SC", "Microsoft YaHei", "Inter", sans-serif;
 }
 
+html {
+  font-size: 18px;
+}
+
+@media (min-width: 768px) {
+  html {
+    font-size: 16px;
+  }
+}
+
 body {
   background: var(--background);
   color: var(--foreground);
-  font-family: "PingFang SC", "Microsoft YaHei", "Inter", sans-serif;
+  font-family: "PingFang SC", "Hiragino Sans GB", "Noto Sans SC", "Microsoft YaHei", ui-rounded, system-ui, sans-serif;
+  line-height: 1.65;
+  letter-spacing: 0.02em;
   -webkit-font-smoothing: antialiased;
 }
 

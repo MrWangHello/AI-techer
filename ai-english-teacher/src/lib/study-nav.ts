@@ -35,6 +35,22 @@ export const SUBJECT_LABELS: Record<StudySubject, string> = {
   explore: "探索",
 };
 
+export const SUBJECT_PINYIN: Record<StudySubject, string> = {
+  english: "yīng yǔ",
+  chinese: "yǔ wén",
+  math: "shù xué",
+  reading: "yuè dú",
+  explore: "tàn suǒ",
+};
+
+export const SUBJECT_EMOJI: Record<StudySubject, string> = {
+  english: "🔤",
+  chinese: "📖",
+  math: "🔢",
+  reading: "📚",
+  explore: "🔍",
+};
+
 export const CHINESE_SUB_LABELS: Record<string, string> = {
   pinyin: "拼音",
   hanzi: "汉字",

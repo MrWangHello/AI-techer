@@ -15,8 +15,8 @@ export default function VoiceHintBar({ text, className = "" }: VoiceHintBarProps
       role="note"
       aria-label="语音指令提示"
     >
-      <p className="text-[11px] text-pink-700 leading-relaxed">
-        <span className="font-medium text-pink-500">🎤 语音这样说：</span>
+      <p className="text-sm text-pink-800 leading-relaxed">
+        <span className="font-semibold text-pink-500">🎤 可以这样说：</span>
         {text}
       </p>
     </div>
