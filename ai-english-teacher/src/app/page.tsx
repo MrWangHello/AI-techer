@@ -407,7 +407,7 @@ export default function HomePage() {
       onTranscript={handleVoiceTranscript}
       onSpeakingChange={setCatSpeaking}
     >
-      <div className={activeTab === "home" ? "" : "hidden"}>
+      {activeTab === "home" && (
         <HomeTab
           pet={pet}
           interactionFeed={interactionFeed}
@@ -417,8 +417,8 @@ export default function HomePage() {
           onFeed={handleFeed}
           onPlay={handlePlay}
         />
-      </div>
-      <div className={activeTab === "pet" ? "" : "hidden"}>
+      )}
+      {activeTab === "pet" && (
         <PetTab
           pet={pet}
           mood={agentEmotion}
@@ -436,8 +436,8 @@ export default function HomePage() {
           onSleep={handleSleep}
           onToggleAchievements={() => setShowAchievements((v) => !v)}
         />
-      </div>
-      <div className={activeTab === "study" ? "" : "hidden"}>
+      )}
+      {activeTab === "study" && (
         <StudyTab
           pet={pet}
           studySection={studySection}
@@ -452,8 +452,8 @@ export default function HomePage() {
           onWordLearned={handleWordLearned}
           onQuizResult={handleQuizResult}
         />
-      </div>
-      <div className={activeTab === "settings" ? "" : "hidden"}>
+      )}
+      {activeTab === "settings" && (
         <SettingsTab
           pet={pet}
           showPetNameInput={showPetNameInput}
@@ -475,7 +475,7 @@ export default function HomePage() {
           onCancelReset={() => setShowResetConfirm(false)}
           onResetData={handleResetData}
         />
-      </div>
+      )}
     </AppShell>
   );
 }

@@ -16,7 +16,7 @@ test.describe("手机点读与侧栏对话", () => {
 
   test("学科芯片保留拼音，底栏没有拼音", async ({ page }) => {
     await openStudyTab(page);
-    await expect(page.getByText("yīng yǔ")).toBeVisible();
+    await expect(page.getByRole("button", { name: "英语" }).getByText("yīng yǔ")).toBeVisible();
     await expect(page.getByRole("navigation").getByText("shǒu yè")).toHaveCount(0);
     await expect(page.getByRole("navigation").getByText("xué xí")).toHaveCount(0);
   });
@@ -24,8 +24,9 @@ test.describe("手机点读与侧栏对话", () => {
   test("对话浮条露出「你」，全文不挡课卡", async ({ page }) => {
     await page.goto("/");
     await sendTextCommand(page, "帮助");
-    await expect(page.getByText("你").first()).toBeVisible();
-    await expect(page.getByText(/讲故事|口算|知识库/).first()).toBeVisible();
+    await expect(page.getByText("你", { exact: true }).first()).toBeVisible();
+    await expect(page.getByRole("button", { name: "打开对话" })).toBeVisible();
+    await expect(page.getByText(/讲故事|口算/).first()).toBeVisible();
   });
 
   test("测验点选项答题，小喇叭另读", async ({ page }) => {
