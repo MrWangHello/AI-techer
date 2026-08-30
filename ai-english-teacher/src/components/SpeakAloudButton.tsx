@@ -1,37 +1,30 @@
 "use client";
 
-import { Volume2 } from "lucide-react";
-import { speak, stopSpeaking } from "@/lib/speech";
+import SpeakIcon from "@/components/ui/SpeakIcon";
+import type { SpeakIconLang } from "@/lib/speak-lang";
+import { cn } from "@/lib/cn";
 
 interface SpeakAloudButtonProps {
   text: string;
   label?: string;
   voiceSpeed?: number;
+  lang?: SpeakIconLang;
   className?: string;
 }
 
 export default function SpeakAloudButton({
   text,
-  label = "朗读",
+  label = "朗读全部",
   voiceSpeed = 1,
+  lang = "auto",
   className = "",
 }: SpeakAloudButtonProps) {
   if (!text.trim()) return null;
 
-  const onSpeak = () => {
-    stopSpeaking();
-    speak(text, undefined, voiceSpeed);
-  };
-
   return (
-    <button
-      type="button"
-      onClick={onSpeak}
-      className={`inline-flex items-center gap-1 px-3 py-1.5 rounded-full bg-pink-50 border border-pink-200 text-pink-600 text-xs font-medium active:scale-95 transition-all ${className}`}
-      aria-label={label}
-    >
-      <Volume2 className="w-3.5 h-3.5" />
-      {label}
-    </button>
+    <div className={cn("inline-flex items-center gap-2", className)}>
+      <SpeakIcon text={text} lang={lang} voiceSpeed={voiceSpeed} label={label} />
+      <span className="text-sm font-medium text-pink-600">{label}</span>
+    </div>
   );
 }

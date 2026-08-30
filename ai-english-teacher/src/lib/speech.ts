@@ -5,6 +5,8 @@
  * STT：浏览器原生 SpeechRecognition / webkitSpeechRecognition
  */
 
+import { detectSpeakLang } from "./speak-lang";
+
 let recognition: any = null;
 let isListening = false;
 /** 主动 stop() 触发的 aborted，不应报错给用户 */
@@ -239,6 +241,10 @@ export function speak(text: string, onEnd?: () => void, speed?: number): boolean
     onSpeakingStateChange?.(false);
     return false;
   }
+}
+
+export function speakAuto(text: string, onEnd?: () => void, speed?: number): boolean {
+  return detectSpeakLang(text) === "en" ? speakEnglish(text, onEnd, speed) : speak(text, onEnd, speed);
 }
 
 export function speakEnglish(text: string, onEnd?: () => void, speed?: number): boolean {

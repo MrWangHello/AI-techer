@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import KbChrome from "@/components/KbChrome";
+import SpeakableText from "@/components/ui/SpeakableText";
 import { cloudKbStatusText, refreshCloudKb } from "@/lib/kb/cloud";
 import { getKbEntries, type KbEntry } from "@/lib/kb/entries";
 
@@ -43,15 +44,26 @@ export default function KbListPage() {
         添加
       </Link>
       {rows.length === 0 ? (
-        <p className="text-base text-gray-500 bg-white/80 rounded-2xl p-5 border border-pink-50">
-          还没有内容。先添加一批单词或故事。没配知识库地址时，也可以进去看怎么切开，但不能入库。
-        </p>
+        <div className="text-base text-gray-500 bg-white/80 rounded-2xl p-5 border border-pink-50">
+          <SpeakableText
+            text="还没有内容。先添加一批单词或故事。没配知识库地址时，也可以进去看怎么切开，但不能入库。"
+            lang="zh"
+            className="items-start"
+            textClassName="text-base text-gray-600"
+          />
+        </div>
       ) : (
         <ul className="space-y-2">
           {rows.map((row) => (
             <li key={row.id} className="bg-white/80 rounded-2xl px-4 py-3 border border-pink-50">
-              <span className="text-sm text-pink-500 mr-2">{KIND_LABEL[row.kind]}</span>
-              <span className="text-base text-gray-800">{label(row)}</span>
+              <SpeakableText
+                text={`${KIND_LABEL[row.kind]} ${label(row)}`}
+                lang="auto"
+                textClassName="text-base text-gray-800"
+              >
+                <span className="text-sm text-pink-500 mr-2">{KIND_LABEL[row.kind]}</span>
+                <span className="text-base text-gray-800">{label(row)}</span>
+              </SpeakableText>
             </li>
           ))}
         </ul>

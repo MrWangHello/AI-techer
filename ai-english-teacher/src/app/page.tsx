@@ -1,15 +1,11 @@
 "use client";
 
 import { useState, useEffect, useCallback, useRef } from "react";
-import { Home, PawPrint, BookOpen, Settings, RotateCcw } from "lucide-react";
-import RealisticCat from "@/components/Cat3D";
-import VoiceChatBar from "@/components/VoiceChatBar";
-import VoiceReplyBar from "@/components/VoiceReplyBar";
-import PetStatus from "@/components/PetStatus";
-import StudyPanel from "@/components/StudyPanel";
-import VoiceHintBar from "@/components/VoiceHintBar";
-import KbSettingsCard from "@/components/KbSettingsCard";
-import { TAB_VOICE_HINTS } from "@/lib/voice-hints";
+import AppShell from "@/components/AppShell";
+import HomeTab from "@/components/tabs/HomeTab";
+import PetTab from "@/components/tabs/PetTab";
+import StudyTab from "@/components/tabs/StudyTab";
+import SettingsTab from "@/components/tabs/SettingsTab";
 import { initKnowledgeBase } from "@/lib/kb/cloud";
 import {
   loadPetData,
@@ -23,29 +19,25 @@ import {
   checkAchievements,
   recordQuizResult,
   addStudyTime,
-  getLevelTitle,
   ACHIEVEMENTS,
   PetData,
 } from "@/lib/pet-data";
 import { speak, stopSpeaking } from "@/lib/speech";
 import { isSpeechSupported, isSTTSupported } from "@/lib/speech";
-import { handleUserMessage, AgentResponse } from "@/lib/mock-agent";
+import type { AgentResponse } from "@/lib/mock-agent";
 import type { ContentCard } from "@/lib/core/types";
 import type { MathQuestion } from "@/lib/math/generator";
 import { getStreak } from "@/lib/math/drill-state";
 import { submitDrillAnswer } from "@/lib/skills/math-skills";
 import { loadDefaultContentForSection } from "@/lib/study-content-loader";
-import { Word, getAllWords, loadWordBatch, refreshWordBatch } from "@/lib/words";
-
-type Tab = "home" | "pet" | "study" | "settings";
+import { Word, loadWordBatch, refreshWordBatch } from "@/lib/words";
+import type { Tab } from "@/lib/app-nav";
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
-  // 使用默认值初始化（SSR 和客户端第一次渲染一致），useEffect 中再加载 localStorage 数据
   const [pet, setPet] = useState<PetData>({ ...loadPetData() });
   const [petLoaded, setPetLoaded] = useState(false);
   const [agentEmotion, setAgentEmotion] = useState<"happy" | "sad" | "surprised" | "neutral" | "thinking">("neutral");
-  const [agentAction, setAgentAction] = useState<"feed" | "play" | "study" | "none">("none");
   const [lastReply, setLastReply] = useState<string>("");
   const [lastUserText, setLastUserText] = useState<string>("");
   const [checkinMsg, setCheckinMsg] = useState<string>("");
@@ -53,7 +45,6 @@ export default function HomePage() {
   const [interactionFeed, setInteractionFeed] = useState<{ icon: string; text: string; time: string }[]>([]);
   const [showPetNameInput, setShowPetNameInput] = useState(false);
   const [newPetName, setNewPetName] = useState("");
-  const [editingVoiceSpeed, setEditingVoiceSpeed] = useState(false);
   const [showAchievements, setShowAchievements] = useState(false);
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [studyingMinutes, setStudyingMinutes] = useState(0);
@@ -74,7 +65,6 @@ export default function HomePage() {
     [pet.voiceSpeed]
   );
 
-  // 客户端加载 localStorage 数据，避免 hydration 不匹配
   useEffect(() => {
     setPet(loadPetData());
     setPetLoaded(true);
@@ -90,14 +80,12 @@ export default function HomePage() {
     });
   }, []);
 
-  // 保存宠物数据（仅在客户端加载后保存）
   useEffect(() => {
     if (petLoaded) {
       savePetData(pet);
     }
   }, [pet, petLoaded]);
 
-  // 学习计时器
   useEffect(() => {
     if (activeTab !== "study") return;
     const interval = setInterval(() => {
@@ -111,14 +99,12 @@ export default function HomePage() {
     };
   }, [activeTab, studyingMinutes]);
 
-  // 添加互动记录
   const addFeed = useCallback((icon: string, text: string) => {
     const now = new Date();
     const time = `${now.getHours().toString().padStart(2, "0")}:${now.getMinutes().toString().padStart(2, "0")}`;
     setInteractionFeed((prev) => [{ icon, text, time }, ...prev].slice(0, 20));
   }, []);
 
-  // 检查成就
   const checkAndAwardAchievements = useCallback((data: PetData) => {
     const { newAchievements, updated } = checkAchievements(data);
     if (newAchievements.length > 0) {
@@ -141,11 +127,9 @@ export default function HomePage() {
     setMathStreak(getStreak());
   }, []);
 
-  // AI Agent 回复处理
   const handleAgentResponse = useCallback(
     (response: AgentResponse) => {
       setAgentEmotion(response.emotion);
-      setAgentAction(response.action as "feed" | "play" | "study" | "none");
       setLastReply(response.reply);
 
       if (response.navigate) {
@@ -299,7 +283,6 @@ export default function HomePage() {
     [applyStudySection]
   );
 
-  // 按钮互动
   const handleFeed = () => {
     setPet((prev) => {
       const updated = feedPet(prev);
@@ -388,10 +371,6 @@ export default function HomePage() {
     speakWithSpeed("数据已重置！让我们重新开始吧！", () => setCatSpeaking(false));
   };
 
-  const handleVoiceSpeedChange = (speed: number) => {
-    setPet((prev) => ({ ...prev, voiceSpeed: speed }));
-  };
-
   const previewVoiceSpeed = useCallback((speed: number) => {
     stopSpeaking();
     setCatSpeaking(true);
@@ -399,564 +378,103 @@ export default function HomePage() {
   }, []);
 
   const handleVoiceSpeedSlider = (speed: number) => {
-    handleVoiceSpeedChange(speed);
+    setPet((prev) => ({ ...prev, voiceSpeed: speed }));
     if (speedPreviewTimer.current) clearTimeout(speedPreviewTimer.current);
     speedPreviewTimer.current = setTimeout(() => previewVoiceSpeed(speed), 500);
   };
 
-  const tabs = [
-    { key: "home" as Tab, label: "首页", icon: Home },
-    { key: "pet" as Tab, label: "宠物", icon: PawPrint },
-    { key: "study" as Tab, label: "学习", icon: BookOpen },
-    { key: "settings" as Tab, label: "设置", icon: Settings },
-  ];
-
-  // 首页内容
-  const renderHomePage = () => (
-    <div className="space-y-4">
-      {/* 签到卡片 */}
-      <div className="bg-gradient-to-r from-pink-400 to-purple-400 rounded-2xl p-5 text-white">
-        <div className="flex items-center justify-between">
-          <div>
-            <p className="text-sm opacity-90">Bella 等你来互动</p>
-            <p className="text-2xl font-bold mt-1">
-              Lv.{pet.level} {pet.petName}
-            </p>
-            <p className="text-xs opacity-75 mt-0.5">{getLevelTitle(pet.level)}</p>
-          </div>
-          <div className="text-4xl">🐱</div>
-        </div>
-        <div className="flex gap-2 mt-3">
-          {[1, 2, 3, 4, 5, 6, 7].map((d) => (
-            <div
-              key={d}
-              className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold ${
-                d <= pet.checkInStreak ? "bg-white/30 text-white" : "bg-white/10 text-white/50"
-              }`}
-            >
-              {d}
-            </div>
-          ))}
-        </div>
-        <p className="text-xs mt-2 opacity-70">连续签到 {pet.checkInStreak} 天</p>
-      </div>
-
-      {/* 宠物状态概览 */}
-      <div className="bg-white/80 rounded-2xl p-4 shadow-sm border border-pink-50">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold text-gray-600">📊 状态概览</h3>
-          <span className="text-xs text-gray-400">金币: {pet.coins} 🪙</span>
-        </div>
-        <div className="grid grid-cols-3 gap-3 text-center">
-          <div>
-            <div className="text-lg">{pet.hunger >= 60 ? "😋" : pet.hunger >= 30 ? "😶" : "😰"}</div>
-            <div className="text-xs text-gray-400 mt-0.5">饱腹 {pet.hunger}</div>
-          </div>
-          <div>
-            <div className="text-lg">{pet.mood >= 60 ? "😄" : pet.mood >= 30 ? "😐" : "😢"}</div>
-            <div className="text-xs text-gray-400 mt-0.5">心情 {pet.mood}</div>
-          </div>
-          <div>
-            <div className="text-lg">⭐</div>
-            <div className="text-xs text-gray-400 mt-0.5">等级 {pet.level}</div>
-          </div>
-        </div>
-        <div className="mt-2 flex flex-wrap gap-1">
-          {pet.achievements.length > 0 && (
-            <>
-              <span className="text-xs text-yellow-500 mr-1">🏅 成就:</span>
-              {pet.achievements.slice(0, 3).map((id) => {
-                const ach = ACHIEVEMENTS.find((a) => a.id === id);
-                return ach ? (
-                  <span key={id} className="text-xs" title={ach.desc}>
-                    {ach.icon}
-                  </span>
-                ) : null;
-              })}
-              {pet.achievements.length > 3 && (
-                <span className="text-xs text-gray-400">+{pet.achievements.length - 3}</span>
-              )}
-            </>
-          )}
-        </div>
-      </div>
-
-      {/* 快捷入口 — 语音也可直达，点击作兜底 */}
-      <div className="bg-white/80 rounded-2xl p-4 shadow-sm border border-pink-50">
-        <h3 className="text-sm font-bold text-gray-600 mb-3">🚀 快捷入口</h3>
-        <div className="grid grid-cols-3 gap-2">
-          {[
-            { icon: "🇬🇧", label: "英语", section: "english.words" },
-            { icon: "📝", label: "语文", section: "chinese.hanzi" },
-            { icon: "🔢", label: "数学", section: "math.drill" },
-            { icon: "📖", label: "阅读", section: "reading.story" },
-            { icon: "🔍", label: "探索", section: "explore.weather" },
-            { icon: "🐱", label: "宠物", section: "" },
-          ].map((item) => (
-            <button
-              key={item.label}
-              type="button"
-              onClick={() => (item.section ? goStudy(item.section) : setActiveTab("pet"))}
-              className="bg-pink-50 rounded-xl p-3 hover:bg-pink-100 active:scale-95 transition-all text-center"
-            >
-              <div className="text-2xl mb-0.5">{item.icon}</div>
-              <div className="text-sm font-semibold text-gray-600">{item.label}</div>
-            </button>
-          ))}
-        </div>
-        <p className="text-[10px] text-gray-300 text-center mt-2">点击下方也可进入 · 语音见下方提示</p>
-      </div>
-
-      <VoiceHintBar text={TAB_VOICE_HINTS.home} />
-
-      {/* 快捷操作 */}
-      <div className="grid grid-cols-3 gap-3">
-        <button
-          onClick={handleFeed}
-          className="bg-white rounded-2xl p-4 shadow-sm border border-pink-50 hover:shadow-md active:scale-95 transition-all"
-        >
-          <div className="text-2xl mb-1">🍖</div>
-          <div className="text-sm font-medium text-gray-600">喂食</div>
-        </button>
-        <button
-          onClick={handlePlay}
-          className="bg-white rounded-2xl p-4 shadow-sm border border-pink-50 hover:shadow-md active:scale-95 transition-all"
-        >
-          <div className="text-2xl mb-1">🎮</div>
-          <div className="text-sm font-medium text-gray-600">玩耍</div>
-        </button>
-        <button
-          onClick={() => goStudy("english.words")}
-          className="bg-white rounded-2xl p-4 shadow-sm border border-pink-50 hover:shadow-md active:scale-95 transition-all"
-        >
-          <div className="text-2xl mb-1">📚</div>
-          <div className="text-sm font-medium text-gray-600">学习</div>
-        </button>
-      </div>
-
-      {/* 今日学习统计 */}
-      <div className="bg-white/80 rounded-2xl p-4 shadow-sm border border-pink-50">
-        <h3 className="text-sm font-bold text-gray-600 mb-3">📈 今日学习</h3>
-        <div className="grid grid-cols-2 gap-3 text-center">
-          <div className="bg-purple-50 rounded-xl p-3">
-            <div className="text-lg font-bold text-purple-600">{pet.learnedWords.length}</div>
-            <div className="text-xs text-gray-400">已学单词</div>
-          </div>
-          <div className="bg-green-50 rounded-xl p-3">
-            <div className="text-lg font-bold text-green-600">
-              {pet.quizTotal > 0 ? Math.round((pet.quizCorrect / pet.quizTotal) * 100) : 0}%
-            </div>
-            <div className="text-xs text-gray-400">测验正确率</div>
-          </div>
-        </div>
-      </div>
-
-      {/* 最近互动 */}
-      <div className="bg-white/80 rounded-2xl p-4 shadow-sm border border-pink-50">
-        <h3 className="text-sm font-bold text-gray-600 mb-3">📋 最近互动</h3>
-        {interactionFeed.length === 0 ? (
-          <p className="text-xs text-gray-400 text-center py-4">还没有互动记录，试试和 Bella 说话吧！</p>
-        ) : (
-          <div className="space-y-2">
-            {interactionFeed.slice(0, 5).map((item, i) => (
-              <div key={i} className="flex items-center gap-2 text-xs text-gray-500">
-                <span>{item.icon}</span>
-                <span className="flex-1">{item.text}</span>
-                <span className="text-gray-300">{item.time}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </div>
-    </div>
-  );
-
-  // 宠物页内容
-  const renderPetPage = () => (
-    <div className="space-y-4">
-      {/* 真实白猫 */}
-      <div className="rounded-2xl shadow-sm border border-pink-100/40 overflow-hidden">
-        <div className="aspect-[4/5] max-h-[500px] relative">
-          <RealisticCat
-            mood={agentEmotion}
-            speaking={catSpeaking}
-            onTap={() => {
-              setAgentEmotion("happy");
-              setCatSpeaking(true);
-              speakWithSpeed("嘿嘿，别戳我！", () => setCatSpeaking(false));
-            }}
-          />
-        </div>
-      </div>
-
-      {/* 宠物状态 */}
-      <PetStatus pet={pet} />
-
-      {/* 互动按钮 */}
-      <VoiceHintBar text={TAB_VOICE_HINTS.pet} className="mb-1" />
-      <div className="flex justify-center gap-4">
-        <button
-          onClick={handleFeed}
-          className="flex flex-col items-center gap-1"
-        >
-          <div className="w-12 h-12 bg-orange-100 rounded-full flex items-center justify-center text-xl hover:bg-orange-200 active:scale-90 transition-all">
-            🍖
-          </div>
-          <span className="text-xs text-gray-400">喂食</span>
-        </button>
-        <button
-          onClick={handlePlay}
-          className="flex flex-col items-center gap-1"
-        >
-          <div className="w-12 h-12 bg-blue-100 rounded-full flex items-center justify-center text-xl hover:bg-blue-200 active:scale-90 transition-all">
-            🎮
-          </div>
-          <span className="text-xs text-gray-400">玩耍</span>
-        </button>
-        <button
-          onClick={handleBathe}
-          className="flex flex-col items-center gap-1"
-        >
-          <div className="w-12 h-12 bg-cyan-100 rounded-full flex items-center justify-center text-xl hover:bg-cyan-200 active:scale-90 transition-all">
-            🛁
-          </div>
-          <span className="text-xs text-gray-400">洗澡</span>
-        </button>
-        <button
-          onClick={handleSleep}
-          className="flex flex-col items-center gap-1"
-        >
-          <div className="w-12 h-12 bg-purple-100 rounded-full flex items-center justify-center text-xl hover:bg-purple-200 active:scale-90 transition-all">
-            💤
-          </div>
-          <span className="text-xs text-gray-400">睡觉</span>
-        </button>
-      </div>
-
-      {/* 成就展示 */}
-      <div className="bg-white/80 rounded-2xl p-4 shadow-sm border border-pink-50">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-bold text-gray-600">🏅 成就 ({pet.achievements.length}/{ACHIEVEMENTS.length})</h3>
-          <button
-            onClick={() => setShowAchievements(!showAchievements)}
-            className="text-xs text-pink-500 hover:text-pink-600"
-          >
-            {showAchievements ? "收起" : "查看全部"}
-          </button>
-        </div>
-        <div className="flex flex-wrap gap-2">
-          {ACHIEVEMENTS.map((ach) => {
-            const unlocked = pet.achievements.includes(ach.id);
-            return (
-              <div
-                key={ach.id}
-                className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-full text-xs ${
-                  unlocked ? "bg-yellow-50 text-yellow-700" : "bg-gray-50 text-gray-300"
-                }`}
-                title={ach.desc}
-              >
-                <span>{ach.icon}</span>
-                <span>{ach.name}</span>
-              </div>
-            );
-          })}
-        </div>
-      </div>
-
-    </div>
-  );
-
-  // 学习页内容
-  const renderStudyPage = () => (
-    <div className="space-y-4">
-      <StudyPanel
-        studySection={studySection}
-        onSectionChange={applyStudySection}
-        contentCard={contentCard}
-        mathQuestion={mathQuestion}
-        mathStreak={mathStreak}
-        onMathAnswer={handleMathAnswer}
-        onRefreshContent={() => applyStudySection(studySection)}
-        words={studyWords}
-        onWordLearned={handleWordLearned}
-        onQuizResult={handleQuizResult}
-        voiceSpeed={pet.voiceSpeed}
-      />
-
-      {/* 学习统计 */}
-      <div className="bg-white/80 rounded-2xl p-4 shadow-sm border border-pink-50">
-        <h3 className="text-sm font-bold text-gray-600 mb-3">📊 学习统计</h3>
-        <div className="grid grid-cols-2 gap-3 mb-3">
-          <div className="bg-purple-50 rounded-xl p-3 text-center">
-            <div className="text-lg font-bold text-purple-600">{pet.learnedWords.length}/{getAllWords().length}</div>
-            <div className="text-xs text-gray-400">已学单词</div>
-          </div>
-          <div className="bg-green-50 rounded-xl p-3 text-center">
-            <div className="text-lg font-bold text-green-600">
-              {pet.quizTotal > 0 ? `${pet.quizCorrect}/${pet.quizTotal}` : "0/0"}
-            </div>
-            <div className="text-xs text-gray-400">测验正确</div>
-          </div>
-          <div className="bg-amber-50 rounded-xl p-3 text-center">
-            <div className="text-lg font-bold text-amber-600">{pet.totalStudyTime} 分钟</div>
-            <div className="text-xs text-gray-400">累计学习</div>
-          </div>
-          <div className="bg-rose-50 rounded-xl p-3 text-center">
-            <div className="text-lg font-bold text-rose-600">
-              {pet.quizTotal > 0 ? Math.round((pet.quizCorrect / pet.quizTotal) * 100) : 0}%
-            </div>
-            <div className="text-xs text-gray-400">正确率</div>
-          </div>
-        </div>
-
-        {/* 已学单词列表 */}
-        <h4 className="text-xs font-bold text-gray-500 mb-2">已学单词</h4>
-        <div className="flex flex-wrap gap-1.5">
-          {pet.learnedWords.map((word, i) => (
-            <span key={i} className="text-xs bg-green-50 text-green-600 px-2 py-0.5 rounded-full">
-              {word}
-            </span>
-          ))}
-          {pet.learnedWords.length === 0 && (
-            <span className="text-xs text-gray-300">还没有学过的单词</span>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-
-  // 设置页内容
-  const renderSettingsPage = () => (
-    <div className="space-y-4">
-      <VoiceHintBar text={TAB_VOICE_HINTS.settings} />
-      <KbSettingsCard />
-      {/* 宠物改名 */}
-      <div className="bg-white/80 rounded-2xl p-5 shadow-sm border border-pink-50">
-        <h3 className="text-lg font-bold text-gray-600 mb-3">✏️ 宠物名称</h3>
-        {showPetNameInput ? (
-          <div className="flex gap-2">
-            <input
-              type="text"
-              value={newPetName}
-              onChange={(e) => setNewPetName(e.target.value)}
-              placeholder="输入新名字"
-              className="flex-1 px-3 py-2 text-sm border border-pink-200 rounded-xl focus:outline-none focus:border-pink-400"
-              onKeyDown={(e) => e.key === "Enter" && handleRenamePet()}
-              autoFocus
-            />
-            <button
-              onClick={handleRenamePet}
-              className="px-4 py-2 bg-pink-500 text-white text-sm rounded-xl hover:bg-pink-600"
-            >
-              确定
-            </button>
-            <button
-              onClick={() => setShowPetNameInput(false)}
-              className="px-4 py-2 bg-gray-100 text-gray-500 text-sm rounded-xl hover:bg-gray-200"
-            >
-              取消
-            </button>
-          </div>
-        ) : (
-          <div className="flex items-center justify-between">
-            <span className="text-sm text-gray-500">当前名称: <strong className="text-pink-600">{pet.petName}</strong></span>
-            <button
-              onClick={() => {
-                setNewPetName(pet.petName);
-                setShowPetNameInput(true);
-              }}
-              className="text-xs text-pink-500 hover:text-pink-600"
-            >
-              修改
-            </button>
-          </div>
-        )}
-      </div>
-
-      {/* 语音设置 */}
-      <div className="bg-white/80 rounded-2xl p-5 shadow-sm border border-pink-50">
-        <h3 className="text-lg font-bold text-gray-600 mb-3">🎙️ 语音设置</h3>
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <span className="text-xs text-gray-500">语音速度</span>
-            <span className="text-xs text-gray-400">{pet.voiceSpeed.toFixed(1)}x</span>
-          </div>
-          <input
-            type="range"
-            min="0.5"
-            max="2.0"
-            step="0.1"
-            value={pet.voiceSpeed}
-            onChange={(e) => handleVoiceSpeedSlider(parseFloat(e.target.value))}
-            className="w-full accent-pink-500"
-          />
-          <div className="flex justify-between text-xs text-gray-300">
-            <span>慢</span>
-            <span>正常</span>
-            <span>快</span>
-          </div>
-          <button
-            type="button"
-            onClick={() => previewVoiceSpeed(pet.voiceSpeed)}
-            className="mt-2 w-full py-2 text-xs text-pink-600 bg-pink-50 border border-pink-200 rounded-xl active:scale-[0.98]"
-          >
-            🔊 试听当前语速
-          </button>
-          <p className="text-[10px] text-gray-400 leading-relaxed">
-            拖动滑块约 0.5 秒后会自动试听；部分手机浏览器对语速支持有限，以试听为准。
-          </p>
-        </div>
-        <div className="mt-3 space-y-1 text-xs text-gray-500">
-          <p>语音合成: {speechSupported === null ? "检测中..." : speechSupported ? "✅ 支持" : "❌ 不支持（建议使用 Chrome）"}</p>
-          <p>语音识别: {sttSupported === null ? "检测中..." : sttSupported ? "✅ 支持" : "❌ 不支持（可使用文字输入）"}</p>
-        </div>
-      </div>
-
-      {/* 数据管理 */}
-      <div className="bg-white/80 rounded-2xl p-5 shadow-sm border border-pink-50">
-        <h3 className="text-lg font-bold text-gray-600 mb-3">🗄️ 数据管理</h3>
-        <div className="space-y-2 text-xs text-gray-500">
-          <p>等级: Lv.{pet.level} · 经验: {pet.exp}/{pet.level * 100}</p>
-          <p>金币: {pet.coins} · 连续签到: {pet.checkInStreak} 天</p>
-          <p className="text-gray-300 mt-2">数据存储在浏览器本地 (localStorage)</p>
-        </div>
-        {showResetConfirm ? (
-          <div className="mt-3 p-3 bg-red-50 rounded-xl">
-            <p className="text-xs text-red-600 mb-2">确定要清除所有数据吗？此操作不可恢复！</p>
-            <div className="flex gap-2">
-              <button
-                onClick={handleResetData}
-                className="px-4 py-2 bg-red-500 text-white text-xs rounded-xl hover:bg-red-600"
-              >
-                确认清除
-              </button>
-              <button
-                onClick={() => setShowResetConfirm(false)}
-                className="px-4 py-2 bg-gray-100 text-gray-500 text-xs rounded-xl hover:bg-gray-200"
-              >
-                取消
-              </button>
-            </div>
-          </div>
-        ) : (
-          <button
-            onClick={() => setShowResetConfirm(true)}
-            className="mt-3 flex items-center gap-1 text-xs text-red-400 hover:text-red-500"
-          >
-            <RotateCcw className="w-3 h-3" />
-            清除所有数据
-          </button>
-        )}
-      </div>
-
-      {/* 关于 */}
-      <div className="bg-white/80 rounded-2xl p-5 shadow-sm border border-pink-50">
-        <h3 className="text-lg font-bold text-gray-600 mb-3">🎯 关于</h3>
-        <div className="space-y-2 text-xs text-gray-500">
-          <p>AI 英语教师 - Bella 是一款语音驱动的英语学习工具。</p>
-          <p>通过虚拟宠物 + 语音交互，让学习更轻松有趣。</p>
-          <p className="text-gray-300 mt-2">Version 1.0.0 · 纯 Web 版</p>
-        </div>
-      </div>
-    </div>
-  );
-
   return (
-    <div className="flex flex-col h-full bg-gradient-to-b from-pink-50 to-white">
-      {/* 顶部状态栏 */}
-      <header className="pt-3 pb-2 px-4 flex items-center justify-between">
-        <div>
-          <h1 className="text-xl font-bold text-pink-600 tracking-wide">
-            {activeTab === "home" && "🏠 首页"}
-            {activeTab === "pet" && "🐱 我的宠物"}
-            {activeTab === "study" && "📖 学习中心"}
-            {activeTab === "settings" && "⚙️ 设置"}
-          </h1>
-        </div>
-        <div className="flex items-center gap-2">
-          {activeTab === "home" && (
-            <button
-              onClick={handleCheckin}
-              className="text-xs bg-pink-100 text-pink-600 px-3 py-1.5 rounded-full hover:bg-pink-200 active:scale-95 transition-all"
-            >
-              签到
-            </button>
-          )}
-          {activeTab === "pet" && (
-            <button
-              onClick={() => setShowAchievements(!showAchievements)}
-              className="text-xs bg-yellow-100 text-yellow-600 px-3 py-1.5 rounded-full hover:bg-yellow-200 active:scale-95 transition-all"
-            >
-              🏅 {pet.achievements.length}
-            </button>
-          )}
-          <span className="text-xs text-gray-400">🪙 {pet.coins}</span>
-        </div>
-      </header>
-
-      {/* 提示消息 */}
-      {checkinMsg && (
-        <div className="mx-4 mb-2 bg-green-50 border border-green-200 text-green-700 text-xs rounded-xl px-3 py-2 animate-fadeIn">
-          {checkinMsg}
-          <button onClick={() => setCheckinMsg("")} className="float-right text-green-400">✕</button>
-        </div>
-      )}
-      {achievementMsg && (
-        <div className="mx-4 mb-2 bg-yellow-50 border border-yellow-200 text-yellow-700 text-xs rounded-xl px-3 py-2 animate-fadeIn">
-          {achievementMsg}
-          <button onClick={() => setAchievementMsg("")} className="float-right text-yellow-400">✕</button>
-        </div>
-      )}
-
-      {/* 全局语音回复 */}
-      <VoiceReplyBar
-        userText={lastUserText}
-        reply={lastReply}
-        onDismiss={() => {
-          setLastReply("");
-          setLastUserText("");
-        }}
-      />
-
-      {/* 主内容区 */}
-      <main className="flex-1 overflow-y-auto hide-scrollbar px-4 pb-2">
-        <div className={activeTab === "home" ? "" : "hidden"}>{renderHomePage()}</div>
-        <div className={activeTab === "pet" ? "" : "hidden"}>{renderPetPage()}</div>
-        <div className={activeTab === "study" ? "" : "hidden"}>{renderStudyPage()}</div>
-        <div className={activeTab === "settings" ? "" : "hidden"}>{renderSettingsPage()}</div>
-      </main>
-
-      {/* 全局语音/文字输入栏（类微信/豆包） */}
-      <VoiceChatBar
-        onAgentResponse={handleAgentResponse}
-        onTranscript={handleVoiceTranscript}
-        onSpeakingChange={setCatSpeaking}
-        voiceSpeed={pet.voiceSpeed}
-      />
-
-      {/* 底部导航栏 */}
-      <nav
-        className="bg-white border-t border-pink-100 flex justify-around items-center py-2 px-2"
-        style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))" }}
-      >
-        {tabs.map((tab) => {
-          const Icon = tab.icon;
-          const isActive = activeTab === tab.key;
-          return (
-            <button
-              key={tab.key}
-              aria-label={tab.label}
-              onClick={() => setActiveTab(tab.key)}
-              className={`flex flex-col items-center gap-0.5 min-w-14 min-h-12 px-3 py-1.5 rounded-xl transition-all ${
-                isActive ? "text-pink-500" : "text-gray-500 hover:text-gray-700"
-              }`}
-            >
-              <Icon className={`w-6 h-6 ${isActive ? "fill-pink-100" : ""}`} />
-              <span className="text-sm font-semibold">{tab.label}</span>
-            </button>
-          );
-        })}
-      </nav>
-    </div>
+    <AppShell
+      activeTab={activeTab}
+      onTabChange={setActiveTab}
+      coins={pet.coins}
+      onCheckin={handleCheckin}
+      onToggleAchievements={() => setShowAchievements((v) => !v)}
+      achievementCount={pet.achievements.length}
+      checkinMsg={checkinMsg}
+      achievementMsg={achievementMsg}
+      onDismissCheckin={() => setCheckinMsg("")}
+      onDismissAchievement={() => setAchievementMsg("")}
+      lastUserText={lastUserText}
+      lastReply={lastReply}
+      onDismissReply={() => {
+        setLastReply("");
+        setLastUserText("");
+      }}
+      voiceSpeed={pet.voiceSpeed}
+      onAgentResponse={handleAgentResponse}
+      onTranscript={handleVoiceTranscript}
+      onSpeakingChange={setCatSpeaking}
+    >
+      <div className={activeTab === "home" ? "" : "hidden"}>
+        <HomeTab
+          pet={pet}
+          interactionFeed={interactionFeed}
+          voiceSpeed={pet.voiceSpeed}
+          onGoStudy={goStudy}
+          onGoPet={() => setActiveTab("pet")}
+          onFeed={handleFeed}
+          onPlay={handlePlay}
+        />
+      </div>
+      <div className={activeTab === "pet" ? "" : "hidden"}>
+        <PetTab
+          pet={pet}
+          mood={agentEmotion}
+          speaking={catSpeaking}
+          showAchievements={showAchievements}
+          voiceSpeed={pet.voiceSpeed}
+          onTapCat={() => {
+            setAgentEmotion("happy");
+            setCatSpeaking(true);
+            speakWithSpeed("嘿嘿，别戳我！", () => setCatSpeaking(false));
+          }}
+          onFeed={handleFeed}
+          onPlay={handlePlay}
+          onBathe={handleBathe}
+          onSleep={handleSleep}
+          onToggleAchievements={() => setShowAchievements((v) => !v)}
+        />
+      </div>
+      <div className={activeTab === "study" ? "" : "hidden"}>
+        <StudyTab
+          pet={pet}
+          studySection={studySection}
+          contentCard={contentCard}
+          mathQuestion={mathQuestion}
+          mathStreak={mathStreak}
+          words={studyWords}
+          voiceSpeed={pet.voiceSpeed}
+          onSectionChange={applyStudySection}
+          onMathAnswer={handleMathAnswer}
+          onRefreshContent={() => applyStudySection(studySection)}
+          onWordLearned={handleWordLearned}
+          onQuizResult={handleQuizResult}
+        />
+      </div>
+      <div className={activeTab === "settings" ? "" : "hidden"}>
+        <SettingsTab
+          pet={pet}
+          showPetNameInput={showPetNameInput}
+          newPetName={newPetName}
+          showResetConfirm={showResetConfirm}
+          speechSupported={speechSupported}
+          sttSupported={sttSupported}
+          voiceSpeed={pet.voiceSpeed}
+          onNewPetNameChange={setNewPetName}
+          onStartRename={() => {
+            setNewPetName(pet.petName);
+            setShowPetNameInput(true);
+          }}
+          onRename={handleRenamePet}
+          onCancelRename={() => setShowPetNameInput(false)}
+          onVoiceSpeedSlider={handleVoiceSpeedSlider}
+          onPreviewVoiceSpeed={previewVoiceSpeed}
+          onShowReset={() => setShowResetConfirm(true)}
+          onCancelReset={() => setShowResetConfirm(false)}
+          onResetData={handleResetData}
+        />
+      </div>
+    </AppShell>
   );
 }

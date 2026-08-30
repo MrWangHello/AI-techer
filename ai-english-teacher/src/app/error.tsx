@@ -9,8 +9,8 @@ export default function Error({
   return (
     <div className="min-h-screen flex flex-col items-center justify-center p-6 bg-[#f0ebe4] text-center">
       <p className="text-4xl mb-3">😿</p>
-      <h1 className="text-lg font-bold text-gray-800 mb-2">页面出了点小问题</h1>
-      <p className="text-sm text-gray-500 mb-6 max-w-xs leading-relaxed">
+      <h1 className="text-xl font-bold text-gray-800 mb-2">页面出了点小问题</h1>
+      <p className="text-base text-gray-500 mb-6 max-w-xs leading-relaxed">
         可能是网络不稳定或内存不足。请点重试，或返回首页继续使用。
       </p>
       <div className="flex gap-3">

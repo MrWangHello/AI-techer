@@ -17,7 +17,7 @@ export const viewport = {
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
     <html lang="zh-CN" className="h-full">
-      <body className="h-full flex flex-col bg-[#fdf2f8] text-[#1f2937]">
+      <body className="h-full flex flex-col bg-background text-foreground font-sans">
         {children}
       </body>
     </html>

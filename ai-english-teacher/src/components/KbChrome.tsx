@@ -16,11 +16,11 @@ export default function KbChrome({
       <header className="flex items-center gap-3 mb-4">
         <Link
           href={backHref}
-          className="min-h-11 px-3 inline-flex items-center text-base text-pink-600 bg-white rounded-xl border border-pink-100"
+          className="min-h-12 px-3 inline-flex items-center text-base text-pink-600 bg-white rounded-xl border border-pink-100"
         >
           ← {backLabel}
         </Link>
-        <h1 className="text-xl font-bold text-pink-600">{title}</h1>
+        <h1 className="text-2xl font-bold text-pink-600">{title}</h1>
       </header>
       {children}
     </div>

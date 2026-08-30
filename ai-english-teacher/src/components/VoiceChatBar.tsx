@@ -316,11 +316,11 @@ export default function VoiceChatBar({
   const busy = listening || speaking || thinking;
 
   return (
-    <div className="shrink-0 bg-white border-t border-pink-100 px-3 pt-2 pb-2">
-      {hint && <p className="text-[10px] text-amber-600 text-center mb-1.5 animate-fadeIn">{hint}</p>}
+    <div className="shrink-0 bg-white border-t border-pink-100 px-3 pt-2 pb-2 max-w-lg mx-auto w-full">
+      {hint && <p className="text-sm text-amber-700 text-center mb-1.5 animate-fadeIn">{hint}</p>}
 
       {interimText && (holding || listening) && (
-        <p className="text-[10px] text-gray-500 text-center mb-1 truncate px-2">{interimText}</p>
+        <p className="text-sm text-gray-600 text-center mb-1.5 px-2 break-words whitespace-pre-wrap">{interimText}</p>
       )}
 
       <div className="flex items-end gap-2">
@@ -328,10 +328,10 @@ export default function VoiceChatBar({
           type="button"
           onClick={toggleMode}
           disabled={busy}
-          className="shrink-0 w-11 h-11 flex items-center justify-center rounded-full text-gray-400 hover:text-pink-500 hover:bg-pink-50 active:scale-95 transition-all disabled:opacity-40"
+          className="shrink-0 w-12 h-12 flex items-center justify-center rounded-full text-gray-500 hover:text-pink-500 hover:bg-pink-50 active:scale-95 transition-all disabled:opacity-40"
           aria-label={mode === "voice" ? "切换到键盘输入" : "切换到语音输入"}
         >
-          {mode === "voice" ? <Keyboard className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
+          {mode === "voice" ? <Keyboard className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
         </button>
 
         {mode === "voice" ? (
@@ -344,8 +344,8 @@ export default function VoiceChatBar({
             onContextMenu={(e) => e.preventDefault()}
             disabled={speaking || thinking}
             className={`
-              flex-1 min-h-12 h-12 rounded-full flex items-center justify-center gap-2
-              text-sm font-medium transition-all select-none touch-none
+              flex-1 min-h-14 h-14 rounded-full flex items-center justify-center gap-2
+              text-base font-medium transition-all select-none touch-none
               ${
                 holding
                   ? "bg-red-50 text-red-500 border border-red-200 scale-[0.98]"
@@ -361,27 +361,27 @@ export default function VoiceChatBar({
           >
             {holding ? (
               <>
-                <Mic className="w-4 h-4 animate-pulse" />
+                <Mic className="w-6 h-6 animate-pulse" />
                 松手发送...
               </>
             ) : listening ? (
               <>
-                <Mic className="w-4 h-4" />
+                <Mic className="w-6 h-6" />
                 正在听...
               </>
             ) : thinking ? (
               <>
-                <Loader2 className="w-4 h-4 animate-spin" />
+                <Loader2 className="w-6 h-6 animate-spin" />
                 Bella 在想...
               </>
             ) : speaking ? (
               <>
-                <Volume1 className="w-4 h-4 animate-pulse" />
+                <Volume1 className="w-6 h-6 animate-pulse" />
                 Bella 正在说话...
               </>
             ) : (
               <>
-                <Mic className="w-4 h-4" />
+                <Mic className="w-6 h-6" />
                 点击说话 · 长按连说
               </>
             )}
@@ -395,7 +395,7 @@ export default function VoiceChatBar({
             onKeyDown={(e) => e.key === "Enter" && submitText()}
             placeholder="输入文字与 Bella 对话..."
             disabled={thinking}
-            className="flex-1 h-10 px-4 text-sm bg-gray-50 border border-pink-100 rounded-full focus:outline-none focus:border-pink-300 focus:bg-white disabled:opacity-60"
+            className="flex-1 min-h-14 h-14 px-4 text-base bg-gray-50 border border-pink-100 rounded-full focus:outline-none focus:border-pink-300 focus:bg-white disabled:opacity-60"
           />
         )}
 
@@ -404,14 +404,14 @@ export default function VoiceChatBar({
             type="button"
             onClick={submitText}
             disabled={!textInput.trim() || thinking}
-            className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-pink-500 text-white hover:bg-pink-600 disabled:opacity-40 active:scale-95 transition-all"
+            className="shrink-0 w-12 h-12 flex items-center justify-center rounded-full bg-pink-500 text-white hover:bg-pink-600 disabled:opacity-40 active:scale-95 transition-all"
             aria-label="发送"
           >
-            {thinking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
+            {thinking ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
           </button>
         )}
       </div>
-      <p className="text-[9px] text-center text-gray-300 mt-1">轻点=说一句 · 长按=连续说 · 键盘图标切文字</p>
+      <p className="text-sm text-center text-gray-500 mt-1.5">轻点说一句 · 长按连续说 · 键盘切文字</p>
     </div>
   );
 }

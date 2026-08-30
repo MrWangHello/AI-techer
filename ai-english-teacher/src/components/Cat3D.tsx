@@ -269,13 +269,13 @@ export default function Cat3D({ mood = "neutral", onTap, speaking = false }: Cat
         </div>
 
         <div className="text-center mt-1">
-          <span className="text-[10px] text-gray-400">点击我互动</span>
+          <span className="text-sm text-gray-500">点击我互动</span>
         </div>
       </div>
 
       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10">
         <span
-          className={`text-[10px] px-2 py-0.5 rounded-full transition-all duration-300 backdrop-blur-sm ${
+          className={`text-sm px-3 py-1 rounded-full transition-all duration-300 backdrop-blur-sm ${
             mood === "happy"
               ? "bg-amber-100/60 text-amber-600"
               : mood === "sad"

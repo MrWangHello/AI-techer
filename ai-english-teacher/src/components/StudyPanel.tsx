@@ -5,6 +5,7 @@ import type { Word } from "@/lib/words";
 import StudyCards from "@/components/StudyCards";
 import MathDrill from "@/components/MathDrill";
 import SpeakAloudButton from "@/components/SpeakAloudButton";
+import SpeakableText from "@/components/ui/SpeakableText";
 import VoiceHintBar from "@/components/VoiceHintBar";
 import { getVoiceHintForSection, SUB_TAB_VOICE_TIPS } from "@/lib/voice-hints";
 import { getSpeakableFromCard } from "@/lib/content/speakable";
@@ -71,10 +72,33 @@ function ContentCardView({ card, voiceSpeed }: { card: ContentCard; voiceSpeed?:
       return (
         <CardShell speakText={speakText} voiceSpeed={voiceSpeed}>
           <div className="bg-white rounded-2xl p-6 text-center border border-pink-100">
-            <div className="text-5xl mb-2">{item.emoji}</div>
-            <div className="text-6xl font-bold text-pink-600 mb-2">{item.display}</div>
-            <p className="text-sm text-gray-600">{item.tip}</p>
-            <p className="text-xs text-gray-400 mt-2">例：{item.example}</p>
+            <div className="text-5xl mb-3">{item.emoji}</div>
+            <SpeakableText
+              text={item.display}
+              lang="zh"
+              voiceSpeed={voiceSpeed}
+              align="center"
+              textClassName="text-6xl font-bold text-pink-600"
+            />
+            <SpeakableText
+              text={item.tip}
+              lang="zh"
+              voiceSpeed={voiceSpeed}
+              align="center"
+              className="mt-3"
+              textClassName="text-base text-gray-600"
+            />
+            <SpeakableText
+              text={item.example}
+              speakText={item.example}
+              lang="zh"
+              voiceSpeed={voiceSpeed}
+              align="center"
+              className="mt-3"
+              textClassName="text-base text-gray-600"
+            >
+              例：{item.example}
+            </SpeakableText>
           </div>
         </CardShell>
       );
@@ -85,11 +109,35 @@ function ContentCardView({ card, voiceSpeed }: { card: ContentCard; voiceSpeed?:
       return (
         <CardShell speakText={speakText} voiceSpeed={voiceSpeed}>
           <div className="bg-white rounded-2xl p-6 text-center border border-pink-100">
-            <div className="text-4xl mb-2">{item.emoji}</div>
-            <div className="text-7xl font-bold text-gray-800 mb-1">{item.char}</div>
-            <p className="text-sm text-pink-500">{item.pinyin}</p>
-            <p className="text-xs text-gray-500 mt-2">组词：{item.words.join(" · ")}</p>
-            <p className="text-sm text-gray-600 mt-3">{item.sentence}</p>
+            <div className="text-4xl mb-3">{item.emoji}</div>
+            <SpeakableText
+              text={`${item.char}，${item.pinyin}`}
+              lang="zh"
+              voiceSpeed={voiceSpeed}
+              align="center"
+              textClassName="text-7xl font-bold text-gray-800"
+            >
+              {item.char}
+            </SpeakableText>
+            <p className="text-xl text-pink-500 mt-2">{item.pinyin}</p>
+            <SpeakableText
+              text={item.words.join("，")}
+              lang="zh"
+              voiceSpeed={voiceSpeed}
+              align="center"
+              className="mt-3"
+              textClassName="text-base text-gray-600"
+            >
+              组词：{item.words.join(" · ")}
+            </SpeakableText>
+            <SpeakableText
+              text={item.sentence}
+              lang="zh"
+              voiceSpeed={voiceSpeed}
+              align="center"
+              className="mt-3"
+              textClassName="text-base text-gray-700"
+            />
           </div>
         </CardShell>
       );
@@ -100,8 +148,23 @@ function ContentCardView({ card, voiceSpeed }: { card: ContentCard; voiceSpeed?:
       return (
         <CardShell speakText={speakText} voiceSpeed={voiceSpeed}>
           <div className="bg-white rounded-2xl p-6 border border-pink-100">
-            <p className="text-2xl leading-relaxed text-gray-800 text-center tracking-widest">{item.text}</p>
-            {item.hint && <p className="text-xs text-center text-gray-400 mt-3">{item.hint}</p>}
+            <SpeakableText
+              text={item.text}
+              lang="zh"
+              voiceSpeed={voiceSpeed}
+              align="center"
+              textClassName="text-2xl leading-relaxed text-gray-800 tracking-widest"
+            />
+            {item.hint && (
+              <SpeakableText
+                text={item.hint}
+                lang="zh"
+                voiceSpeed={voiceSpeed}
+                align="center"
+                className="mt-3"
+                textClassName="text-base text-gray-500"
+              />
+            )}
           </div>
         </CardShell>
       );
@@ -111,11 +174,25 @@ function ContentCardView({ card, voiceSpeed }: { card: ContentCard; voiceSpeed?:
       if (!item) return null;
       return (
         <CardShell speakText={speakText} voiceSpeed={voiceSpeed}>
-          <div className="bg-white rounded-2xl p-5 border border-amber-100">
-            <h3 className="text-2xl font-bold text-amber-800">{item.word}</h3>
-            <p className="text-xs text-gray-400">{item.pinyin}</p>
-            <p className="text-sm text-gray-700 mt-2">{item.meaning}</p>
-            <p className="text-xs text-gray-500 mt-2">例：{item.example}</p>
+          <div className="bg-white rounded-2xl p-5 border border-amber-100 space-y-3">
+            <SpeakableText
+              text={`${item.word}，${item.pinyin}`}
+              lang="zh"
+              voiceSpeed={voiceSpeed}
+              textClassName="text-3xl font-bold text-amber-800"
+            >
+              {item.word}
+            </SpeakableText>
+            <p className="text-base text-pink-500">{item.pinyin}</p>
+            <SpeakableText text={item.meaning} lang="zh" voiceSpeed={voiceSpeed} textClassName="text-base text-gray-700" />
+            <SpeakableText
+              text={item.example}
+              lang="zh"
+              voiceSpeed={voiceSpeed}
+              textClassName="text-base text-gray-600"
+            >
+              例：{item.example}
+            </SpeakableText>
           </div>
         </CardShell>
       );
@@ -125,10 +202,22 @@ function ContentCardView({ card, voiceSpeed }: { card: ContentCard; voiceSpeed?:
       if (!item) return null;
       return (
         <CardShell speakText={speakText} voiceSpeed={voiceSpeed}>
-          <div className="bg-white rounded-2xl p-6 text-center border border-blue-100">
-            <div className="text-4xl mb-2">{item.emoji}</div>
-            <p className="text-lg font-semibold text-blue-700">{item.en}</p>
-            <p className="text-sm text-gray-500 mt-2">{item.zh}</p>
+          <div className="bg-white rounded-2xl p-6 text-center border border-blue-100 space-y-3">
+            <div className="text-4xl">{item.emoji}</div>
+            <SpeakableText
+              text={item.en}
+              lang="en"
+              voiceSpeed={voiceSpeed}
+              align="center"
+              textClassName="text-2xl font-semibold text-blue-700"
+            />
+            <SpeakableText
+              text={item.zh}
+              lang="zh"
+              voiceSpeed={voiceSpeed}
+              align="center"
+              textClassName="text-base text-gray-600"
+            />
           </div>
         </CardShell>
       );
@@ -138,10 +227,10 @@ function ContentCardView({ card, voiceSpeed }: { card: ContentCard; voiceSpeed?:
       if (!item) return null;
       return (
         <CardShell speakText={speakText} voiceSpeed={voiceSpeed}>
-          <div className="bg-white rounded-2xl p-5 border border-green-100">
-            <div className="text-3xl text-center mb-2">{item.emoji}</div>
-            <p className="text-sm text-gray-800 leading-relaxed">{item.question}</p>
-            <p className="text-xs text-gray-400 mt-3">语音说出答案，或说「答案是 {item.answer}」</p>
+          <div className="bg-white rounded-2xl p-5 border border-green-100 space-y-3">
+            <div className="text-3xl text-center">{item.emoji}</div>
+            <SpeakableText text={item.question} lang="zh" voiceSpeed={voiceSpeed} textClassName="text-base text-gray-800 leading-relaxed" />
+            <p className="text-sm text-gray-500">语音说出答案，或说「答案是 {item.answer}」</p>
           </div>
         </CardShell>
       );
@@ -150,10 +239,29 @@ function ContentCardView({ card, voiceSpeed }: { card: ContentCard; voiceSpeed?:
       const item = p as { title?: string; author?: string; content?: string };
       return (
         <CardShell speakText={speakText} voiceSpeed={voiceSpeed}>
-          <div className="bg-gradient-to-b from-amber-50 to-white rounded-2xl p-5 border border-amber-100">
-            <h3 className="text-lg font-bold text-amber-900">《{item.title}》</h3>
-            <p className="text-xs text-gray-500">{item.author}</p>
-            <p className="text-sm text-gray-700 mt-3 whitespace-pre-line leading-loose">{item.content}</p>
+          <div className="bg-gradient-to-b from-amber-50 to-white rounded-2xl p-5 border border-amber-100 space-y-3">
+            {item.title && (
+              <SpeakableText
+                text={`《${item.title}》`}
+                lang="zh"
+                voiceSpeed={voiceSpeed}
+                textClassName="text-xl font-bold text-amber-900"
+              />
+            )}
+            {item.author && (
+              <SpeakableText text={item.author} lang="zh" voiceSpeed={voiceSpeed} textClassName="text-base text-gray-600" />
+            )}
+            {item.content && (
+              <SpeakableText
+                text={item.content.replace(/\n/g, "，")}
+                lang="zh"
+                voiceSpeed={voiceSpeed}
+                className="items-start"
+                textClassName="text-base text-gray-700 whitespace-pre-line leading-loose"
+              >
+                {item.content}
+              </SpeakableText>
+            )}
           </div>
         </CardShell>
       );
@@ -163,9 +271,17 @@ function ContentCardView({ card, voiceSpeed }: { card: ContentCard; voiceSpeed?:
       const title = p?.title as string | undefined;
       return text ? (
         <CardShell speakText={speakText || text} voiceSpeed={voiceSpeed}>
-          <div className="bg-white rounded-2xl p-4 border border-pink-100">
-            {title && <p className="text-sm font-bold text-gray-700 mb-2">{title}</p>}
-            <p className="text-sm text-gray-700 leading-relaxed">{text}</p>
+          <div className="bg-white rounded-2xl p-5 border border-pink-100 space-y-3">
+            {title && (
+              <SpeakableText text={title} lang="auto" voiceSpeed={voiceSpeed} textClassName="text-lg font-bold text-gray-700" />
+            )}
+            <SpeakableText
+              text={text}
+              lang="auto"
+              voiceSpeed={voiceSpeed}
+              className="items-start"
+              textClassName="text-base text-gray-700 leading-relaxed whitespace-pre-line"
+            />
           </div>
         </CardShell>
       ) : null;
@@ -203,42 +319,40 @@ export default function StudyPanel({
     subject === "chinese"
       ? Object.entries(CHINESE_SUB_LABELS)
       : subject === "english"
-      ? Object.entries(ENGLISH_SUB_LABELS)
-      : subject === "math"
-      ? Object.entries(MATH_SUB_LABELS)
-      : subject === "reading"
-      ? Object.entries(READING_SUB_LABELS)
-      : subject === "explore"
-      ? Object.entries(EXPLORE_SUB_LABELS)
-      : [];
+        ? Object.entries(ENGLISH_SUB_LABELS)
+        : subject === "math"
+          ? Object.entries(MATH_SUB_LABELS)
+          : subject === "reading"
+            ? Object.entries(READING_SUB_LABELS)
+            : subject === "explore"
+              ? Object.entries(EXPLORE_SUB_LABELS)
+              : [];
 
   return (
     <div className="space-y-3">
-      {/* 学科 Segmented */}
-      <div className="flex gap-1 overflow-x-auto pb-1 scrollbar-hide">
+      <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
         {SUBJECTS.map((s) => (
           <button
             key={s}
             type="button"
             aria-label={SUBJECT_LABELS[s]}
             onClick={() => setSubject(s)}
-            className={`shrink-0 min-h-11 px-3 py-1.5 rounded-2xl text-sm font-semibold transition-all leading-tight ${
+            className={`shrink-0 min-h-14 px-3.5 py-2 rounded-2xl text-base font-semibold transition-all leading-tight ${
               subject === s ? "bg-pink-500 text-white shadow-sm" : "bg-white text-gray-600 border border-pink-100"
             }`}
           >
             <span className="block">
               {SUBJECT_EMOJI[s]} {SUBJECT_LABELS[s]}
             </span>
-            <span className={`block text-[11px] font-normal ${subject === s ? "text-pink-100" : "text-gray-400"}`}>
+            <span className={`block text-sm font-normal ${subject === s ? "text-pink-100" : "text-gray-500"}`}>
               {SUBJECT_PINYIN[s]}
             </span>
           </button>
         ))}
       </div>
 
-      {/* 子模块 Segmented */}
       {subTabs.length > 0 && (
-        <div className="flex gap-1 overflow-x-auto pb-1">
+        <div className="flex gap-1.5 overflow-x-auto pb-1 hide-scrollbar">
           {subTabs.map(([key, label]) => (
             <button
               key={key}
@@ -246,7 +360,7 @@ export default function StudyPanel({
               title={SUB_TAB_VOICE_TIPS[key] ? `可说「${SUB_TAB_VOICE_TIPS[key]}」` : undefined}
               onClick={() => setSub(key)}
               aria-label={label}
-              className={`shrink-0 min-h-10 px-3 py-1.5 rounded-full text-sm ${
+              className={`shrink-0 min-h-11 px-4 py-2 rounded-full text-base ${
                 sub === key ? "bg-pink-100 text-pink-700 font-semibold" : "text-gray-500"
               }`}
             >
@@ -256,9 +370,8 @@ export default function StudyPanel({
         </div>
       )}
 
-      <VoiceHintBar text={voiceHint} />
+      <VoiceHintBar text={voiceHint} voiceSpeed={voiceSpeed} />
 
-      {/* 内容区 */}
       {contentCard && <ContentCardView card={contentCard} voiceSpeed={voiceSpeed} />}
 
       {subject === "english" && sub === "words" && (
@@ -271,18 +384,18 @@ export default function StudyPanel({
       )}
 
       {subject === "math" && sub === "drill" && mathQuestion && (
-        <MathDrill question={mathQuestion} streak={mathStreak} onAnswer={onMathAnswer} />
+        <MathDrill question={mathQuestion} streak={mathStreak} onAnswer={onMathAnswer} voiceSpeed={voiceSpeed} />
       )}
 
       {subject === "math" && sub === "drill" && !mathQuestion && (
         <div className="bg-amber-50 rounded-2xl p-6 text-center border border-amber-100">
           <p className="text-3xl mb-2">🐵</p>
-          <p className="text-sm text-gray-600 mb-3">口算练习加载中…</p>
+          <p className="text-base text-gray-600 mb-3">口算练习加载中…</p>
           {onRefreshContent && (
             <button
               type="button"
               onClick={onRefreshContent}
-              className="text-xs text-pink-600 bg-white px-3 py-1.5 rounded-full border border-pink-200"
+              className="text-base text-pink-600 bg-white min-h-11 px-4 rounded-full border border-pink-200"
             >
               开始口算
             </button>
@@ -291,17 +404,21 @@ export default function StudyPanel({
       )}
 
       {onRefreshContent &&
-        (subject === "chinese" || subject === "reading" || subject === "explore" || (subject === "math" && sub === "word-problem") || (subject === "english" && sub === "sentence")) && (
+        (subject === "chinese" ||
+          subject === "reading" ||
+          subject === "explore" ||
+          (subject === "math" && sub === "word-problem") ||
+          (subject === "english" && sub === "sentence")) && (
           <button
             type="button"
             onClick={onRefreshContent}
-            className="w-full text-xs text-pink-600 py-2 rounded-xl bg-pink-50 border border-pink-100 active:scale-[0.98]"
+            className="w-full text-base text-pink-600 min-h-12 rounded-xl bg-pink-50 border border-pink-100 active:scale-[0.98]"
           >
-            🔄 换一个
+            换一个
           </button>
         )}
 
-      <p className="text-[10px] text-center text-gray-400">点击 🎤 说话或长按 · 说「帮助」查看全部指令</p>
+      <p className="text-sm text-center text-gray-500">点击麦克风说话或长按 · 说「帮助」查看全部指令</p>
     </div>
   );
 }
