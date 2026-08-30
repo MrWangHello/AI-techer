@@ -209,6 +209,14 @@
 | 修复 | CSS mask 羽化 + 背景色 `#f0ebe4` 匹配 |
 | 限制 | 视频源自带实心底，无法完全透明 |
 
+### 5.6 宠物动作预览片 + 甲兜底 `[preview]`
+
+| 项 | 内容 |
+|----|------|
+| 乙 | `public/videos/actions/{idle,eat,play,bathe,sleep}.mp4` 480p 短片；点喂/玩/洗/睡播对应片，播完回 idle |
+| 甲 | 旧 5 段 mood 片未删；动作片 2s 内未出画或 onError → 旧片 + 🐟🧶🫧Zz 贴花 |
+| 体积 | idle ~70KB，动作约 25KB；仅 idle 预载 |
+
 ---
 
 ## 6. 部署与 CI

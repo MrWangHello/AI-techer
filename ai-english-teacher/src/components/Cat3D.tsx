@@ -2,10 +2,15 @@
 
 import { useState, useEffect, useRef, useCallback } from "react";
 
+export type PetAction = "idle" | "eat" | "play" | "bathe" | "sleep";
+
 interface Cat3DProps {
   mood?: "happy" | "sad" | "surprised" | "neutral" | "thinking";
+  /** 乙：一动作一视频。失败或超时立刻走旧 mood 片 + 甲贴花 */
+  action?: PetAction;
   onTap?: () => void;
   speaking?: boolean;
+  onActionEnd?: () => void;
 }
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
@@ -26,6 +31,32 @@ const MOOD_POSTERS: Record<string, string> = {
   surprised: `${BASE}/images/white-cat-surprised.jpg`,
   thinking: `${BASE}/images/white-cat-curious.jpg`,
 };
+
+const ACTION_VIDEOS: Record<PetAction, string> = {
+  idle: `${BASE}/videos/actions/idle.mp4`,
+  eat: `${BASE}/videos/actions/eat.mp4`,
+  play: `${BASE}/videos/actions/play.mp4`,
+  bathe: `${BASE}/videos/actions/bathe.mp4`,
+  sleep: `${BASE}/videos/actions/sleep.mp4`,
+};
+
+const ACTION_POSTERS: Record<PetAction, string> = {
+  idle: `${BASE}/images/actions/idle.jpg`,
+  eat: `${BASE}/images/actions/eat.jpg`,
+  play: `${BASE}/images/actions/play.jpg`,
+  bathe: `${BASE}/images/actions/bathe.jpg`,
+  sleep: `${BASE}/images/actions/sleep.jpg`,
+};
+
+const ACTION_TO_MOOD: Record<PetAction, "happy" | "sad" | "neutral"> = {
+  idle: "neutral",
+  eat: "happy",
+  play: "happy",
+  bathe: "happy",
+  sleep: "sad",
+};
+
+const ACTION_LOAD_MS = 2000;
 
 const MOOD_GLOWS: Record<string, string> = {
   neutral: "rgba(244, 114, 182, 0.08)",
@@ -73,22 +104,61 @@ async function prefetchVideo(url: string, allowBlob = true): Promise<string | nu
   }
 }
 
-export default function Cat3D({ mood = "neutral", onTap, speaking = false }: Cat3DProps) {
+export default function Cat3D({
+  mood = "neutral",
+  action = "idle",
+  onTap,
+  speaking = false,
+  onActionEnd,
+}: Cat3DProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [bounce, setBounce] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [useFakeFx, setUseFakeFx] = useState(false);
   /** 记录 resolvedSrc 对应的原始 URL，避免 mood 切换竞态 */
   const [activeSrc, setActiveSrc] = useState<{ url: string; src: string } | null>(null);
   const bounceTimeoutRef = useRef<number | null>(null);
   const loadedMoodsRef = useRef<Set<string>>(new Set());
+  const actionEndTimer = useRef<number | null>(null);
 
-  const currentVideo = MOOD_VIDEOS[mood] || MOOD_VIDEOS.neutral;
-  const currentPoster = MOOD_POSTERS[mood] || MOOD_POSTERS.neutral;
-  const glowColor = MOOD_GLOWS[mood] || MOOD_GLOWS.neutral;
+  const fallbackMood = ACTION_TO_MOOD[action] || mood;
+  const displayMood = action !== "idle" ? fallbackMood : mood;
+  const preferActionClip = action !== "idle" ? !useFakeFx : mood === "neutral";
+  const currentVideo = preferActionClip
+    ? ACTION_VIDEOS[action]
+    : MOOD_VIDEOS[action !== "idle" ? fallbackMood : mood] || MOOD_VIDEOS.neutral;
+  const currentPoster = preferActionClip
+    ? ACTION_POSTERS[action]
+    : MOOD_POSTERS[action !== "idle" ? fallbackMood : mood] || MOOD_POSTERS.neutral;
+  const glowColor = MOOD_GLOWS[displayMood] || MOOD_GLOWS.neutral;
   const srcReady = activeSrc?.url === currentVideo;
+  const isOneShot = action !== "idle" && !useFakeFx;
 
-  // mood 变化 → 加载对应视频
+  useEffect(() => {
+    setUseFakeFx(false);
+    setVideoError(false);
+    setVideoLoaded(false);
+  }, [action]);
+
+  useEffect(() => {
+    if (action === "idle" || useFakeFx) return;
+    const timer = window.setTimeout(() => {
+      if (!videoLoaded) setUseFakeFx(true);
+    }, ACTION_LOAD_MS);
+    return () => window.clearTimeout(timer);
+  }, [action, useFakeFx, videoLoaded]);
+
+  useEffect(() => {
+    if (action === "idle") return;
+    if (actionEndTimer.current) window.clearTimeout(actionEndTimer.current);
+    actionEndTimer.current = window.setTimeout(() => onActionEnd?.(), useFakeFx ? 2200 : 3200);
+    return () => {
+      if (actionEndTimer.current) window.clearTimeout(actionEndTimer.current);
+    };
+  }, [action, useFakeFx, onActionEnd]);
+
+  // mood / action 变化 → 加载对应视频
   useEffect(() => {
     let cancelled = false;
     setVideoError(false);
@@ -113,7 +183,7 @@ export default function Cat3D({ mood = "neutral", onTap, speaking = false }: Cat
     const video = videoRef.current;
     if (!video) return;
 
-    const alreadyLoaded = loadedMoodsRef.current.has(mood);
+    const alreadyLoaded = loadedMoodsRef.current.has(currentVideo);
     if (!alreadyLoaded) setVideoLoaded(false);
 
     const handleCanPlay = () => {
@@ -161,8 +231,30 @@ export default function Cat3D({ mood = "neutral", onTap, speaking = false }: Cat
         }}
       />
 
-      {/* 心情特效 */}
-      {mood === "happy" && (
+      {/* 甲兜底贴花：仅在动作片失败/超时时出现 */}
+      {useFakeFx && action === "eat" && (
+        <div className="absolute top-6 left-1/2 -translate-x-1/2 text-3xl animate-bounce-slow pointer-events-none z-10">
+          🐟
+        </div>
+      )}
+      {useFakeFx && action === "play" && (
+        <div className="absolute top-6 right-10 text-3xl animate-bounce-slow pointer-events-none z-10">
+          🧶
+        </div>
+      )}
+      {useFakeFx && action === "bathe" && (
+        <div className="absolute top-8 left-1/3 text-2xl animate-float-slow pointer-events-none z-10">
+          🫧
+        </div>
+      )}
+      {useFakeFx && action === "sleep" && (
+        <div className="absolute top-6 right-8 text-xl animate-float-slow pointer-events-none z-10 opacity-70">
+          Zz
+        </div>
+      )}
+
+      {/* 心情特效（旧片路径保留） */}
+      {displayMood === "happy" && !useFakeFx && action === "idle" && (
         <div className="absolute top-4 left-1/2 -translate-x-1/2 text-2xl animate-bounce-slow pointer-events-none z-10">
           ✨
         </div>
@@ -222,34 +314,40 @@ export default function Cat3D({ mood = "neutral", onTap, speaking = false }: Cat
 
               {srcReady && activeSrc && (
                 <video
-                  key={mood}
+                  key={currentVideo}
                   ref={videoRef}
                   poster={currentPoster}
-                  preload="auto"
+                  preload={action === "idle" ? "auto" : "metadata"}
                   className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
                     videoLoaded ? "opacity-100" : "opacity-0"
                   } ${
-                    mood === "happy"
+                    displayMood === "happy"
                       ? "brightness-105 saturate-105"
-                      : mood === "sad"
+                      : displayMood === "sad"
                       ? "brightness-95 saturate-90"
                       : ""
                   }`}
                   style={maskStyle}
                   muted
-                  loop
+                  loop={!isOneShot}
                   playsInline
                   autoPlay
                   draggable={false}
                   onLoadedData={() => {
                     setVideoLoaded(true);
-                    loadedMoodsRef.current.add(mood);
+                    loadedMoodsRef.current.add(currentVideo);
                   }}
-                  onError={() => setVideoError(true)}
+                  onEnded={() => {
+                    if (isOneShot) onActionEnd?.();
+                  }}
+                  onError={() => {
+                    if (action !== "idle" && !useFakeFx) setUseFakeFx(true);
+                    else setVideoError(true);
+                  }}
                 />
               )}
 
-              {!videoLoaded && srcReady && !loadedMoodsRef.current.has(mood) && (
+              {!videoLoaded && srcReady && !loadedMoodsRef.current.has(currentVideo) && (
                 <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-20">
                   <div className="w-5 h-5 border-2 border-pink-300 border-t-pink-500 rounded-full animate-spin" />
                 </div>
@@ -276,7 +374,7 @@ export default function Cat3D({ mood = "neutral", onTap, speaking = false }: Cat
       <div className="absolute bottom-2 left-1/2 -translate-x-1/2 z-10">
         <span
           className={`text-sm px-3 py-1 rounded-full transition-all duration-300 backdrop-blur-sm ${
-            mood === "happy"
+            displayMood === "happy"
               ? "bg-amber-100/60 text-amber-600"
               : mood === "sad"
               ? "bg-sky-100/60 text-sky-500"
@@ -287,13 +385,21 @@ export default function Cat3D({ mood = "neutral", onTap, speaking = false }: Cat
               : "bg-pink-100/60 text-pink-400"
           }`}
         >
-          {mood === "happy"
+          {action === "eat"
+            ? "吃饭 🐟"
+            : action === "play"
+            ? "玩耍 🧶"
+            : action === "bathe"
+            ? "洗澡 🫧"
+            : action === "sleep"
+            ? "睡觉 💤"
+            : displayMood === "happy"
             ? "开心 😊"
-            : mood === "sad"
+            : displayMood === "sad"
             ? "困困 😴"
-            : mood === "surprised"
+            : displayMood === "surprised"
             ? "惊讶 😮"
-            : mood === "thinking"
+            : displayMood === "thinking"
             ? "思考 🤔"
             : "平静 🐱"}
         </span>

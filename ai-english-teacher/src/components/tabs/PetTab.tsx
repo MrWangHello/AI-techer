@@ -1,6 +1,6 @@
 "use client";
 
-import Cat3D from "@/components/Cat3D";
+import Cat3D, { type PetAction } from "@/components/Cat3D";
 import PetStatus from "@/components/PetStatus";
 import VoiceHintBar from "@/components/VoiceHintBar";
 import Card from "@/components/ui/Card";
@@ -10,10 +10,12 @@ import { ACHIEVEMENTS, type PetData } from "@/lib/pet-data";
 export default function PetTab({
   pet,
   mood,
+  action,
   speaking,
   showAchievements,
   voiceSpeed,
   onTapCat,
+  onActionEnd,
   onFeed,
   onPlay,
   onBathe,
@@ -22,10 +24,12 @@ export default function PetTab({
 }: {
   pet: PetData;
   mood: "happy" | "sad" | "surprised" | "neutral" | "thinking";
+  action: PetAction;
   speaking: boolean;
   showAchievements: boolean;
   voiceSpeed: number;
   onTapCat: () => void;
+  onActionEnd: () => void;
   onFeed: () => void;
   onPlay: () => void;
   onBathe: () => void;
@@ -43,7 +47,7 @@ export default function PetTab({
     <div className="space-y-4 animate-slideUp">
       <div className="rounded-2xl shadow-sm border border-pink-100/40 overflow-hidden">
         <div className="aspect-[4/5] max-h-[500px] relative">
-          <Cat3D mood={mood} speaking={speaking} onTap={onTapCat} />
+          <Cat3D mood={mood} action={action} speaking={speaking} onTap={onTapCat} onActionEnd={onActionEnd} />
         </div>
       </div>
 

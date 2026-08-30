@@ -32,12 +32,14 @@ import { submitDrillAnswer } from "@/lib/skills/math-skills";
 import { loadDefaultContentForSection } from "@/lib/study-content-loader";
 import { Word, loadWordBatch, refreshWordBatch } from "@/lib/words";
 import type { Tab } from "@/lib/app-nav";
+import type { PetAction } from "@/components/Cat3D";
 
 export default function HomePage() {
   const [activeTab, setActiveTab] = useState<Tab>("home");
   const [pet, setPet] = useState<PetData>({ ...loadPetData() });
   const [petLoaded, setPetLoaded] = useState(false);
   const [agentEmotion, setAgentEmotion] = useState<"happy" | "sad" | "surprised" | "neutral" | "thinking">("neutral");
+  const [petAction, setPetAction] = useState<PetAction>("idle");
   const [lastReply, setLastReply] = useState<string>("");
   const [lastUserText, setLastUserText] = useState<string>("");
   const [checkinMsg, setCheckinMsg] = useState<string>("");
@@ -284,6 +286,7 @@ export default function HomePage() {
   );
 
   const handleFeed = () => {
+    setPetAction("eat");
     setPet((prev) => {
       const updated = feedPet(prev);
       addFeed("🍖", "喂食了 Bella");
@@ -295,6 +298,7 @@ export default function HomePage() {
   };
 
   const handlePlay = () => {
+    setPetAction("play");
     setPet((prev) => {
       const updated = playWithPet(prev);
       addFeed("🎮", "和 Bella 一起玩");
@@ -306,6 +310,7 @@ export default function HomePage() {
   };
 
   const handleBathe = () => {
+    setPetAction("bathe");
     setPet((prev) => {
       const updated = bathePet(prev);
       addFeed("🛁", "给 Bella 洗澡");
@@ -317,6 +322,7 @@ export default function HomePage() {
   };
 
   const handleSleep = () => {
+    setPetAction("sleep");
     setPet((prev) => {
       const updated = sleepPet(prev);
       addFeed("💤", "Bella 睡觉了");
@@ -326,6 +332,11 @@ export default function HomePage() {
       return checkAndAwardAchievements(updated);
     });
   };
+
+  const handlePetActionEnd = useCallback(() => {
+    setPetAction("idle");
+    setAgentEmotion("neutral");
+  }, []);
 
   const handleCheckin = () => {
     setPet((prev) => {
@@ -421,9 +432,11 @@ export default function HomePage() {
         <PetTab
           pet={pet}
           mood={agentEmotion}
+          action={petAction}
           speaking={catSpeaking}
           showAchievements={showAchievements}
           voiceSpeed={pet.voiceSpeed}
+          onActionEnd={handlePetActionEnd}
           onTapCat={() => {
             setAgentEmotion("happy");
             setCatSpeaking(true);
