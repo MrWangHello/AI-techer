@@ -194,7 +194,7 @@ export default function HomePage() {
       addFeed("💤", "Bella 睡觉了");
       setCatSpeaking(true);
       speakWithSpeed("晚安，做个好梦~", () => setCatSpeaking(false));
-      setAgentEmotion("neutral");
+      setAgentEmotion("sad");
       return checkAndAwardAchievements(updated);
     });
   };
@@ -390,7 +390,7 @@ export default function HomePage() {
   const renderPetPage = () => (
     <div className="space-y-4">
       {/* 真实白猫 */}
-      <div className="rounded-2xl shadow-sm border border-pink-100/60 overflow-hidden bg-gradient-to-b from-pink-50/80 via-white/40 to-pink-50/60">
+      <div className="rounded-2xl shadow-sm border border-pink-100/40 overflow-hidden">
         <div className="aspect-[4/5] max-h-[500px] relative">
           <RealisticCat
             mood={agentEmotion}

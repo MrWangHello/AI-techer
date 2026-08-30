@@ -9,6 +9,8 @@ let recognition: any = null;
 let isListening = false;
 let voicesLoaded = false;
 let voicesPromise: Promise<void> | null = null;
+/** 按语言缓存选定的音色，避免每次 speak 随机切换 */
+const cachedVoiceByLang: Record<string, SpeechSynthesisVoice | undefined> = {};
 
 type SpeakingStateCallback = (speaking: boolean) => void;
 let onSpeakingStateChange: SpeakingStateCallback | null = null;
@@ -37,12 +39,14 @@ function loadVoices(): Promise<void> {
     const voices = synth.getVoices();
     if (voices.length > 0) {
       voicesLoaded = true;
+      cachePreferredVoices();
       resolve();
       return;
     }
 
     synth.onvoiceschanged = () => {
       voicesLoaded = true;
+      cachePreferredVoices();
       resolve();
     };
 
@@ -55,6 +59,35 @@ function loadVoices(): Promise<void> {
   });
 
   return voicesPromise;
+}
+
+function pickVoiceForLang(lang: string): SpeechSynthesisVoice | undefined {
+  if (cachedVoiceByLang[lang]) return cachedVoiceByLang[lang];
+
+  const synth = getSynth();
+  if (!synth) return undefined;
+
+  const voices = synth.getVoices();
+  const langPrefix = lang.split("-")[0];
+  const matched =
+    voices.find(
+      (v) =>
+        v.lang.startsWith(langPrefix) &&
+        /xiaoxiao|xiaoyi|xiaoyan|yaoyao|huihui|female|女|samantha|google.*zh|google.*cn/i.test(
+          v.name
+        )
+    ) ||
+    voices.find((v) => v.lang.startsWith(langPrefix) && /google|microsoft/i.test(v.name)) ||
+    voices.find((v) => v.lang.startsWith(langPrefix));
+
+  if (matched) cachedVoiceByLang[lang] = matched;
+  return matched;
+}
+
+/** 预热时锁定中/英音色，避免后续 speak 音色漂移 */
+function cachePreferredVoices(): void {
+  pickVoiceForLang("zh-CN");
+  pickVoiceForLang("en-US");
 }
 
 export function getAvailableVoices(): SpeechSynthesisVoice[] {
@@ -100,17 +133,8 @@ function createUtterance(
   try {
     const synth = getSynth();
     if (synth) {
-      const voices = synth.getVoices();
-      const langPrefix = lang.split("-")[0];
-      const matchedVoice =
-        voices.find(
-          (v) =>
-            v.lang.startsWith(langPrefix) &&
-            /female|女|samantha|google|xiaoyi|xiaoxuan|xiaoyan|yaoyao/i.test(v.name)
-        ) || voices.find((v) => v.lang.startsWith(langPrefix));
-      if (matchedVoice) {
-        utterance.voice = matchedVoice;
-      }
+      const matched = pickVoiceForLang(lang);
+      if (matched) utterance.voice = matched;
     }
   } catch (_) {}
 
@@ -132,7 +156,7 @@ function doSpeak(utterance: SpeechSynthesisUtterance): boolean {
   if (!synth) return false;
 
   try {
-    loadVoices();
+    loadVoices().then(() => cachePreferredVoices());
     synth.cancel();
 
     if (synth.paused) {
@@ -176,6 +200,7 @@ export function speak(text: string, onEnd?: () => void, speed?: number): boolean
   }
 
   try {
+    cachePreferredVoices();
     onSpeakingStateChange?.(true);
 
     const utterance = createUtterance(
@@ -216,6 +241,7 @@ export function speakEnglish(text: string, onEnd?: () => void, speed?: number): 
   }
 
   try {
+    cachePreferredVoices();
     onSpeakingStateChange?.(true);
 
     const utterance = createUtterance(
@@ -246,7 +272,7 @@ export function warmUpSpeech(): boolean {
   if (!synth) return false;
 
   try {
-    loadVoices();
+    loadVoices().then(() => cachePreferredVoices());
 
     if (synth.paused) {
       synth.resume();

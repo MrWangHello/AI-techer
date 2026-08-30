@@ -113,7 +113,7 @@ const RULES: { keywords: string[]; response: AgentResponse }[] = [
     keywords: ["睡", "困", "休息", "sleep", "tired", "rest"],
     response: {
       intent: "sleep",
-      emotion: "neutral",
+      emotion: "sad",
       action: "none",
       reply: "好的，我休息一下~ 养足精神再陪你学习！",
     },
