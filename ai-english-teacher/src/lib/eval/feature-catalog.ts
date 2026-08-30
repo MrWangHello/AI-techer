@@ -60,7 +60,7 @@ export const FEATURE_CASES: FeatureCase[] = [
     id: "nav.settings",
     name: "打开设置",
     tab: "global",
-    voicePhrases: ["打开设置", "设置页", "知识库"],
+    voicePhrases: ["打开设置", "设置页", "知识库", "打开知识库"],
     expected: { intent: "nav_settings", navigate: "settings" },
     tapFallback: true,
     offline: true,
@@ -335,6 +335,17 @@ export const FEATURE_CASES: FeatureCase[] = [
   },
 
   // —— 闲聊 ——
+  {
+    id: "kb.manage",
+    name: "知识库入口",
+    tab: "settings",
+    voicePhrases: ["知识库"],
+    expected: { intent: "nav_settings", navigate: "settings" },
+    tapFallback: true,
+    offline: true,
+    status: "partial",
+    notes: "设置来源勾选 + /kb 粘贴预览已做；云库写入待配 Supabase",
+  },
   {
     id: "chat.greeting",
     name: "打招呼",

@@ -4,7 +4,8 @@ import sentencesData from "@/data/sentences/grade1.json";
 import idiomsData from "@/data/idioms.json";
 import wordProblemsData from "@/data/word-problems/grade1.json";
 import englishSentences from "@/data/english-sentences/grade1.json";
-import { getKb } from "@/lib/kb/store";
+import { getKbProblems } from "@/lib/kb/entries";
+import { randomFromSource } from "@/lib/kb/merge";
 
 export interface PinyinItem {
   id: string;
@@ -71,14 +72,20 @@ export function pickRandomIdiom(): IdiomItem {
 
 export function pickRandomWordProblem(): WordProblemItem {
   const bundled = wordProblemsData as WordProblemItem[];
-  const extra = (getKb().wordProblems ?? []).map((w) => ({
+  const extra = getKbProblems().map((w) => ({
     question: w.question,
     answer: w.answer,
-    explain: w.explain,
+    explain: w.explain || "",
     emoji: w.emoji || "🧮",
   }));
-  const list = extra.length ? [...bundled, ...extra] : bundled;
-  return pick(list);
+  return (
+    randomFromSource(extra, bundled) ?? {
+      question: "知识库里还没有应用题。去添加，或把内置勾上。",
+      answer: -1,
+      explain: "",
+      emoji: "🧮",
+    }
+  );
 }
 
 export function pickRandomEnglishSentence(): EnglishSentenceItem {

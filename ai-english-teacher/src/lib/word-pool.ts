@@ -1,5 +1,6 @@
 import allWords from "@/data/words.json";
-import { getKb } from "@/lib/kb/store";
+import { getKbWords } from "@/lib/kb/entries";
+import { listFromSource } from "@/lib/kb/merge";
 
 export interface Word {
   en: string;
@@ -21,14 +22,12 @@ function shuffle<T>(arr: T[]): T[] {
 
 export function getAllWords(): Word[] {
   const bundled = allWords as Word[];
-  const extra = (getKb().words ?? []).map((w) => ({
+  const extra = getKbWords().map((w) => ({
     en: w.en,
     zh: w.zh,
-    sentence: w.sentence || `${w.en} is ${w.zh}.`,
+    sentence: w.sentence || "",
   }));
-  if (!extra.length) return bundled;
-  const seen = new Set(bundled.map((w) => w.en.toLowerCase()));
-  return [...bundled, ...extra.filter((w) => !seen.has(w.en.toLowerCase()))];
+  return listFromSource(extra, bundled, (w) => w.zh);
 }
 
 export function loadWordBatch(): Word[] {

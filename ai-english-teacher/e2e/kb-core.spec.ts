@@ -54,26 +54,23 @@ test.describe("核心意图（文字=语音）", () => {
   });
 });
 
-test.describe("知识库动态加词", () => {
-  test("本机知识库可查未打包的词", async ({ page }) => {
-    await page.addInitScript(() => {
-      localStorage.setItem(
-        "bella_kb",
-        JSON.stringify({
-          version: 1,
-          dict: [{ zh: "飞船", en: "spaceship", sentence: "A spaceship is fast." }],
-        })
-      );
-    });
-    await page.goto("/");
-    await sendTextCommand(page, "飞船用英语怎么说");
-    await expect(page.getByText(/spaceship/i).first()).toBeVisible({ timeout: 8000 });
-  });
-
-  test("设置页有导入入口", async ({ page }) => {
+test.describe("知识库设置与粘贴预览", () => {
+  test("设置页是数据来源和去添加内容", async ({ page }) => {
     await openTab(page, "设置");
     await expect(page.getByRole("heading", { name: /知识库/ })).toBeVisible();
-    await expect(page.getByRole("button", { name: "导入 JSON 文件" })).toBeVisible();
-    await expect(page.getByRole("button", { name: "粘贴导入" })).toBeVisible();
+    await expect(page.getByText("数据来源（至少勾一个）")).toBeVisible();
+    await expect(page.getByRole("checkbox", { name: /内置/ })).toBeChecked();
+    await expect(page.getByRole("link", { name: "去添加内容" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "导入 JSON 文件" })).toHaveCount(0);
+  });
+
+  test("添加页按模板切开预览", async ({ page }) => {
+    await page.goto("/kb/new");
+    await page.getByPlaceholder(/火箭 rocket/).fill("火箭 rocket\n只有中文");
+    await page.getByRole("button", { name: "拆开预览" }).click();
+    await expect(page.getByText("火箭 → rocket")).toBeVisible();
+    await expect(page.getByText(/要有中文和英文/)).toBeVisible();
+    await page.getByRole("button", { name: "确认入库" }).click();
+    await expect(page.getByText(/还没配置知识库地址|云库写入还要家长登录/)).toBeVisible();
   });
 });

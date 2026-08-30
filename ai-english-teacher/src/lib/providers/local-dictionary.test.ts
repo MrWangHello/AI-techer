@@ -1,9 +1,11 @@
 import { describe, expect, it, beforeEach } from "vitest";
 import { lookupDictionaryLocal, lookupLocalEn, lookupLocalZh } from "./local-dictionary";
-import { resetKbMemory, saveLocalPack } from "@/lib/kb/store";
+import { resetKbEntries, setKbEntries } from "@/lib/kb/entries";
+import { resetContentSource, setContentSource } from "@/lib/kb/source";
 
 beforeEach(() => {
-  resetKbMemory();
+  resetKbEntries();
+  resetContentSource();
 });
 
 describe("local dictionary", () => {
@@ -26,12 +28,27 @@ describe("local dictionary", () => {
     expect(res?.intent).toBe("dict_miss");
   });
 
-  it("hits knowledge-base dict without rebuild", () => {
-    saveLocalPack({ version: 1, dict: [{ zh: "火箭", en: "rocket", sentence: "A rocket flies." }] });
+  it("hits knowledge-base dict when source includes kb", () => {
+    setContentSource({ builtin: true, kb: true });
+    setKbEntries([
+      {
+        id: "1",
+        kind: "word",
+        enabled: true,
+        payload: { zh: "火箭", en: "rocket", sentence: "A rocket flies." },
+      },
+    ]);
     const res = lookupDictionaryLocal("火箭用英语怎么说");
     expect(res?.intent).toBe("dict_hit");
     expect(res?.reply).toContain("rocket");
     expect(lookupLocalZh("火箭")?.en).toBe("rocket");
     expect(lookupLocalEn("rocket")?.zh).toBe("火箭");
+  });
+
+  it("does not use kb rows when source is builtin only", () => {
+    setKbEntries([
+      { id: "1", kind: "word", enabled: true, payload: { zh: "量子", en: "quantum" } },
+    ]);
+    expect(lookupLocalZh("量子")).toBeNull();
   });
 });

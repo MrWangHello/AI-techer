@@ -8,9 +8,9 @@ import VoiceReplyBar from "@/components/VoiceReplyBar";
 import PetStatus from "@/components/PetStatus";
 import StudyPanel from "@/components/StudyPanel";
 import VoiceHintBar from "@/components/VoiceHintBar";
-import KnowledgeBasePanel from "@/components/KnowledgeBasePanel";
+import KbSettingsCard from "@/components/KbSettingsCard";
 import { TAB_VOICE_HINTS } from "@/lib/voice-hints";
-import { initKnowledgeBase } from "@/lib/kb/store";
+import { initKnowledgeBase } from "@/lib/kb/cloud";
 import {
   loadPetData,
   savePetData,
@@ -81,6 +81,10 @@ export default function HomePage() {
     setSpeechSupported(isSpeechSupported());
     setSttSupported(isSTTSupported());
     setStudyWords(loadWordBatch());
+    const tab = new URLSearchParams(window.location.search).get("tab");
+    if (tab === "home" || tab === "pet" || tab === "study" || tab === "settings") {
+      setActiveTab(tab);
+    }
     void initKnowledgeBase().then(() => {
       setStudyWords(loadWordBatch());
     });
@@ -725,10 +729,10 @@ export default function HomePage() {
   const renderSettingsPage = () => (
     <div className="space-y-4">
       <VoiceHintBar text={TAB_VOICE_HINTS.settings} />
-      <KnowledgeBasePanel />
+      <KbSettingsCard />
       {/* 宠物改名 */}
       <div className="bg-white/80 rounded-2xl p-5 shadow-sm border border-pink-50">
-        <h3 className="text-sm font-bold text-gray-600 mb-3">✏️ 宠物名称</h3>
+        <h3 className="text-lg font-bold text-gray-600 mb-3">✏️ 宠物名称</h3>
         {showPetNameInput ? (
           <div className="flex gap-2">
             <input
@@ -771,7 +775,7 @@ export default function HomePage() {
 
       {/* 语音设置 */}
       <div className="bg-white/80 rounded-2xl p-5 shadow-sm border border-pink-50">
-        <h3 className="text-sm font-bold text-gray-600 mb-3">🎙️ 语音设置</h3>
+        <h3 className="text-lg font-bold text-gray-600 mb-3">🎙️ 语音设置</h3>
         <div className="space-y-3">
           <div className="flex items-center justify-between">
             <span className="text-xs text-gray-500">语音速度</span>
@@ -810,7 +814,7 @@ export default function HomePage() {
 
       {/* 数据管理 */}
       <div className="bg-white/80 rounded-2xl p-5 shadow-sm border border-pink-50">
-        <h3 className="text-sm font-bold text-gray-600 mb-3">🗄️ 数据管理</h3>
+        <h3 className="text-lg font-bold text-gray-600 mb-3">🗄️ 数据管理</h3>
         <div className="space-y-2 text-xs text-gray-500">
           <p>等级: Lv.{pet.level} · 经验: {pet.exp}/{pet.level * 100}</p>
           <p>金币: {pet.coins} · 连续签到: {pet.checkInStreak} 天</p>
@@ -847,7 +851,7 @@ export default function HomePage() {
 
       {/* 关于 */}
       <div className="bg-white/80 rounded-2xl p-5 shadow-sm border border-pink-50">
-        <h3 className="text-sm font-bold text-gray-600 mb-3">🎯 关于</h3>
+        <h3 className="text-lg font-bold text-gray-600 mb-3">🎯 关于</h3>
         <div className="space-y-2 text-xs text-gray-500">
           <p>AI 英语教师 - Bella 是一款语音驱动的英语学习工具。</p>
           <p>通过虚拟宠物 + 语音交互，让学习更轻松有趣。</p>

@@ -50,7 +50,7 @@
 | study.checkin | 签到 | 签到 | 是 | 是 | ok |
 | pet.dressup | 装扮 | 装扮 | 否 | 是 | placeholder |
 | chat.greeting | 打招呼 | 你好 | 否 | 是 | ok |
-| kb.manage | 知识库 | 知识库、打开知识库 | 是（设置页） | 是 | ok |
+| kb.manage | 知识库 | 知识库、打开知识库 | 是（设置来源 + /kb） | 是 | **partial** |
 
 完整短语与期望 intent 以 `feature-catalog.ts` 为准。
 
@@ -62,7 +62,7 @@
 
 - **单词卡**：`StudyCards`，词库 `words.json`（187）+ 换一批；朗读走 `voiceSpeed`
 - **词典**：本地同步查词，不请求外网；未收录立即 miss 提示  
-- **知识库**：方案见 `KB_DESIGN.md`（主库未接；设置将勾选内置/知识库来源。先不要当已上线功能）
+- **知识库**：设置里勾数据来源、去 `/kb/new` 粘贴预览。云库未配地址时不能入库。方案见 `KB_DESIGN.md` 第 20 节。
 - **句子**：语音「每日英语」可走 API；点击子 Tab 用 `english-sentences/grade1.json`
 
 ### 3.2 语文

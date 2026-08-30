@@ -10,7 +10,7 @@ export const RULE_SKILLS: RuleEntry[] = [
       intent: "nav_settings",
       emotion: "neutral",
       action: "none",
-      reply: "好的，打开设置。往下看「知识库」，可以导入单词和故事。",
+      reply: "好的，打开设置。往下看「知识库」，可以勾数据来源、去添加内容。",
       navigate: "settings",
     },
   },
