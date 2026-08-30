@@ -1,9 +1,9 @@
 # Bella 产品架构与语音交互方案（v2）
 
-> 状态：**规划稿**（评审后分阶段实现）  
-> 关联：[SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md) · [VOICE_UX_PLAN.md](./VOICE_UX_PLAN.md) · [CONTENT_API_RESEARCH.md](./CONTENT_API_RESEARCH.md)  
-> 日期：2026-08-30  
-> 取代/补充：原 [CONTENT_UI_PLAN.md](./CONTENT_UI_PLAN.md) 中「全局浮层卡片」思路，改为 **Tab 内学科分区 + 首页聚合**
+> 状态：**部分已实现**（2026-08-30）  
+> ✅ 学习 Tab 五科分区（StudyPanel）· ✅ 全局 VoiceChatBar · ✅ Mock Agent + Skills  
+> 📋 待做：首页「最近记录」· 设置页年级 · 语音指令帮助面板  
+> 关联：[SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md) · [PROJECT_MEMORY.md](./PROJECT_MEMORY.md)
 
 ---
 

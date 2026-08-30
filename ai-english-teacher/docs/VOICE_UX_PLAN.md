@@ -1,8 +1,7 @@
 # 语音交互 UX 与指令词方案
 
-> 状态：**规划稿**（待评审后实施）
-> 关联文档：[ARCHITECTURE.md](./ARCHITECTURE.md)
-> 撰写日期：2026-08-30
+> 状态：**部分已实现**（2026-08-30 规划 → 全局 VoiceChatBar / VoiceReplyBar / 导航指令已落地；按住说话、指令表 UI 待做）  
+> 归档说明：核心诉求已满足，剩余项见 [APP_PRODUCT_PLAN.md](./APP_PRODUCT_PLAN.md) §5
 
 ---
 

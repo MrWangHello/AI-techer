@@ -1,1 +1,14 @@
 flutter.tar.xz
+
+# Next.js build outputs
+ai-english-teacher/.next/
+ai-english-teacher/out/
+ai-english-teacher/test-results/
+
+# Playwright
+ai-english-teacher/playwright-report/
+ai-english-teacher/blob-report/
+
+# Env
+.env
+.env.local

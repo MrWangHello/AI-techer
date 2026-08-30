@@ -1,55 +1,60 @@
-# 项目记忆
+# 项目记忆（活跃）
 
-## 已完成
+> Agent 每次会话必读。详细问题记录见 [`ai-english-teacher/docs/PROJECT_MEMORY.md`](ai-english-teacher/docs/PROJECT_MEMORY.md)。
 
-- ✅ 删除Flutter部署工作流，只保留 Next.js GitHub Pages 部署
-- ✅ 3D 动画白猫（5 个表情视频）替换静态宠物图片
-- ✅ Cat3D 组件 — CSS mask 羽化 + 背景色 `#f0ebe4` 匹配视频源
-- ✅ 移除 Edge-TTS / Cloudflare Worker，改用 Web Speech API
-- ✅ 语音：Chrome wake-up、音色缓存、STT 文字输入降级、voiceSpeed
-- ✅ **修复首次语音 TTS 中断** — STT/TTS 抢音频，见 `SYSTEM_ARCHITECTURE.md` §11
-- ✅ **Mock Agent + Skills 分层** — `handleUserMessage`、规则 Skill + Tier1 API Skill
-- ✅ **词库 187 词 + 换一批** — 语音/按钮触发 `word.refresh`
-- ✅ **每日英语多源降级** — 扇贝优先（CORS 可用）；词霸浏览器常失败
-- ✅ **STT 稳定性** — 忽略主动 stop 的 aborted；软错误不切文字模式
-- ✅ 开发文档索引见下表
+## 产品定位
 
-## 待测试
+- **AI-techer / Bella**：面向 1–3 年级的 Web 学习助手（英语、语文、数学、阅读、探索）
+- **唯一代码目录：** `ai-english-teacher/`
+- **部署：** GitHub Pages → https://mrwanghello.github.io/AI-techer/
+- **原则：** 语音优先、零后端、规则 Router + Skills（不用 LLM）
 
-- ⏳ **首次语音 TTS** — 手机 Chrome 验证修复是否生效
-- ⏳ **内容 Skill** — 每日英语、古诗、天气、百科在国内网络实测
-- ⏳ **TTS/STT** — 各浏览器手机端
-- ⏳ **宠物 mood 切换** — 语音关键词 → 视频表情
+## 架构要点
 
-## 架构决策（2026-08-30）
+```
+VoiceChatBar → handleUserMessage → orchestrator → Skills → TTS
+```
 
-- **不用 ClawBot / 本地 OpenClaw** — 需常开机器 + 默认 LLM，不符合零成本 Web 优先
-- **Mock Agent 现在** — 规则 Router 调各 Skill；**以后只换意图识别层**
-- **微信通道** — 暂缓；若要做用云开发云函数 `/api/chat`，非 ClawBot
-- **产品 IA v2** — 首页（功能集+历史）/ 宠物（不动）/ **学习分科** / 设置（用户属性）；见 [`APP_PRODUCT_PLAN.md`](ai-english-teacher/docs/APP_PRODUCT_PLAN.md)
-- **语音 v2** — 按住说话 + 静音自动发送，替代单纯 12s 超时；见同上 §5
+- 意图层：`src/lib/core/orchestrator.ts` + `src/lib/skills/*`
+- 语音：`src/lib/speech.ts`（Web Speech API STT/TTS）
+- 宠物：`Cat3D.tsx`（5 个 MP4 mood 视频）
+- 学习 UI：`StudyPanel.tsx`（五科分区 + 内容卡片）
 
-## 已知限制
+## 当前已知限制
 
-- MP4 自带实心背景，CSS 无法完全透明化
-- STT 在荣耀/华为无 GMS、QQ/UC 浏览器常失败 → 文字输入降级
-- 内容 API Skill 需联网；GitHub Pages 静态部署下由**浏览器直连** API
-- `agentEmotion` 触发后保持，不会自动恢复 neutral
+| 限制 | 说明 |
+|------|------|
+| STT | 荣耀/华为/QQ 浏览器常失败 → 文字输入降级 |
+| TTS | 需用户手势唤醒；沙箱环境无法测 |
+| 视频 | MP4 实心底，CSS 羽化无法完全透明 |
+| 联网 | 内容 API 需网络；wiki/诗词/故事有离线兜底 |
+| 情绪 | `agentEmotion` 触发后不自动回 neutral |
+
+## 待验证（部署后）
+
+- [ ] 手机 Chrome：口算语音、讲故事朗读、中译英查词（PR #10 合并后）
+- [ ] 各浏览器 TTS/STT 实测
+
+## 明确不做
+
+- Flutter 双轨（已清理）
+- Edge-TTS / Cloudflare Worker（已废弃）
+- ClawBot / 前端暴露 LLM API Key
 
 ## 文档索引
 
-| 文档 | 内容 |
+| 文档 | 用途 |
 |------|------|
-| [`docs/SYSTEM_ARCHITECTURE.md`](ai-english-teacher/docs/SYSTEM_ARCHITECTURE.md) | 分层架构 §11 语音修复 §12 Skills |
-| [`docs/APP_PRODUCT_PLAN.md`](ai-english-teacher/docs/APP_PRODUCT_PLAN.md) | **产品 IA v2**：学习分科、首页历史、语音按住说 |
-| [`docs/CONTENT_UI_PLAN.md`](ai-english-teacher/docs/CONTENT_UI_PLAN.md) | 内容卡片模板（并入学习分科内） |
-| [`docs/CONTENT_API_RESEARCH.md`](ai-english-teacher/docs/CONTENT_API_RESEARCH.md) | 故事机式内容 API 实测 |
-| [`docs/BROWSER_COMPAT_PLAN.md`](ai-english-teacher/docs/BROWSER_COMPAT_PLAN.md) | 浏览器兼容 FAQ §11 |
-| [`docs/ARCHITECTURE.md`](ai-english-teacher/docs/ARCHITECTURE.md) | 宠物 mood、部署、排错 |
-| 本文件 | 项目记忆与变更摘要 |
+| [`docs/PROJECT_MEMORY.md`](ai-english-teacher/docs/PROJECT_MEMORY.md) | **问题沉淀库**（修 bug 先查） |
+| [`docs/SYSTEM_ARCHITECTURE.md`](ai-english-teacher/docs/SYSTEM_ARCHITECTURE.md) | 分层架构与 Skills 设计 |
+| [`docs/BROWSER_COMPAT_PLAN.md`](ai-english-teacher/docs/BROWSER_COMPAT_PLAN.md) | 浏览器兼容 FAQ |
+| [`docs/APP_PRODUCT_PLAN.md`](ai-english-teacher/docs/APP_PRODUCT_PLAN.md) | 产品路线图（标 done/todo） |
+| [`docs/CONTENT_API_RESEARCH.md`](ai-english-teacher/docs/CONTENT_API_RESEARCH.md) | 内容 API 实测结论 |
+| [`docs/archive/`](ai-english-teacher/docs/archive/) | 已废弃方案（Flutter 等） |
 
-## 宠物 mood 速查
+## 记忆维护规则
 
-5 个视频 = 5 种 mood：`neutral` `happy` `sad`(困倦) `surprised` `thinking`
-
-触发：语音关键词 / 按钮 / 戳猫 → 详见 ARCHITECTURE.md §2.2
+1. 修 bug → 追加到 `PROJECT_MEMORY.md` 对应章节
+2. 架构决策变更 → 更新本文件 + `SYSTEM_ARCHITECTURE.md`
+3. 功能完成 → `APP_PRODUCT_PLAN.md` 标 ✅
+4. 已解决项从「待验证」移除；6 个月未复现标 `[stable]`
