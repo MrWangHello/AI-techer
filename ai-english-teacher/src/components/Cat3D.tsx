@@ -311,7 +311,7 @@ export default function Cat3D({
                 <img
                   src={currentPoster}
                   alt="Bella"
-                  className="absolute inset-0 w-full h-full object-cover"
+                  className="absolute inset-0 w-full h-full object-cover scale-[1.12]"
                   style={maskStyle}
                 />
               )}
