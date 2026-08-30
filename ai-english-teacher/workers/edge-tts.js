@@ -28,49 +28,45 @@ const DEFAULT_VOICES = {
   'en-US': 'en-US-AriaNeural',
 };
 
-// ============ 请求处理（Service Worker 格式） ============
+export default {
+  async fetch(request) {
+    // CORS 处理
+    if (request.method === 'OPTIONS') {
+      return new Response(null, {
+        headers: {
+          'Access-Control-Allow-Origin': '*',
+          'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+          'Access-Control-Allow-Headers': 'Content-Type',
+          'Access-Control-Max-Age': '86400',
+        },
+      });
+    }
 
-addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request));
-});
+    const url = new URL(request.url);
 
-async function handleRequest(request) {
-  // CORS 处理
-  if (request.method === 'OPTIONS') {
-    return new Response(null, {
-      headers: {
-        'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type',
-        'Access-Control-Max-Age': '86400',
-      },
-    });
-  }
+    // GET /voices - 获取可用音色列表
+    if (url.pathname === '/voices' && request.method === 'GET') {
+      return handleVoices();
+    }
 
-  const url = new URL(request.url);
+    // POST /synthesize - 语音合成
+    if (url.pathname === '/synthesize' && request.method === 'POST') {
+      return handleSynthesize(request);
+    }
 
-  // GET /voices - 获取可用音色列表
-  if (url.pathname === '/voices' && request.method === 'GET') {
-    return handleVoices();
-  }
+    // GET / - 状态检查
+    if (url.pathname === '/') {
+      return new Response(JSON.stringify({ status: 'ok', service: 'edge-tts' }), {
+        headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
+      });
+    }
 
-  // POST /synthesize - 语音合成
-  if (url.pathname === '/synthesize' && request.method === 'POST') {
-    return handleSynthesize(request);
-  }
-
-  // GET / - 状态检查
-  if (url.pathname === '/') {
-    return new Response(JSON.stringify({ status: 'ok', service: 'edge-tts' }), {
+    return new Response(JSON.stringify({ error: 'Not found' }), {
+      status: 404,
       headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
     });
-  }
-
-  return new Response(JSON.stringify({ error: 'Not found' }), {
-    status: 404,
-    headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' },
-  });
-}
+  },
+};
 
 // ============ 音色列表 ============
 
