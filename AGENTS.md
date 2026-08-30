@@ -38,6 +38,7 @@
 |------|------|
 | [`docs/ARCHITECTURE.md`](ai-english-teacher/docs/ARCHITECTURE.md) | 完整架构：宠物 mood 映射、语音方案、部署、排错 |
 | [`docs/VOICE_UX_PLAN.md`](ai-english-teacher/docs/VOICE_UX_PLAN.md) | **规划稿**：全局悬浮语音入口 + 指令词体系 |
+| [`docs/BROWSER_COMPAT_PLAN.md`](ai-english-teacher/docs/BROWSER_COMPAT_PLAN.md) | **规划稿**：浏览器兼容 + 双通道文字输入降级 |
 | 本文件 | 项目记忆与变更摘要 |
 
 ## 语音方案（2026-08-30 确定）
