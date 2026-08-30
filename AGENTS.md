@@ -45,16 +45,20 @@ VoiceChatBar → handleUserMessage → orchestrator → Skills → TTS
 
 | 文档 | 用途 |
 |------|------|
-| [`docs/PROJECT_MEMORY.md`](ai-english-teacher/docs/PROJECT_MEMORY.md) | **问题沉淀库**（修 bug 先查） |
-| [`docs/SYSTEM_ARCHITECTURE.md`](ai-english-teacher/docs/SYSTEM_ARCHITECTURE.md) | 分层架构与 Skills 设计 |
+| [`docs/FEATURES.md`](ai-english-teacher/docs/FEATURES.md) | **功能说明书** |
+| [`docs/EVALUATION.md`](ai-english-teacher/docs/EVALUATION.md) | **评测方法与评分（当前 69 分）** |
+| [`docs/TEST_CASES.md`](ai-english-teacher/docs/TEST_CASES.md) | 用例与代码映射 |
+| [`src/lib/eval/feature-catalog.ts`](ai-english-teacher/src/lib/eval/feature-catalog.ts) | 机器可读功能目录（新功能先改这里） |
+| [`docs/PROJECT_MEMORY.md`](ai-english-teacher/docs/PROJECT_MEMORY.md) | 问题沉淀库（修 bug 先查） |
+| [`docs/SYSTEM_ARCHITECTURE.md`](ai-english-teacher/docs/SYSTEM_ARCHITECTURE.md) | 分层架构 |
 | [`docs/BROWSER_COMPAT_PLAN.md`](ai-english-teacher/docs/BROWSER_COMPAT_PLAN.md) | 浏览器兼容 FAQ |
-| [`docs/APP_PRODUCT_PLAN.md`](ai-english-teacher/docs/APP_PRODUCT_PLAN.md) | 产品路线图（标 done/todo） |
-| [`docs/CONTENT_API_RESEARCH.md`](ai-english-teacher/docs/CONTENT_API_RESEARCH.md) | 内容 API 实测结论 |
-| [`docs/archive/`](ai-english-teacher/docs/archive/) | 已废弃方案（Flutter 等） |
+| [`docs/APP_PRODUCT_PLAN.md`](ai-english-teacher/docs/APP_PRODUCT_PLAN.md) | 产品路线图 |
+| [`docs/archive/`](ai-english-teacher/docs/archive/) | 已废弃方案 |
 
 ## 记忆维护规则
 
-1. 修 bug → 追加到 `PROJECT_MEMORY.md` 对应章节
-2. 架构决策变更 → 更新本文件 + `SYSTEM_ARCHITECTURE.md`
-3. 功能完成 → `APP_PRODUCT_PLAN.md` 标 ✅
-4. 已解决项从「待验证」移除；6 个月未复现标 `[stable]`
+1. **新语音功能**：先加 `feature-catalog.ts` 一条 → 实现 → `npm run test:all`
+2. 修 bug → 追加 `PROJECT_MEMORY.md`
+3. 承诺与行为不一致 → catalog `status` 标 `broken`/`partial`，并改 hint
+4. 复评 → 更新 `EVALUATION.md` 分数
+5. 6 个月未复现标 `[stable]`
