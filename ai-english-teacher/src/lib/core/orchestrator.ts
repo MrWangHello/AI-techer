@@ -11,7 +11,7 @@ import {
 } from "@/lib/skills/math-skills";
 import { matchShortcutContent, enrichNavWithContent, matchReadAloud } from "@/lib/skills/nav-content";
 import { drillActiveFallback, buildDrillExitResponse } from "@/lib/skills/drill-hint";
-import { tryChineseToEnglishLookup, looksLikeChineseLookup } from "@/lib/providers/english-lookup";
+import { lookupDictionaryLocal, looksLikeChineseLookup } from "@/lib/providers/local-dictionary";
 import { fallbackSkill } from "@/lib/skills/fallback";
 import { getSession, updateSession } from "@/lib/session-store";
 import { isDrillActive } from "@/lib/math/drill-state";
@@ -183,21 +183,21 @@ export async function handleUserMessage(
   if (shortcut) return trackResponse(shortcut);
 
   if (looksLikeChineseLookup(text)) {
-    const zhToEn = await tryChineseToEnglishLookup(text);
-    if (zhToEn) return trackResponse(zhToEn);
+    const local = lookupDictionaryLocal(text);
+    if (local) return trackResponse(local);
   }
 
   const ruleHit = matchRuleSkills(normalized);
   if (ruleHit) return trackResponse(enrichRuleHit(ruleHit.skillId, ruleHit.response));
 
+  const dict = lookupDictionaryLocal(text);
+  if (dict) return trackResponse(dict);
+
   const asyncId = matchAsyncSkillId(normalized, text);
-  if (asyncId) {
+  if (asyncId && asyncId !== "english.lookup") {
     const result = await executeAsyncSkill(asyncId, text, normalized, session);
     return trackResponse(result);
   }
-
-  const zhToEn = await tryChineseToEnglishLookup(text);
-  if (zhToEn) return trackResponse(zhToEn);
 
   const lookup = await tryEnglishLookup(text);
   if (lookup) {

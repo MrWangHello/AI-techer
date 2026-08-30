@@ -63,14 +63,14 @@
 | 修复 | 滑块防抖自动试听 +「试听当前语速」；StudyCards 传入语速 |
 | 文件 | `page.tsx`, `StudyCards.tsx` |
 
-### 1.7 查词时整页黑屏（Chrome This page couldn't load）
+### 1.7 查词时整页黑屏 / 词典不可用
 
 | 项 | 内容 |
 |----|------|
-| 现象 | 手机查词/查百科时偶发整页崩溃，只有 Reload/Back |
-| 根因 | 词霸 API 超时；旧 WebView 无 `AbortSignal.timeout`；Cat3D 移动端预载多路视频 blob OOM |
-| 修复 | `fetchWithTimeout`；移动端视频直连；`error.tsx` 应用内重试 |
-| 文件 | `safe-fetch.ts`, `Cat3D.tsx`, `iciba.ts` |
+| 现象 | 手机查词时黑屏或错误页；弱网下词典像「假功能」 |
+| 根因 | 查词主路径依赖词霸外网 API（CORS/超时）；中文查词还会把汉字剥掉再请求 |
+| 修复 | **本地词库优先**：`words.json` + 补充表同步命中，不发起网络请求；未收录立即说明，不卡住 |
+| 文件 | `local-dictionary.ts`, `orchestrator.ts` |
 
 ---
 

@@ -64,7 +64,8 @@ function ContentCardView({ card, voiceSpeed }: { card: ContentCard; voiceSpeed?:
 
   switch (card.type) {
     case "pinyin": {
-      const item = p?.item as { display: string; tip: string; emoji: string; example: string };
+      const item = p?.item as { display: string; tip: string; emoji: string; example: string } | undefined;
+      if (!item) return null;
       return (
         <CardShell speakText={speakText} voiceSpeed={voiceSpeed}>
           <div className="bg-white rounded-2xl p-6 text-center border border-pink-100">
@@ -77,7 +78,8 @@ function ContentCardView({ card, voiceSpeed }: { card: ContentCard; voiceSpeed?:
       );
     }
     case "hanzi": {
-      const item = p?.item as { char: string; emoji: string; pinyin: string; words: string[]; sentence: string };
+      const item = p?.item as { char: string; emoji: string; pinyin: string; words: string[]; sentence: string } | undefined;
+      if (!item) return null;
       return (
         <CardShell speakText={speakText} voiceSpeed={voiceSpeed}>
           <div className="bg-white rounded-2xl p-6 text-center border border-pink-100">
@@ -91,7 +93,8 @@ function ContentCardView({ card, voiceSpeed }: { card: ContentCard; voiceSpeed?:
       );
     }
     case "sentence": {
-      const item = p?.item as { text: string; hint?: string };
+      const item = p?.item as { text: string; hint?: string } | undefined;
+      if (!item) return null;
       return (
         <CardShell speakText={speakText} voiceSpeed={voiceSpeed}>
           <div className="bg-white rounded-2xl p-6 border border-pink-100">
@@ -102,7 +105,8 @@ function ContentCardView({ card, voiceSpeed }: { card: ContentCard; voiceSpeed?:
       );
     }
     case "idiom": {
-      const item = p?.item as { word: string; pinyin: string; meaning: string; example: string };
+      const item = p?.item as { word: string; pinyin: string; meaning: string; example: string } | undefined;
+      if (!item) return null;
       return (
         <CardShell speakText={speakText} voiceSpeed={voiceSpeed}>
           <div className="bg-white rounded-2xl p-5 border border-amber-100">
@@ -115,7 +119,8 @@ function ContentCardView({ card, voiceSpeed }: { card: ContentCard; voiceSpeed?:
       );
     }
     case "english-sentence": {
-      const item = p?.item as { en: string; zh: string; emoji: string };
+      const item = p?.item as { en: string; zh: string; emoji: string } | undefined;
+      if (!item) return null;
       return (
         <CardShell speakText={speakText} voiceSpeed={voiceSpeed}>
           <div className="bg-white rounded-2xl p-6 text-center border border-blue-100">
@@ -127,7 +132,8 @@ function ContentCardView({ card, voiceSpeed }: { card: ContentCard; voiceSpeed?:
       );
     }
     case "word-problem": {
-      const item = p?.item as { question: string; emoji: string; answer: number; explain: string };
+      const item = p?.item as { question: string; emoji: string; answer: number; explain: string } | undefined;
+      if (!item) return null;
       return (
         <CardShell speakText={speakText} voiceSpeed={voiceSpeed}>
           <div className="bg-white rounded-2xl p-5 border border-green-100">

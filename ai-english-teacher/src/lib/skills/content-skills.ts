@@ -1,7 +1,7 @@
 import type { AgentResponse, AsyncSkill, SessionContext } from "@/lib/core/types";
 import { withStudyNav } from "@/lib/skills/nav-skills";
 import { fetchDailyEnglish } from "@/lib/providers/daily-english";
-import { lookupWord } from "@/lib/providers/iciba";
+import { lookupDictionaryLocal, extractEnglishQuery } from "@/lib/providers/local-dictionary";
 import { fetchRandomPoem } from "@/lib/providers/poetry";
 import { fetchWeather } from "@/lib/providers/weather";
 import { fetchWikiSummary } from "@/lib/providers/wiki";
@@ -180,51 +180,19 @@ export const ASYNC_SKILLS: AsyncSkill[] = [
       "词典",
       "英文单词",
     ],
-    execute: async (text, normalized) => {
-      const enMatch = text.match(/[a-zA-Z]{2,}/);
-      const word = enMatch?.[0] ?? normalized.replace(/什么意思|翻译|释义/g, "");
-      if (!word || word.length < 2) {
+    execute: async (text) => {
+      const local = lookupDictionaryLocal(text);
+      if (local) return local;
+      const word = extractEnglishQuery(text);
+      if (!word) {
         return failReply("english_lookup", "你想查哪个英文单词？比如说「apple 什么意思」");
       }
-      try {
-        const mean = await lookupWord(word);
-        if (!mean) {
-          return failReply("english_lookup", `没找到 ${word} 的释义，换个词试试？`);
-        }
-        return withStudyNav(
-          {
-            intent: "english_lookup",
-            emotion: "thinking",
-            action: "study",
-            reply: `${word}：${mean}`,
-          },
-          "english.words"
-        );
-      } catch {
-        return failReply("english_lookup", "词典查询失败了~");
-      }
+      return failReply("english_lookup", `词库里还没有「${word}」。试试「apple 什么意思」或「书本用英语怎么说」。`);
     },
   },
 ];
 
 /** 纯英文输入 → 查词（无关键词时也尝试） */
 export async function tryEnglishLookup(text: string): Promise<AgentResponse | null> {
-  const trimmed = text.trim();
-  if (!/^[a-zA-Z\s-]{2,40}$/.test(trimmed)) return null;
-  const word = trimmed.split(/\s+/)[0];
-  try {
-    const mean = await lookupWord(word);
-    if (!mean) return null;
-    return withStudyNav(
-      {
-        intent: "english_lookup",
-        emotion: "thinking",
-        action: "study",
-        reply: `${word}：${mean}`,
-      },
-      "english.words"
-    );
-  } catch {
-    return null;
-  }
+  return lookupDictionaryLocal(text);
 }
