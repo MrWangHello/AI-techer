@@ -124,7 +124,7 @@ export default function Cat3D({
 
   useEffect(() => {
     if (pauseTimer.current) window.clearTimeout(pauseTimer.current);
-    const current = videoRefs.current[displayMood];
+    const current = videoRefs.current[displayMood] ?? null;
     if (active) playSafe(current);
     pauseTimer.current = window.setTimeout(() => {
       for (const key of MOODS) {
