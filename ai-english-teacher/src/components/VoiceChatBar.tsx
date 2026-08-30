@@ -10,9 +10,9 @@ import {
   speak,
   speakAfterMic,
   stopSpeaking,
-  isSpeechSupported,
+  isTtsOutputAvailable,
 } from "@/lib/speech";
-import { decideSttEngine, hasWebSpeechApi, readSttPref, type SttEngine } from "@/lib/speech-probe";
+import { decideSttEngine, decideTtsEngine, hasWebSpeechApi, readSttPref, type SttEngine } from "@/lib/speech-probe";
 import {
   ensureLocalModel,
   finishLocalRecording,
@@ -21,6 +21,7 @@ import {
   stopLocalRecording,
   subscribeLocalStt,
 } from "@/lib/speech-local";
+import { ensureLocalTts, isLocalTtsMarkedReady, subscribeLocalTts } from "@/lib/speech-local-tts";
 import { handleUserMessage, AgentResponse } from "@/lib/mock-agent";
 
 export type InputMode = "voice" | "text";
@@ -93,10 +94,33 @@ export default function VoiceChatBar({
       localReady: isLocalMarkedReady(),
     });
     setSttEngine(decision.engine === "none" && decision.shouldPrefetch ? "local" : decision.engine);
-    setTtsAvailable(isSpeechSupported());
+    const ttsDecision = decideTtsEngine({
+      webSpeechTts: "speechSynthesis" in window,
+      webSpeechVoices: window.speechSynthesis?.getVoices?.().length ?? 0,
+      ua: navigator.userAgent,
+      pref: readSttPref(),
+      localReady: isLocalTtsMarkedReady(),
+    });
+    setTtsAvailable(isTtsOutputAvailable());
     const canVoice = decision.engine !== "none" || decision.shouldPrefetch;
     setSttAvailable(canVoice);
     if (!canVoice) setMode("text");
+
+    if (ttsDecision.shouldPrefetch) {
+      setPackHint("正在给 Bella 装嘴巴…");
+      void ensureLocalTts().then((ok) => {
+        if (!isMounted.current) return;
+        setTtsAvailable(ok || isTtsOutputAvailable());
+        if (ok && !decision.shouldPrefetch) {
+          setPackHint("离线嘴巴准备好了，可以听 Bella");
+          setTimeout(() => {
+            if (isMounted.current) setPackHint(null);
+          }, 2500);
+        } else if (!ok && !decision.shouldPrefetch) {
+          setPackHint(null);
+        }
+      });
+    }
 
     if (decision.shouldPrefetch) {
       setPackHint("正在给 Bella 装耳朵…");
@@ -135,13 +159,22 @@ export default function VoiceChatBar({
   }, []);
 
   useEffect(() => {
-    return subscribeLocalStt((s) => {
+    const unsubEar = subscribeLocalStt((s) => {
       if (s.status === "downloading" && s.progress > 0) {
         setPackHint(`正在给 Bella 装耳朵… ${s.progress}%`);
       } else if (s.status === "error") {
         setPackHint(null);
       }
     });
+    const unsubMouth = subscribeLocalTts((s) => {
+      if (s.status === "downloading" && s.progress > 0) {
+        setPackHint(`正在给 Bella 装嘴巴… ${s.progress}%`);
+      }
+    });
+    return () => {
+      unsubEar();
+      unsubMouth();
+    };
   }, []);
 
   const showHint = useCallback((msg: string, ms = 3500) => {
@@ -153,7 +186,8 @@ export default function VoiceChatBar({
 
   const playReply = useCallback(
     async (reply: string, afterMic: boolean) => {
-      if (!ttsAvailable || !reply.trim()) return;
+      if (!reply.trim()) return;
+      if (!ttsAvailable && !isTtsOutputAvailable()) return;
 
       setSpeaking(true);
       onSpeakingChange?.(true);

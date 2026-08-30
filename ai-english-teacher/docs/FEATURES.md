@@ -31,6 +31,8 @@
 | ID | 功能 | 语音说法（示例） | 点击兜底 | 离线 | 状态 |
 |----|------|------------------|----------|------|------|
 | help.list | 帮助 | 帮助、你能做什么 | 否 | 是 | ok |
+| stt.local-pack | 离线耳朵 | 打开设置 | 是 | 是 | partial |
+| tts.local-pack | 离线嘴巴 | 打开设置 | 是 | 是 | partial |
 | nav.home / pet / study / settings | Tab 导航 | 回首页、看宠物、开始学习、打开设置 | 是 | 是 | ok |
 | english.words | 学英语单词 | 学英语 | 是 | 是 | ok |
 | dict.en / dict.zh | 词典 | apple什么意思、书本用英语怎么说 | 是 | 是 | ok |

@@ -4,6 +4,7 @@ import { describe, expect, it } from "vitest";
 import { ensureLocalModel } from "./speech-local";
 
 const modelRoot = resolve(process.cwd(), "public/models/whisper-tiny");
+const ttsRoot = resolve(process.cwd(), "public/models/tts-zh-huayan-x_low");
 const ortRoot = resolve(process.cwd(), "public/ort");
 
 const REQUIRED: Array<[string, number]> = [
@@ -20,6 +21,14 @@ describe("same-origin STT pack files", () => {
       expect(existsSync(path), path).toBe(true);
       expect(statSync(path).size, path).toBeGreaterThan(min);
     }
+  });
+
+  it("keeps the Piper Chinese mouth next to the app", () => {
+    expect(existsSync(resolve(ttsRoot, "zh_CN-huayan-x_low.onnx"))).toBe(true);
+    expect(statSync(resolve(ttsRoot, "zh_CN-huayan-x_low.onnx")).size).toBeGreaterThan(15_000_000);
+    expect(existsSync(resolve(ttsRoot, "zh_CN-huayan-x_low.onnx.json"))).toBe(true);
+    expect(existsSync(resolve(ttsRoot, "pinyin-ipa.json"))).toBe(true);
+    expect(statSync(resolve(ttsRoot, "pinyin-ipa.json")).size).toBeGreaterThan(10_000);
   });
 
   it("keeps onnxruntime wasm next to the app", () => {

@@ -10,6 +10,7 @@ import { TAB_VOICE_HINTS } from "@/lib/voice-hints";
 import type { PetData } from "@/lib/pet-data";
 import { readSttPref, writeSttPref, type SttPref } from "@/lib/speech-probe";
 import { ensureLocalModel, getLocalSttSnapshot, subscribeLocalStt } from "@/lib/speech-local";
+import { ensureLocalTts, getLocalTtsSnapshot, subscribeLocalTts } from "@/lib/speech-local-tts";
 
 export default function SettingsTab({
   pet,
@@ -48,16 +49,25 @@ export default function SettingsTab({
 }) {
   const [sttPref, setSttPref] = useState<SttPref>("auto");
   const [pack, setPack] = useState(getLocalSttSnapshot());
+  const [mouth, setMouth] = useState(getLocalTtsSnapshot());
 
   useEffect(() => {
     setSttPref(readSttPref());
-    return subscribeLocalStt((s) => setPack({ ...s, ready: s.status === "ready" }));
+    const unsubEar = subscribeLocalStt((s) => setPack({ ...s, ready: s.status === "ready" }));
+    const unsubMouth = subscribeLocalTts((s) => setMouth({ ...s, ready: s.status === "ready" }));
+    return () => {
+      unsubEar();
+      unsubMouth();
+    };
   }, []);
 
   const setPref = (pref: SttPref) => {
     setSttPref(pref);
     writeSttPref(pref);
-    if (pref === "local") void ensureLocalModel();
+    if (pref === "local") {
+      void ensureLocalModel();
+      void ensureLocalTts();
+    }
   };
 
   return (
@@ -124,8 +134,11 @@ export default function SettingsTab({
           </p>
         </div>
         <div className="mt-3 space-y-1 text-sm text-gray-600">
-          <p>语音合成: {speechSupported === null ? "检测中..." : speechSupported ? "支持" : "不支持（建议使用 Chrome）"}</p>
-          <p>语音识别: {sttSupported === null ? "检测中..." : sttSupported ? "支持" : "不支持（可使用文字输入）"}</p>
+          <p>
+            浏览器播报:{" "}
+            {speechSupported === null ? "检测中..." : speechSupported ? "有" : "没有（荣耀、微信常没有，用下面的离线嘴巴）"}
+          </p>
+          <p>浏览器识别: {sttSupported === null ? "检测中..." : sttSupported ? "有" : "没有（可打字，或用离线耳朵）"}</p>
         </div>
         <div className="mt-4 space-y-2">
           <p className="text-base text-gray-600">识别方式</p>
@@ -150,26 +163,40 @@ export default function SettingsTab({
             ))}
           </div>
           <p className="text-sm text-gray-500">
-            离线包：
+            离线耳朵：
             {pack.status === "downloading"
-              ? `正在装 ${pack.progress}%（先走国内镜像）`
+              ? `正在装 ${pack.progress}%`
               : pack.ready || pack.status === "ready"
                 ? "已在这台浏览器里"
                 : pack.status === "error"
                   ? `装不上（${pack.error || "请检查网络"}）`
-                  : "还没装进这台浏览器。Chrome 能认就不下。"}
+                  : "还没装。Chrome 能认就不下。"}
           </p>
-          {pack.status === "error" && (
+          <p className="text-sm text-gray-500">
+            离线嘴巴：
+            {mouth.status === "downloading"
+              ? `正在装 ${mouth.progress}%`
+              : mouth.ready || mouth.status === "ready"
+                ? "已在这台浏览器里"
+                : mouth.status === "error"
+                  ? `装不上（${mouth.error || "请检查网络"}）`
+                  : "还没装。浏览器能播就不下。"}
+          </p>
+          {(pack.status === "error" || mouth.status === "error") && (
             <button
               type="button"
-              onClick={() => void ensureLocalModel()}
+              onClick={() => {
+                void ensureLocalModel();
+                void ensureLocalTts();
+              }}
               className="min-h-11 rounded-full border border-pink-200 bg-white px-3 text-sm text-pink-600"
             >
               再试一次
             </button>
           )}
           <p className="text-sm leading-relaxed text-gray-500">
-            进页面会先探测。浏览器耳朵够用就不下包。荣耀、华为、QQ 或探测失败，才从本站装离线耳朵（跟网页同一个地址，不连国外模型站）。
+            进页面先探测。Chrome 能听能说就不下包。荣耀、华为、微信没有系统播报时，从本站装离线耳朵（约 42MB）和离线嘴巴（约
+            20MB），跟网页同一个地址，不连国外模型站。
           </p>
         </div>
       </Card>

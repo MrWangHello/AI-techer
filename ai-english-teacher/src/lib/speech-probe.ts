@@ -77,3 +77,55 @@ export function decideSttEngine(input: {
     reason: "webspeech-ok",
   };
 }
+
+export type TtsEngine = "webspeech" | "local" | "none";
+export type TtsPref = SttPref;
+
+export function decideTtsEngine(input: {
+  webSpeechTts: boolean;
+  webSpeechVoices: number;
+  ua: string;
+  pref: TtsPref;
+  localReady: boolean;
+}): { engine: TtsEngine; shouldPrefetch: boolean; reason: string } {
+  const highRisk = isHighRiskSttUa(input.ua);
+  const webUsable = input.webSpeechTts && (!highRisk || input.webSpeechVoices > 0);
+
+  if (input.pref === "local") {
+    return {
+      engine: input.localReady ? "local" : "none",
+      shouldPrefetch: true,
+      reason: "force-local",
+    };
+  }
+
+  if (input.pref === "webspeech") {
+    return {
+      engine: webUsable ? "webspeech" : input.webSpeechTts ? "webspeech" : "none",
+      shouldPrefetch: false,
+      reason: "force-webspeech",
+    };
+  }
+
+  if (!input.webSpeechTts) {
+    return {
+      engine: input.localReady ? "local" : "none",
+      shouldPrefetch: true,
+      reason: "no-webspeech-tts",
+    };
+  }
+
+  if (highRisk) {
+    return {
+      engine: input.localReady ? "local" : "webspeech",
+      shouldPrefetch: true,
+      reason: "high-risk-ua",
+    };
+  }
+
+  return {
+    engine: "webspeech",
+    shouldPrefetch: false,
+    reason: "webspeech-ok",
+  };
+}

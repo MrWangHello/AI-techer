@@ -1,11 +1,18 @@
 /**
- * 语音工具模块 - 基于 Web Speech API
+ * 语音工具模块
  *
- * TTS：浏览器原生 SpeechSynthesis（Chrome wake-up 修复）
- * STT：浏览器原生 SpeechRecognition / webkitSpeechRecognition
+ * TTS：Chrome 等用 SpeechSynthesis；荣耀/微信没有嘴巴时走本站 Piper 包 + Web Audio
+ * STT：浏览器 SpeechRecognition，失败则走本站 Whisper 包
  */
 
 import { detectSpeakLang } from "./speak-lang";
+import { decideTtsEngine, readSttPref } from "./speech-probe";
+import {
+  isLocalTtsMarkedReady,
+  isLocalTtsReady,
+  speakLocal,
+  stopLocalTts,
+} from "./speech-local-tts";
 
 let recognition: any = null;
 let isListening = false;
@@ -202,6 +209,35 @@ function doSpeak(utterance: SpeechSynthesisUtterance): boolean {
   }
 }
 
+function pickTtsEngine(): ReturnType<typeof decideTtsEngine> {
+  if (typeof window === "undefined") {
+    return { engine: "none", shouldPrefetch: false, reason: "ssr" };
+  }
+  const synth = getSynth();
+  return decideTtsEngine({
+    webSpeechTts: !!synth,
+    webSpeechVoices: getAvailableVoices().length,
+    ua: navigator.userAgent,
+    pref: readSttPref(),
+    localReady: isLocalTtsReady() || isLocalTtsMarkedReady(),
+  });
+}
+
+function speakWithLocal(text: string, onEnd?: () => void, speed?: number): boolean {
+  stopLocalTts();
+  onSpeakingStateChange?.(true);
+  void speakLocal(text, {
+    speed,
+    onEnd: () => {
+      onSpeakingStateChange?.(false);
+      onEnd?.();
+    },
+  }).then((ok) => {
+    if (!ok) onSpeakingStateChange?.(false);
+  });
+  return true;
+}
+
 export function speak(text: string, onEnd?: () => void, speed?: number): boolean {
   if (!text.trim()) {
     onSpeakingStateChange?.(false);
@@ -209,11 +245,10 @@ export function speak(text: string, onEnd?: () => void, speed?: number): boolean
     return false;
   }
 
+  const decision = pickTtsEngine();
   const synth = getSynth();
-  if (!synth) {
-    console.warn("[Speech] SpeechSynthesis not available");
-    onSpeakingStateChange?.(false);
-    return false;
+  if (decision.engine !== "webspeech" || !synth) {
+    return speakWithLocal(text, onEnd, speed);
   }
 
   try {
@@ -233,13 +268,12 @@ export function speak(text: string, onEnd?: () => void, speed?: number): boolean
 
     const success = doSpeak(utterance);
     if (!success) {
-      onSpeakingStateChange?.(false);
+      return speakWithLocal(text, onEnd, speed);
     }
     return success;
   } catch (e) {
     console.warn("[Speech] speak failed:", e);
-    onSpeakingStateChange?.(false);
-    return false;
+    return speakWithLocal(text, onEnd, speed);
   }
 }
 
@@ -254,11 +288,10 @@ export function speakEnglish(text: string, onEnd?: () => void, speed?: number): 
     return false;
   }
 
+  const decision = pickTtsEngine();
   const synth = getSynth();
-  if (!synth) {
-    console.warn("[Speech] SpeechSynthesis not available");
-    onSpeakingStateChange?.(false);
-    return false;
+  if (decision.engine !== "webspeech" || !synth) {
+    return speakWithLocal(text, onEnd, speed ?? 0.9);
   }
 
   try {
@@ -278,13 +311,12 @@ export function speakEnglish(text: string, onEnd?: () => void, speed?: number): 
 
     const success = doSpeak(utterance);
     if (!success) {
-      onSpeakingStateChange?.(false);
+      return speakWithLocal(text, onEnd, speed ?? 0.9);
     }
     return success;
   } catch (e) {
     console.warn("[Speech] speakEnglish failed:", e);
-    onSpeakingStateChange?.(false);
-    return false;
+    return speakWithLocal(text, onEnd, speed ?? 0.9);
   }
 }
 
@@ -336,8 +368,9 @@ export function stopSpeaking(): void {
   const synth = getSynth();
   if (synth) {
     synth.cancel();
-    onSpeakingStateChange?.(false);
   }
+  stopLocalTts();
+  onSpeakingStateChange?.(false);
 }
 
 export const cancelSpeech = stopSpeaking;
@@ -624,6 +657,13 @@ export function endHoldListening(
 
 export function isSpeechSupported(): boolean {
   return typeof window !== "undefined" && !!window.speechSynthesis;
+}
+
+/** 浏览器能播，或本站嘴巴包能装/已装 */
+export function isTtsOutputAvailable(): boolean {
+  if (typeof window === "undefined") return false;
+  const d = pickTtsEngine();
+  return d.engine !== "none" || d.shouldPrefetch;
 }
 
 export function isSTTSupported(): boolean {
