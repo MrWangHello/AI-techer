@@ -230,15 +230,13 @@
 
 - 组件已删除；逻辑由 `VoiceChatBar` 接管
 
-### 7.6 未清理项（待确认）
+### 7.6 Live2D / Pixi 遗留（已清理 2026-08-30）
 
-| 项 | 说明 |
+| 项 | 处理 |
 |----|------|
-| `public/live2d.min.js` | 未被 `src/` 引用；Cat3D 已改用 MP4 |
-| `pixi-live2d-display` / `pixi.js` | package.json 依赖，src 无 import |
-| `src/types/global.d.ts` Live2D 声明 | 无使用方 |
-
-> 以上暂未删除，避免误伤；确认后可单独 PR 移除。
+| `public/live2d.min.js` | 已删除 |
+| `pixi-live2d-display` / `pixi.js` | 已从 package.json 移除（-82 npm 包） |
+| `global.d.ts` Live2D/PIXI | 已删除，保留 SpeechRecognition 声明 |
 
 ---
 
