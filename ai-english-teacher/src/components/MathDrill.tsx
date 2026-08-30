@@ -22,6 +22,10 @@ export default function MathDrill({ question, streak = 0, onAnswer }: MathDrillP
     setInput((prev) => (prev.length < 2 ? prev + String(n) : prev));
   };
 
+  const stopBubble = (e: React.SyntheticEvent) => {
+    e.stopPropagation();
+  };
+
   const submit = () => {
     if (!input) return;
     const n = parseInt(input, 10);
@@ -32,7 +36,11 @@ export default function MathDrill({ question, streak = 0, onAnswer }: MathDrillP
   };
 
   return (
-    <div className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-5 border border-amber-100 shadow-sm">
+    <div
+      className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-5 border border-amber-100 shadow-sm"
+      onPointerDown={stopBubble}
+      onClick={stopBubble}
+    >
       <div className="text-center mb-3">
         <span className="text-2xl">{question.emoji}</span>
         <p className="text-sm text-amber-800 mt-1 font-medium">{question.scenario}</p>

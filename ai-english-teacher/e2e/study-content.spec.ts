@@ -23,7 +23,9 @@ test.describe("Study content loads on tab click", () => {
 
   test("阅读 tab shows story or joke text", async ({ page }) => {
     await page.getByRole("button", { name: "阅读", exact: true }).click();
-    await expect(page.getByText(/📖 故事|😄 笑话/)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByText(/小兔子|小明|小蜜蜂|玲玲|小红|小猫/).first()).toBeVisible({
+      timeout: 5000,
+    });
   });
 
   test("探索 tab shows explore tips", async ({ page }) => {

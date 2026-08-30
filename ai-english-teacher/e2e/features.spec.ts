@@ -59,14 +59,35 @@ test.describe("全功能意图（文字模拟语音）", () => {
     await expect(page.getByText("✨ 美句")).toBeVisible({ timeout: 5000 });
   });
 
-  test("数学口算：两位数输入需点确定", async ({ page }) => {
+  test("数学 9+1：点1和0再确定才提交", async ({ page }) => {
     await openStudyTab(page);
     await page.getByRole("button", { name: "数学", exact: true }).click();
     const drill = page.locator(".border-amber-100").filter({ hasText: "确定" });
-    await expect(drill.getByRole("button", { name: "确定" })).toBeVisible();
     await drill.getByRole("button", { name: "1", exact: true }).click();
+    await expect(drill.locator("span.text-pink-500")).toHaveText("1");
+    await expect(page.getByText(/没关系|对了/)).not.toBeVisible();
     await drill.getByRole("button", { name: "0", exact: true }).click();
-    await expect(drill.getByText("10")).toBeVisible();
+    await expect(drill.locator("span.text-pink-500")).toHaveText("10");
+  });
+
+  test("故事为中文内容", async ({ page }) => {
+    await openStudyTab(page);
+    await page.getByRole("button", { name: "阅读", exact: true }).click();
+    await expect(page.getByText(/小兔子|小明|小蜜蜂|玲玲|小红|小猫/).first()).toBeVisible({
+      timeout: 5000,
+    });
+    await expect(page.getByText(/Bella was|The Little Cat/i)).not.toBeVisible();
+  });
+
+  test("语文古诗为短诗", async ({ page }) => {
+    await openStudyTab(page);
+    await page.getByRole("button", { name: "语文", exact: true }).click();
+    await page.getByRole("button", { name: "古诗", exact: true }).click();
+    const poem = page.locator(".border-amber-100").first();
+    await expect(poem).toBeVisible({ timeout: 5000 });
+    const text = await poem.innerText();
+    expect(text.length).toBeLessThan(120);
+    expect(text).toMatch(/静夜思|春晓|咏鹅|悯农|登鹳雀楼|江南|古朗月行|池上/);
   });
 });
 
