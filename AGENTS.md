@@ -18,6 +18,7 @@
 - ✅ **全局 VoiceReplyBar** — 文字回复保底
 - ✅ **导航指令词** — 首页/宠物/学习/设置 + 帮助
 - 📋 Phase 2：StudyCards 子指令（朗读/下一个/测验）
+- 📋 **开放问答** — 天气/时间等工具 API + 可选 LLM，见 [`OPEN_QA_PLAN.md`](ai-english-teacher/docs/OPEN_QA_PLAN.md)
 
 ## 待测试
 
@@ -41,6 +42,7 @@
 | [`docs/ARCHITECTURE.md`](ai-english-teacher/docs/ARCHITECTURE.md) | 完整架构：宠物 mood 映射、语音方案、部署、排错 |
 | [`docs/VOICE_UX_PLAN.md`](ai-english-teacher/docs/VOICE_UX_PLAN.md) | **规划稿**：全局悬浮语音入口 + 指令词体系 |
 | [`docs/BROWSER_COMPAT_PLAN.md`](ai-english-teacher/docs/BROWSER_COMPAT_PLAN.md) | 浏览器兼容 + 双通道降级 + **用户 FAQ（§11）** |
+| [`docs/OPEN_QA_PLAN.md`](ai-english-teacher/docs/OPEN_QA_PLAN.md) | **规划稿**：开放问答（天气/搜索/LLM 路由方案） |
 | 本文件 | 项目记忆与变更摘要 |
 
 ## 语音方案（2026-08-30 确定）
