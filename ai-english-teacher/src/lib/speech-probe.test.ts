@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { decideSttEngine, isHighRiskSttUa } from "./speech-probe";
+import { decideSttEngine, decideTtsEngine, isHighRiskSttUa } from "./speech-probe";
 
 describe("isHighRiskSttUa", () => {
   it("flags honor / huawei / qq / wechat / firefox", () => {
@@ -57,6 +57,43 @@ describe("decideSttEngine", () => {
       localReady: false,
     });
     expect(d.engine).toBe("none");
+    expect(d.shouldPrefetch).toBe(true);
+  });
+});
+
+describe("decideTtsEngine", () => {
+  it("does not prefetch when Chrome TTS looks fine", () => {
+    const d = decideTtsEngine({
+      webSpeechTts: true,
+      webSpeechVoices: 8,
+      ua: "Mozilla/5.0 Chrome/126.0.0.0",
+      pref: "auto",
+      localReady: false,
+    });
+    expect(d.engine).toBe("webspeech");
+    expect(d.shouldPrefetch).toBe(false);
+  });
+
+  it("prefetches a mouth pack on WeChat even if speechSynthesis exists", () => {
+    const d = decideTtsEngine({
+      webSpeechTts: true,
+      webSpeechVoices: 0,
+      ua: "MicroMessenger",
+      pref: "auto",
+      localReady: false,
+    });
+    expect(d.shouldPrefetch).toBe(true);
+  });
+
+  it("uses local mouth when Honor has no speechSynthesis", () => {
+    const d = decideTtsEngine({
+      webSpeechTts: false,
+      webSpeechVoices: 0,
+      ua: "Mozilla/5.0 Honor",
+      pref: "auto",
+      localReady: true,
+    });
+    expect(d.engine).toBe("local");
     expect(d.shouldPrefetch).toBe(true);
   });
 });

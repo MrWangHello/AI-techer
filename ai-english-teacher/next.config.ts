@@ -3,6 +3,7 @@ import type { NextConfig } from "next";
 const isBuildForPages = process.env.DEPLOY_TARGET === "github-pages";
 
 const nextConfig: NextConfig = {
+  serverExternalPackages: ["onnxruntime-node", "onnxruntime-web"],
   ...(isBuildForPages
     ? {
         output: "export" as const,

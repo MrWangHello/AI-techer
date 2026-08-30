@@ -48,6 +48,18 @@ export const FEATURE_CASES: FeatureCase[] = [
     notes: "进页先探测；需要时从本站 /models/whisper-tiny 装 q8 包（约 42MB），WASM 走 /ort。不连 huggingface。装不上回退浏览器识别",
   },
   {
+    id: "tts.local-pack",
+    name: "离线播报包（探测后再下）",
+    tab: "settings",
+    voicePhrases: ["打开设置"],
+    expected: { intent: "nav_settings", navigate: "settings" },
+    tapFallback: true,
+    offline: true,
+    status: "partial",
+    notes:
+      "荣耀/微信常没有 speechSynthesis。需要时从本站 /models/tts-zh-huayan-x_low 装 Piper 华研 x_low（约 20MB），Web Audio 出声。Chrome 能播就不下。短句能听懂，不如系统声",
+  },
+  {
     id: "nav.home",
     name: "回首页",
     tab: "global",

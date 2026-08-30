@@ -83,6 +83,16 @@
 | 失败 | 有 Web Speech 就回退浏览器识别；设置里可再试一次 |
 | 文件 | `speech-probe.ts`, `speech-local.ts`, `VoiceChatBar.tsx` |
 
+### 1.9 荣耀 / 微信只能识别不能播报 `[preview]`
+
+| 项 | 内容 |
+|----|------|
+| 现象 | 离线耳朵能听，Bella 不说话。设置里「语音合成：不支持」。荣耀浏览器、微信浏览器都这样，不是手机型号问题 |
+| 根因 | Whisper 包只做 STT。嘴巴仍绑 `speechSynthesis`。这些内核经常没有系统 TTS，`speak()` 直接跳过 |
+| 修复 | 本站再放 Piper 华研 x_low（约 20MB）。探测：Chrome 能播就不下；没有 `speechSynthesis` 或高危 UA 则装包，Web Audio 播 PCM |
+| 品质 | 短中文能听懂，不如 Chrome 系统声；英语带口音。故事按句切开 |
+| 文件 | `speech-local-tts.ts`, `tts-phonemes.ts`, `speech.ts`, `VoiceChatBar.tsx` |
+
 ---
 
 ## 2. 意图路由 / Skills

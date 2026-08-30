@@ -16,7 +16,7 @@ VoiceChatBar → handleUserMessage → orchestrator → Skills → TTS
 ```
 
 - 意图层：`src/lib/core/orchestrator.ts` + `src/lib/skills/*`
-- 语音：`src/lib/speech.ts`（Web Speech API STT/TTS）
+- 语音：`src/lib/speech.ts`（Chrome：Web Speech；荣耀/微信：本站 Whisper 耳朵 + Piper 嘴巴）
 - 宠物：`Cat3D.tsx`（5 个 MP4 mood 视频）
 - 学习 UI：`StudyPanel.tsx`（五科分区 + 内容卡片）
 
@@ -24,8 +24,8 @@ VoiceChatBar → handleUserMessage → orchestrator → Skills → TTS
 
 | 限制 | 说明 |
 |------|------|
-| STT | 荣耀/华为/QQ 浏览器常失败 → 文字输入降级 |
-| TTS | 需用户手势唤醒；沙箱环境无法测 |
+| STT | 荣耀/华为/微信：本站 Whisper 包；仍失败则打字 |
+| TTS | Chrome 用系统声；荣耀/微信走本站 Piper（约 20MB）。需用户手势；沙箱听不见 |
 | 视频 | MP4 实心底，CSS 羽化无法完全透明 |
 | 联网 | 内容 API 需网络；wiki/诗词/故事有离线兜底 |
 | 情绪 | `agentEmotion` 触发后不自动回 neutral |

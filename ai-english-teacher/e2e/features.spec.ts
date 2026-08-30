@@ -128,6 +128,12 @@ test.describe("Tab 与页面完整性", () => {
     await openTab(page, "设置");
     await expect(page.getByText("语音设置")).toBeVisible();
     await expect(page.getByText("数据管理")).toBeVisible();
+    await expect(page.getByText(/浏览器播报/)).toBeVisible();
+    await expect(page.getByText(/^离线嘴巴/)).toBeVisible();
+    await expect(page.getByText("建议使用 Chrome")).toHaveCount(0);
+    await page.getByRole("button", { name: "只用离线包" }).click();
+    await page.getByRole("button", { name: "试听当前语速" }).click();
+    await expect(page.getByText("语音设置")).toBeVisible();
   });
 
   test("学习各学科子 Tab 有内容", async ({ page }) => {
