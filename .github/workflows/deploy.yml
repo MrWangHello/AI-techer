@@ -44,11 +44,22 @@ jobs:
         id: cf-deploy
         working-directory: ./ai-english-teacher/workers
         run: |
-          npx --yes wrangler deploy edge-tts.js --name ai-teacher-tts 2>&1 | tee wrangler-output.txt
-          # 从输出中提取 Worker URL
-          URL=$(grep -oP 'https://[^ ]+\.workers\.dev' wrangler-output.txt | head -1)
-          if [ -z "$URL" ]; then
-            echo "::warning::Could not extract Worker URL from output"
+          echo "::group::Deploying Cloudflare Worker"
+          OUTPUT=$(npx --yes wrangler deploy edge-tts.js --name ai-teacher-tts 2>&1)
+          echo "$OUTPUT"
+          echo "::endgroup::"
+          # 获取 Workers 子域名
+          echo "::group::Getting Workers Subdomain"
+          WHOAMI=$(npx --yes wrangler whoami 2>&1)
+          echo "$WHOAMI"
+          echo "::endgroup::"
+          # 从 whoami 输出中提取 Workers 子域名（格式: user@example.com's Workers · subdomain.workers.dev）
+          SUBDOMAIN=$(echo "$WHOAMI" | grep -oP "Workers\s*·\s*\K[a-z0-9-]+" | head -1)
+          if [ -n "$SUBDOMAIN" ]; then
+            URL="https://ai-teacher-tts.$SUBDOMAIN.workers.dev"
+            echo "Constructed Worker URL: $URL"
+          else
+            echo "::warning::Could not determine Workers subdomain"
             URL="https://ai-teacher-tts.example.workers.dev"
           fi
           echo "worker_url=$URL" >> $GITHUB_OUTPUT
@@ -56,20 +67,12 @@ jobs:
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
 
-      # 提取 Worker URL
-      - name: Extract Worker URL
-        id: cf-url
-        working-directory: ./ai-english-teacher
-        run: |
-          echo "worker_url=${{ steps.cf-deploy.outputs.worker_url }}" >> $GITHUB_OUTPUT
-          echo "Worker URL: ${{ steps.cf-deploy.outputs.worker_url }}"
-
       # 构建 Next.js，传入 Worker URL 作为环境变量
       - name: Build for GitHub Pages
         run: npm run build
         env:
           DEPLOY_TARGET: github-pages
-          NEXT_PUBLIC_TTS_WORKER_URL: ${{ steps.cf-url.outputs.worker_url }}
+          NEXT_PUBLIC_TTS_WORKER_URL: ${{ steps.cf-deploy.outputs.worker_url }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4
