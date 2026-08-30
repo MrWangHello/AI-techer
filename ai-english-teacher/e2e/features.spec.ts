@@ -107,6 +107,9 @@ test.describe("Tab 与页面完整性", () => {
     await expect(page.getByRole("button", { name: "玩耍" }).first()).toBeVisible();
     await expect(page.getByRole("button", { name: "洗澡" })).toBeVisible();
     await expect(page.getByRole("button", { name: "睡觉" })).toBeVisible();
+    const clip = page.locator("video[src*='white-cat']");
+    await expect(clip).toBeVisible();
+    await expect.poll(async () => clip.evaluate((el) => (el as HTMLVideoElement).readyState)).toBeGreaterThan(1);
   });
 
   test("设置 Tab 语音与数据区块", async ({ page }) => {

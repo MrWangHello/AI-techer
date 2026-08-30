@@ -98,6 +98,22 @@ body {
   animation: float-slow 3s ease-in-out infinite;
 }
 
+@keyframes sticker-roll {
+  0%,
+  100% {
+    transform: translateX(-16px) translateY(0) rotate(-10deg);
+  }
+  50% {
+    transform: translateX(18px) translateY(-10px) rotate(10deg);
+  }
+}
+.animate-sticker-roll {
+  animation: sticker-roll 2.4s ease-in-out infinite;
+}
+.animate-sticker-roll-rev {
+  animation: sticker-roll 2.8s ease-in-out infinite reverse;
+}
+
 /* 一次性ping动画 */
 @keyframes ping-once {
   0% { transform: scale(0.5); opacity: 0; }
