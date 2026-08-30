@@ -26,6 +26,8 @@
 - **不用 ClawBot / 本地 OpenClaw** — 需常开机器 + 默认 LLM，不符合零成本 Web 优先
 - **Mock Agent 现在** — 规则 Router 调各 Skill；**以后只换意图识别层**
 - **微信通道** — 暂缓；若要做用云开发云函数 `/api/chat`，非 ClawBot
+- **产品 IA v2** — 首页（功能集+历史）/ 宠物（不动）/ **学习分科** / 设置（用户属性）；见 [`APP_PRODUCT_PLAN.md`](ai-english-teacher/docs/APP_PRODUCT_PLAN.md)
+- **语音 v2** — 按住说话 + 静音自动发送，替代单纯 12s 超时；见同上 §5
 
 ## 已知限制
 
@@ -39,7 +41,8 @@
 | 文档 | 内容 |
 |------|------|
 | [`docs/SYSTEM_ARCHITECTURE.md`](ai-english-teacher/docs/SYSTEM_ARCHITECTURE.md) | 分层架构 §11 语音修复 §12 Skills |
-| [`docs/CONTENT_UI_PLAN.md`](ai-english-teacher/docs/CONTENT_UI_PLAN.md) | **多主题内容卡片 UI 方案**（古诗/英语浮层） |
+| [`docs/APP_PRODUCT_PLAN.md`](ai-english-teacher/docs/APP_PRODUCT_PLAN.md) | **产品 IA v2**：学习分科、首页历史、语音按住说 |
+| [`docs/CONTENT_UI_PLAN.md`](ai-english-teacher/docs/CONTENT_UI_PLAN.md) | 内容卡片模板（并入学习分科内） |
 | [`docs/CONTENT_API_RESEARCH.md`](ai-english-teacher/docs/CONTENT_API_RESEARCH.md) | 故事机式内容 API 实测 |
 | [`docs/BROWSER_COMPAT_PLAN.md`](ai-english-teacher/docs/BROWSER_COMPAT_PLAN.md) | 浏览器兼容 FAQ §11 |
 | [`docs/ARCHITECTURE.md`](ai-english-teacher/docs/ARCHITECTURE.md) | 宠物 mood、部署、排错 |

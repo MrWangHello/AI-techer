@@ -168,3 +168,7 @@ src/components/content/
 3. 首页宫格是否 Phase UI-1 一起做？（推荐 UI-2，先验证浮层）
 
 确认后可从 `PoetryCard` + `DailyEnglishCard` 开始编码。
+
+---
+
+> **v2 更新（2026-08-30）：** 产品方向调整为 **学习 Tab 分科 + 首页历史**，不再优先「全局浮层」。详见 **[APP_PRODUCT_PLAN.md](./APP_PRODUCT_PLAN.md)** §3。
