@@ -28,6 +28,7 @@
 - **微信通道** — 暂缓；若要做用云开发云函数 `/api/chat`，非 ClawBot
 - **产品 IA v2** — 首页（功能集+历史）/ 宠物（不动）/ **学习分科** / 设置（用户属性）；见 [`APP_PRODUCT_PLAN.md`](ai-english-teacher/docs/APP_PRODUCT_PLAN.md)
 - **语音 v2** — 按住说话 + 静音自动发送，替代单纯 12s 超时；见同上 §5
+- **模块调研完成** — 入口门禁清单见 [`MODULE_FEASIBILITY.md`](ai-english-teacher/docs/MODULE_FEASIBILITY.md)；**有内容再开入口**
 
 ## 已知限制
 
@@ -41,6 +42,7 @@
 | 文档 | 内容 |
 |------|------|
 | [`docs/SYSTEM_ARCHITECTURE.md`](ai-english-teacher/docs/SYSTEM_ARCHITECTURE.md) | 分层架构 §11 语音修复 §12 Skills |
+| [`docs/MODULE_FEASIBILITY.md`](ai-english-teacher/docs/MODULE_FEASIBILITY.md) | **入口门禁调研**：各学科 API/内置/代码对照 |
 | [`docs/APP_PRODUCT_PLAN.md`](ai-english-teacher/docs/APP_PRODUCT_PLAN.md) | **产品 IA v2**：学习分科、首页历史、语音按住说 |
 | [`docs/CONTENT_UI_PLAN.md`](ai-english-teacher/docs/CONTENT_UI_PLAN.md) | 内容卡片模板（并入学习分科内） |
 | [`docs/CONTENT_API_RESEARCH.md`](ai-english-teacher/docs/CONTENT_API_RESEARCH.md) | 故事机式内容 API 实测 |

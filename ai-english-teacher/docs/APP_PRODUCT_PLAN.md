@@ -1,9 +1,11 @@
 # Bella 产品架构与语音交互方案（v2）
 
-> 状态：**规划稿**（评审后分阶段实现）  
-> 关联：[SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md) · [VOICE_UX_PLAN.md](./VOICE_UX_PLAN.md) · [CONTENT_API_RESEARCH.md](./CONTENT_API_RESEARCH.md)  
+> 状态：**规划稿**（调研完成，评审后分阶段实现）  
+> 关联：[MODULE_FEASIBILITY.md](./MODULE_FEASIBILITY.md) · [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md) · [VOICE_UX_PLAN.md](./VOICE_UX_PLAN.md) · [CONTENT_API_RESEARCH.md](./CONTENT_API_RESEARCH.md)  
 > 日期：2026-08-30  
 > 取代/补充：原 [CONTENT_UI_PLAN.md](./CONTENT_UI_PLAN.md) 中「全局浮层卡片」思路，改为 **Tab 内学科分区 + 首页聚合**
+
+**入口门禁：** 各模块能否上首页/学习 Tab，以 [MODULE_FEASIBILITY.md](./MODULE_FEASIBILITY.md) 总表为准 — **有内容、有代码、CORS 通，才开入口**。
 
 ---
 
@@ -136,14 +138,14 @@ interface HistoryItem {
 |--------|------|----------|
 | **古诗词** | 诗泉随机 + 换一首 + 竖排卡片 | Skill + 待做卡片 |
 | **美句摘录** | 一言 | Skill |
-| **成语** | apihz / 内置（Phase 2） | 规划 |
+| **成语** | apihz / 内置 | 🔴 **暂不做 Tab**（API 有、代码无；需 `idioms.json`≥30 或 Key） |
 
 #### 阅读
 
 | 子模块 | 内容 | 对应现有 |
 |--------|------|----------|
-| **短故事** | 内置 JSON | Skill |
-| **笑话** | 内置 JSON | Skill |
+| **短故事** | 内置 JSON（现 3 篇英文） | Skill；🟡 **UI 暂缓**至中文≥20 篇 |
+| **笑话** | 内置 JSON（现 5 条） | Skill；🟡 **宫格暂缓**至≥30 条 |
 
 #### 探索
 
@@ -156,8 +158,8 @@ interface HistoryItem {
 
 | 子模块 | 内容 | 说明 |
 |--------|------|------|
-| **口算练习** | 内置生成 / apihz | 显示「即将开放」 |
-| **应用题** | 内置 JSON | Phase 3 |
+| **口算练习** | 客户端生成（推荐自写或 npm 库） | 🔴 **M1 做完前整栏不显示** |
+| **应用题** | apihz `shuxuex.php`（CORS ✅，需 Key） | 🟡 M1 后可选子入口 |
 
 **学习 Tab 内 UI 模板（3 种）：**
 
@@ -308,16 +310,21 @@ recognition.interimResults = true;
 
 ## 6. 实施路线图（汇总）
 
-| 优先级 | 模块 | 内容 |
-|--------|------|------|
-| **P0** | 语音 V-1 | 按住说话 + 结束即发送 |
-| **P1** | 学习 Tab | 顶部分科 Segmented + 英语/语文/阅读/探索子页 |
-| **P1** | 英语/语文 | 单词区保留 + 古诗/每日英语 **content 卡片** |
-| **P2** | 首页 | 快捷入口宫格 + 历史记录 |
-| **P2** | 语音 V-2 | 静音自动发送 |
-| **P3** | 设置 | 年级、默认语音模式 |
-| **P3** | 数学 | 占位 + 口算 Skill |
-| **P4** | 语音 V-3/V-4 | 上滑取消/锁定 |
+> 详细门禁与 API 结论见 [MODULE_FEASIBILITY.md §7](./MODULE_FEASIBILITY.md#7-修订后的实施顺序有内容再开入口)
+
+| 优先级 | 模块 | 内容 | 解锁入口 |
+|--------|------|------|----------|
+| **P0** | 语音 V-1 | 按住说话 + 结束即发送 | 体验稳定 |
+| **P1** | 学习 Tab 壳 | 分科 Segmented：**英语 / 语文 / 探索**（三栏先上） | 见 MODULE_FEASIBILITY §4.2 |
+| **P1** | 英语/语文卡片 | 单词区保留 + PoetryCard + DailyEnglishCard | 古诗、每日一句 |
+| **P2** | 首页 | 宫格（按门禁）+ 历史记录 | 英语/语文/探索 🟢；数学/阅读 🟡🔴 |
+| **P2** | 语音 V-2 | 点按 + 1.5s 静音自动发送 | — |
+| **P2** | 内置扩容 | `jokes.json`≥30、`stories.json` 中文≥20 | 阅读 Tab / 宫格 |
+| **P3** | MathDrill | 口算生成器（自写或 npm） | **数学 Tab + 首页数学** |
+| **P3** | 成语 | `idioms.json`≥30 或 apihz Key 设置项 | 语文 › 成语 |
+| **P3** | 设置 | 年级、默认语音模式、可选 apihz Key | 应用题/成语增强 |
+| **P4** | 语音 V-3/V-4 | 上滑取消/锁定 | — |
+| **P4** | 数学应用题 | apihz `shuxuex` Skill（可选 Key） | 数学 › 应用题 |
 
 ---
 
