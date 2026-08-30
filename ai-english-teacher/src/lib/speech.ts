@@ -15,10 +15,12 @@
 const TTS_WORKER_URL = process.env.NEXT_PUBLIC_TTS_WORKER_URL || 'https://ai-teacher-tts.你的用户名.workers.dev';
 const TTS_WORKER_CONFIGURED = !TTS_WORKER_URL.includes('你的用户名');
 
-// 默认音色
+// 默认音色（可通过环境变量覆盖）
+// NEXT_PUBLIC_TTS_VOICE_ZH: 中文朗读音色，默认 晓晓（温柔女声）
+// NEXT_PUBLIC_TTS_VOICE_EN: 英文朗读音色，默认 Aria（美式女声）
 const VOICES = {
-  'zh-CN': 'zh-CN-XiaoxiaoNeural',
-  'en-US': 'en-US-AriaNeural',
+  'zh-CN': process.env.NEXT_PUBLIC_TTS_VOICE_ZH || 'zh-CN-XiaoxiaoNeural',
+  'en-US': process.env.NEXT_PUBLIC_TTS_VOICE_EN || 'en-US-AriaNeural',
 };
 
 // ============ 语音合成状态管理 ============
