@@ -1,8 +1,5 @@
-# GitHub Pages 部署工作流 + Cloudflare Worker 自动部署
-# 推送 main 分支时自动：
-# 1. 部署 Edge-TTS Worker 到 Cloudflare
-# 2. 获取 Worker URL 传给 Next.js 构建
-# 3. 构建静态网站并部署到 GitHub Pages
+# GitHub Pages 部署工作流
+# 推送 main 分支时自动构建静态网站并部署到 GitHub Pages
 
 name: Deploy to GitHub Pages
 
@@ -39,54 +36,10 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      # 部署 Cloudflare Worker 到生产环境
-      - name: Deploy Cloudflare Worker
-        id: cf-deploy
-        working-directory: ./ai-english-teacher/workers
-        run: |
-          echo "::group::Deploying Cloudflare Worker"
-          npm install wrangler@3.90.0 2>&1
-          # 部署 Worker（service worker 格式）
-          OUTPUT=$(npx --no-install wrangler deploy edge-tts.js --name ai-teacher-tts 2>&1) || true
-          echo "$OUTPUT"
-          echo "::endgroup::"
-
-          # 获取 Workers 子域名（通过 API）
-          echo "::group::Getting Workers Subdomain"
-          SUBDOMAIN_INFO=$(curl -s \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN") || true
-          echo "$SUBDOMAIN_INFO" | head -5
-          SUBDOMAIN=$(echo "$SUBDOMAIN_INFO" | grep -oP '"subdomain"\s*:\s*"\K[a-z0-9-]+' | head -1)
-          if [ -n "$SUBDOMAIN" ]; then
-            URL="https://ai-teacher-tts.$SUBDOMAIN.workers.dev"
-            echo "Constructed Worker URL: $URL"
-          else
-            echo "::warning::Could not determine Workers subdomain from API"
-            # 兜底：从 wrangler whoami 获取
-            set +e
-            WHOAMI=$(npx --no-install wrangler whoami 2>&1) || true
-            SUBDOMAIN=$(echo "$WHOAMI" | grep -oP "Workers\s*·\s*\K[a-z0-9-]+" | head -1)
-            if [ -n "$SUBDOMAIN" ]; then
-              URL="https://ai-teacher-tts.$SUBDOMAIN.workers.dev"
-            else
-              echo "::warning::Could not determine Workers subdomain, using fallback"
-              URL="https://ai-teacher-tts.example.workers.dev"
-            fi
-          fi
-          echo "worker_url=$URL" >> $GITHUB_OUTPUT
-          echo "Deployed Worker URL: $URL"
-          echo "::endgroup::"
-        env:
-          CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
-          CLOUDFLARE_ACCOUNT_ID: 03df0c3386c137d3cf1156bc7d8b2eec
-
-      # 构建 Next.js，传入 Worker URL 作为环境变量
       - name: Build for GitHub Pages
         run: npm run build
         env:
           DEPLOY_TARGET: github-pages
-          NEXT_PUBLIC_TTS_WORKER_URL: ${{ steps.cf-deploy.outputs.worker_url }}
 
       - name: Setup Pages
         uses: actions/configure-pages@v4

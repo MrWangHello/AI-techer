@@ -2,7 +2,7 @@
 
 import { useState, useRef, useCallback } from "react";
 import { WORDS, Word } from "@/lib/words";
-import { speakEnglish, warmUpSpeech, setSpeakingStateCallback } from "@/lib/speech";
+import { speakEnglish, warmUpSpeech } from "@/lib/speech";
 import { Volume2, Volume1, Check, X } from "lucide-react";
 
 interface StudyCardsProps {
@@ -38,13 +38,10 @@ export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsPr
     ensureWarmup();
     setTtsError(null);
     setSpeakingWord(true);
-    const success = speakEnglish(currentWord.en);
+    const success = speakEnglish(currentWord.en, () => setSpeakingWord(false));
     if (!success) {
-      setTtsError("语音合成不可用，请检查浏览器设置");
+      setTtsError("语音合成不可用，请使用 Chrome 浏览器");
       setSpeakingWord(false);
-    } else {
-      // 2秒后自动关闭状态
-      setTimeout(() => setSpeakingWord(false), 2000);
     }
   };
 
@@ -52,12 +49,10 @@ export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsPr
     ensureWarmup();
     setTtsError(null);
     setSpeakingWord(true);
-    const success = speakEnglish(currentWord.sentence);
+    const success = speakEnglish(currentWord.sentence, () => setSpeakingWord(false));
     if (!success) {
-      setTtsError("语音合成不可用，请检查浏览器设置");
+      setTtsError("语音合成不可用，请使用 Chrome 浏览器");
       setSpeakingWord(false);
-    } else {
-      setTimeout(() => setSpeakingWord(false), 2500);
     }
   };
 

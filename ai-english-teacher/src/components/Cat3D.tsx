@@ -8,8 +8,8 @@ interface Cat3DProps {
   speaking?: boolean;
 }
 
-// 各表情对应的视频
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
+
 const MOOD_VIDEOS: Record<string, string> = {
   neutral: `${BASE}/videos/white-cat-3d.mp4`,
   happy: `${BASE}/videos/white-cat-happy-3d.mp4`,
@@ -18,59 +18,114 @@ const MOOD_VIDEOS: Record<string, string> = {
   thinking: `${BASE}/videos/white-cat-thinking-3d.mp4`,
 };
 
-// 心情对应的背景渐变
-const MOOD_GRADIENTS: Record<string, string> = {
-  neutral: "from-pink-100/20 via-pink-50/10 to-transparent",
-  happy: "from-amber-100/20 via-yellow-50/10 to-transparent",
-  sad: "from-sky-100/20 via-blue-50/10 to-transparent",
-  surprised: "from-violet-100/20 via-purple-50/10 to-transparent",
-  thinking: "from-indigo-100/20 via-indigo-50/10 to-transparent",
+const MOOD_POSTERS: Record<string, string> = {
+  neutral: `${BASE}/images/white-cat.jpg`,
+  happy: `${BASE}/images/white-cat-happy.jpg`,
+  sad: `${BASE}/images/white-cat-sleepy.jpg`,
+  surprised: `${BASE}/images/white-cat-surprised.jpg`,
+  thinking: `${BASE}/images/white-cat-curious.jpg`,
 };
 
-// 心情对应的辉光颜色
-const MOOD_GLOWS: Record<string, string> = {
-  neutral: "rgba(244, 114, 182, 0.15)",
-  happy: "rgba(251, 191, 36, 0.2)",
-  sad: "rgba(56, 189, 248, 0.15)",
-  surprised: "rgba(167, 139, 250, 0.2)",
-  thinking: "rgba(99, 102, 241, 0.15)",
+const MOOD_GRADIENTS: Record<string, string> = {
+  neutral: "from-pink-100/30 via-pink-50/15 to-transparent",
+  happy: "from-amber-100/30 via-yellow-50/15 to-transparent",
+  sad: "from-sky-100/30 via-blue-50/15 to-transparent",
+  surprised: "from-violet-100/30 via-purple-50/15 to-transparent",
+  thinking: "from-indigo-100/30 via-indigo-50/15 to-transparent",
 };
+
+const MOOD_GLOWS: Record<string, string> = {
+  neutral: "rgba(244, 114, 182, 0.12)",
+  happy: "rgba(251, 191, 36, 0.15)",
+  sad: "rgba(56, 189, 248, 0.12)",
+  surprised: "rgba(167, 139, 250, 0.15)",
+  thinking: "rgba(99, 102, 241, 0.12)",
+};
+
+const VIDEO_MASK =
+  "radial-gradient(ellipse 68% 68% at 50% 44%, black 52%, transparent 100%)";
+
+// 全局视频 blob 缓存，跨 mood 切换复用
+const videoCache = new Map<string, string>();
+
+async function prefetchVideo(url: string): Promise<string | null> {
+  if (videoCache.has(url)) return videoCache.get(url)!;
+  try {
+    const res = await fetch(url);
+    if (!res.ok) return null;
+    const blob = await res.blob();
+    const blobUrl = URL.createObjectURL(blob);
+    videoCache.set(url, blobUrl);
+    return blobUrl;
+  } catch {
+    return null;
+  }
+}
 
 export default function Cat3D({ mood = "neutral", onTap, speaking = false }: Cat3DProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const [bounce, setBounce] = useState(false);
   const [videoError, setVideoError] = useState(false);
   const [videoLoaded, setVideoLoaded] = useState(false);
+  const [resolvedSrc, setResolvedSrc] = useState<string>("");
   const bounceTimeoutRef = useRef<number | null>(null);
   const prevMoodRef = useRef(mood);
+  const loadedMoodsRef = useRef<Set<string>>(new Set());
 
   const currentVideo = MOOD_VIDEOS[mood] || MOOD_VIDEOS.neutral;
+  const currentPoster = MOOD_POSTERS[mood] || MOOD_POSTERS.neutral;
   const glowColor = MOOD_GLOWS[mood] || MOOD_GLOWS.neutral;
   const moodGradient = MOOD_GRADIENTS[mood] || MOOD_GRADIENTS.neutral;
 
-  // 当 mood 变化时切换视频
+  // 预加载当前 mood 视频，并后台 prefetch 其余 mood
   useEffect(() => {
-    if (prevMoodRef.current !== mood) {
-      prevMoodRef.current = mood;
+    let cancelled = false;
+
+    const loadCurrent = async () => {
+      const cached = await prefetchVideo(currentVideo);
+      if (cancelled) return;
+      setResolvedSrc(cached || currentVideo);
+    };
+
+    loadCurrent();
+
+    // 后台预加载其他 mood 视频
+    Object.values(MOOD_VIDEOS).forEach((url) => {
+      if (url !== currentVideo) prefetchVideo(url);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [currentVideo]);
+
+  // mood 切换时更新视频源
+  useEffect(() => {
+    if (prevMoodRef.current === mood) return;
+    prevMoodRef.current = mood;
+
+    const alreadyLoaded = loadedMoodsRef.current.has(mood);
+    if (!alreadyLoaded) {
       setVideoLoaded(false);
-
-      if (videoRef.current) {
-        const video = videoRef.current;
-        video.pause();
-        video.src = currentVideo;
-        video.load();
-        video.play().catch(() => {});
-      }
     }
-  }, [mood, currentVideo]);
 
-  // 视频加载完成后播放
+    const video = videoRef.current;
+    if (!video || !resolvedSrc) return;
+
+    video.pause();
+    video.src = resolvedSrc;
+    video.load();
+    video.play().catch(() => {});
+  }, [mood, resolvedSrc]);
+
+  // 视频就绪后播放
   useEffect(() => {
     const video = videoRef.current;
-    if (!video) return;
+    if (!video || !resolvedSrc) return;
 
     const handleCanPlay = () => {
       setVideoLoaded(true);
+      loadedMoodsRef.current.add(mood);
       video.play().catch(() => {});
     };
 
@@ -78,17 +133,18 @@ export default function Cat3D({ mood = "neutral", onTap, speaking = false }: Cat
       setVideoError(true);
     };
 
+    video.src = resolvedSrc;
     video.addEventListener("canplay", handleCanPlay);
     video.addEventListener("error", handleError);
+    video.load();
     video.play().catch(() => {});
 
     return () => {
       video.removeEventListener("canplay", handleCanPlay);
       video.removeEventListener("error", handleError);
     };
-  }, []);
+  }, [resolvedSrc, mood]);
 
-  // 点击弹跳
   const handleTap = useCallback(() => {
     setBounce(true);
     if (bounceTimeoutRef.current) {
@@ -101,23 +157,16 @@ export default function Cat3D({ mood = "neutral", onTap, speaking = false }: Cat
 
   return (
     <div className="relative w-full h-full flex items-center justify-center overflow-hidden select-none">
-      {/* 底层背景 - 柔和渐变，与视频背景融合 */}
+      {/* 全幅 mood 场景背景 */}
       <div
         className={`absolute inset-0 bg-gradient-to-b ${moodGradient} transition-all duration-700`}
       />
 
-      {/* 外层辉光 - 让视频边缘柔和过渡 */}
+      {/* 外层 radial 光晕 */}
       <div
         className="absolute inset-0 transition-all duration-700"
         style={{
-          background: `
-            radial-gradient(
-              ellipse 55% 55% at 50% 50%,
-              transparent 50%,
-              ${glowColor} 80%,
-              transparent 100%
-            )
-          `,
+          background: `radial-gradient(ellipse 80% 70% at 50% 45%, ${glowColor} 0%, transparent 70%)`,
         }}
       />
 
@@ -162,17 +211,38 @@ export default function Cat3D({ mood = "neutral", onTap, speaking = false }: Cat
         }}
       >
         <div className="relative w-48 h-48 md:w-56 md:h-56 lg:w-64 lg:h-64">
-          {/* 视频元素 */}
           {videoError ? (
-            <div className="absolute inset-0 flex items-center justify-center bg-pink-50/40 rounded-2xl">
-              <span className="text-4xl">🐱</span>
+            <div className="absolute inset-0 flex items-center justify-center">
+              <img
+                src={currentPoster}
+                alt="Bella"
+                className="w-full h-full object-cover"
+                style={{
+                  WebkitMaskImage: VIDEO_MASK,
+                  maskImage: VIDEO_MASK,
+                }}
+              />
             </div>
           ) : (
             <>
+              {/* poster 作为即时占位 */}
+              {!videoLoaded && (
+                <img
+                  src={currentPoster}
+                  alt="Bella"
+                  className="absolute inset-0 w-full h-full object-cover transition-opacity duration-500"
+                  style={{
+                    WebkitMaskImage: VIDEO_MASK,
+                    maskImage: VIDEO_MASK,
+                  }}
+                />
+              )}
+
               <video
                 ref={videoRef}
-                src={currentVideo}
-                className={`w-full h-full object-cover rounded-2xl transition-all duration-500 ${
+                poster={currentPoster}
+                preload="auto"
+                className={`w-full h-full object-cover transition-opacity duration-500 ${
                   videoLoaded ? "opacity-100" : "opacity-0"
                 } ${
                   mood === "happy"
@@ -184,53 +254,44 @@ export default function Cat3D({ mood = "neutral", onTap, speaking = false }: Cat
                     : ""
                 }`}
                 style={{
-                  // 多层阴影叠加，让视频边缘融入背景
-                  boxShadow: `
-                    0 0 0 0 ${glowColor},
-                    0 0 30px -5px ${glowColor},
-                    inset 0 0 20px -5px rgba(0,0,0,0.03)
-                  `,
+                  WebkitMaskImage: VIDEO_MASK,
+                  maskImage: VIDEO_MASK,
                 }}
                 muted
                 loop
                 playsInline
                 autoPlay
                 draggable={false}
-                onLoadedData={() => setVideoLoaded(true)}
+                onLoadedData={() => {
+                  setVideoLoaded(true);
+                  loadedMoodsRef.current.add(mood);
+                }}
                 onError={() => setVideoError(true)}
               />
-              {/* 边缘羽化叠加层 - 让视频边缘透明过渡到背景 */}
+
+              {/* 轻微 mood 色调 overlay */}
               <div
-                className="absolute inset-0 rounded-2xl pointer-events-none"
+                className={`absolute inset-0 transition-all duration-500 pointer-events-none ${
+                  mood === "happy"
+                    ? "bg-gradient-to-t from-amber-200/10 via-transparent to-transparent"
+                    : mood === "sad"
+                    ? "bg-gradient-to-t from-sky-200/10 via-transparent to-transparent"
+                    : mood === "surprised"
+                    ? "bg-gradient-to-t from-violet-200/10 via-transparent to-transparent"
+                    : mood === "thinking"
+                    ? "bg-gradient-to-t from-indigo-200/10 via-transparent to-transparent"
+                    : "bg-gradient-to-t from-pink-200/8 via-transparent to-transparent"
+                }`}
                 style={{
-                  background: `
-                    radial-gradient(
-                      ellipse 70% 70% at 50% 50%,
-                      transparent 55%,
-                      rgba(253, 242, 248, 0.6) 85%,
-                      rgba(253, 242, 248, 0.9) 100%
-                    )
-                  `,
+                  WebkitMaskImage: VIDEO_MASK,
+                  maskImage: VIDEO_MASK,
                 }}
               />
-              {/* 心情颜色叠加层 */}
-              <div
-                className={`absolute inset-0 rounded-2xl transition-all duration-500 pointer-events-none ${
-                  mood === "happy"
-                    ? "bg-gradient-to-t from-amber-200/15 via-transparent to-transparent"
-                    : mood === "sad"
-                    ? "bg-gradient-to-t from-sky-200/15 via-transparent to-transparent"
-                    : mood === "surprised"
-                    ? "bg-gradient-to-t from-violet-200/15 via-transparent to-transparent"
-                    : mood === "thinking"
-                    ? "bg-gradient-to-t from-indigo-200/15 via-transparent to-transparent"
-                    : "bg-gradient-to-t from-pink-200/10 via-transparent to-transparent"
-                }`}
-              />
-              {/* 加载中 */}
-              {!videoLoaded && (
-                <div className="absolute inset-0 flex items-center justify-center bg-pink-50/30 rounded-2xl backdrop-blur-sm">
-                  <div className="w-8 h-8 border-2 border-pink-300 border-t-pink-500 rounded-full animate-spin" />
+
+              {/* 仅在首次加载时显示 spinner */}
+              {!videoLoaded && !loadedMoodsRef.current.has(mood) && (
+                <div className="absolute bottom-2 left-1/2 -translate-x-1/2">
+                  <div className="w-5 h-5 border-2 border-pink-300 border-t-pink-500 rounded-full animate-spin" />
                 </div>
               )}
             </>
@@ -248,7 +309,6 @@ export default function Cat3D({ mood = "neutral", onTap, speaking = false }: Cat
           )}
         </div>
 
-        {/* 点击提示 */}
         <div className="text-center mt-1">
           <span className="text-[10px] text-gray-300">点击我互动</span>
         </div>
@@ -269,7 +329,15 @@ export default function Cat3D({ mood = "neutral", onTap, speaking = false }: Cat
               : "bg-pink-100/60 text-pink-400"
           }`}
         >
-          {mood === "happy" ? "开心 😊" : mood === "sad" ? "难过 😢" : mood === "surprised" ? "惊讶 😮" : mood === "thinking" ? "思考 🤔" : "平静 🐱"}
+          {mood === "happy"
+            ? "开心 😊"
+            : mood === "sad"
+            ? "难过 😢"
+            : mood === "surprised"
+            ? "惊讶 😮"
+            : mood === "thinking"
+            ? "思考 🤔"
+            : "平静 🐱"}
         </span>
       </div>
     </div>

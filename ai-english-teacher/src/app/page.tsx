@@ -23,6 +23,7 @@ import {
   PetData,
 } from "@/lib/pet-data";
 import { speak } from "@/lib/speech";
+import { isSpeechSupported, isSTTSupported } from "@/lib/speech";
 import { AgentResponse } from "@/lib/mock-agent";
 import { WORDS } from "@/lib/words";
 
@@ -46,11 +47,22 @@ export default function HomePage() {
   const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [studyingMinutes, setStudyingMinutes] = useState(0);
   const [catSpeaking, setCatSpeaking] = useState(false);
+  const [speechSupported, setSpeechSupported] = useState<boolean | null>(null);
+  const [sttSupported, setSttSupported] = useState<boolean | null>(null);
+
+  const speakWithSpeed = useCallback(
+    (text: string, onEnd?: () => void) => {
+      speak(text, onEnd, pet.voiceSpeed);
+    },
+    [pet.voiceSpeed]
+  );
 
   // 客户端加载 localStorage 数据，避免 hydration 不匹配
   useEffect(() => {
     setPet(loadPetData());
     setPetLoaded(true);
+    setSpeechSupported(isSpeechSupported());
+    setSttSupported(isSTTSupported());
   }, []);
 
   // 保存宠物数据（仅在客户端加载后保存）
@@ -148,7 +160,7 @@ export default function HomePage() {
       const updated = feedPet(prev);
       addFeed("🍖", "喂食了 Bella");
       setCatSpeaking(true);
-      speak("好香呀！谢谢喂我！喵~", () => setCatSpeaking(false));
+      speakWithSpeed("好香呀！谢谢喂我！喵~", () => setCatSpeaking(false));
       setAgentEmotion("happy");
       return checkAndAwardAchievements(updated);
     });
@@ -159,7 +171,7 @@ export default function HomePage() {
       const updated = playWithPet(prev);
       addFeed("🎮", "和 Bella 一起玩");
       setCatSpeaking(true);
-      speak("好呀好呀！一起玩！", () => setCatSpeaking(false));
+      speakWithSpeed("好呀好呀！一起玩！", () => setCatSpeaking(false));
       setAgentEmotion("happy");
       return checkAndAwardAchievements(updated);
     });
@@ -170,7 +182,7 @@ export default function HomePage() {
       const updated = bathePet(prev);
       addFeed("🛁", "给 Bella 洗澡");
       setCatSpeaking(true);
-      speak("洗澡澡，好舒服！", () => setCatSpeaking(false));
+      speakWithSpeed("洗澡澡，好舒服！", () => setCatSpeaking(false));
       setAgentEmotion("happy");
       return checkAndAwardAchievements(updated);
     });
@@ -181,7 +193,7 @@ export default function HomePage() {
       const updated = sleepPet(prev);
       addFeed("💤", "Bella 睡觉了");
       setCatSpeaking(true);
-      speak("晚安，做个好梦~", () => setCatSpeaking(false));
+      speakWithSpeed("晚安，做个好梦~", () => setCatSpeaking(false));
       setAgentEmotion("neutral");
       return checkAndAwardAchievements(updated);
     });
@@ -216,7 +228,7 @@ export default function HomePage() {
       setPet((prev) => ({ ...prev, petName: newPetName.trim() }));
       setShowPetNameInput(false);
       setCatSpeaking(true);
-      speak(`好的，以后叫我 ${newPetName.trim()} 吧！`, () => setCatSpeaking(false));
+      speakWithSpeed(`好的，以后叫我 ${newPetName.trim()} 吧！`, () => setCatSpeaking(false));
     }
   };
 
@@ -228,7 +240,7 @@ export default function HomePage() {
     setAchievementMsg("");
     setCheckinMsg("");
     setCatSpeaking(true);
-    speak("数据已重置！让我们重新开始吧！", () => setCatSpeaking(false));
+    speakWithSpeed("数据已重置！让我们重新开始吧！", () => setCatSpeaking(false));
   };
 
   const handleVoiceSpeedChange = (speed: number) => {
@@ -378,7 +390,7 @@ export default function HomePage() {
   const renderPetPage = () => (
     <div className="space-y-4">
       {/* 真实白猫 */}
-      <div className="bg-white rounded-2xl shadow-sm border border-pink-100 overflow-hidden">
+      <div className="rounded-2xl shadow-sm border border-pink-100/60 overflow-hidden bg-gradient-to-b from-pink-50/80 via-white/40 to-pink-50/60">
         <div className="aspect-[4/5] max-h-[500px] relative">
           <RealisticCat
             mood={agentEmotion}
@@ -386,7 +398,7 @@ export default function HomePage() {
             onTap={() => {
               setAgentEmotion("happy");
               setCatSpeaking(true);
-              speak("嘿嘿，别戳我！", () => setCatSpeaking(false));
+              speakWithSpeed("嘿嘿，别戳我！", () => setCatSpeaking(false));
             }}
           />
         </div>
@@ -469,6 +481,7 @@ export default function HomePage() {
       <VoiceController
         onAgentResponse={handleAgentResponse}
         onSpeakingChange={setCatSpeaking}
+        voiceSpeed={pet.voiceSpeed}
       />
     </div>
   );
@@ -593,8 +606,8 @@ export default function HomePage() {
           </div>
         </div>
         <div className="mt-3 space-y-1 text-xs text-gray-500">
-          <p>语音识别: {typeof window !== "undefined" && ((window as any).SpeechRecognition || (window as any).webkitSpeechRecognition) ? "✅ 支持" : "❌ 不支持"}</p>
-          <p>语音合成: {typeof window !== "undefined" && window.speechSynthesis ? "✅ 支持" : "❌ 不支持"}</p>
+          <p>语音合成: {speechSupported === null ? "检测中..." : speechSupported ? "✅ 支持" : "❌ 不支持（建议使用 Chrome）"}</p>
+          <p>语音识别: {sttSupported === null ? "检测中..." : sttSupported ? "✅ 支持" : "❌ 不支持（可使用文字输入）"}</p>
         </div>
       </div>
 
@@ -706,10 +719,10 @@ export default function HomePage() {
 
       {/* 主内容区 */}
       <main className="flex-1 overflow-y-auto hide-scrollbar px-4 pb-4">
-        {activeTab === "home" && renderHomePage()}
-        {activeTab === "pet" && renderPetPage()}
-        {activeTab === "study" && renderStudyPage()}
-        {activeTab === "settings" && renderSettingsPage()}
+        <div className={activeTab === "home" ? "" : "hidden"}>{renderHomePage()}</div>
+        <div className={activeTab === "pet" ? "" : "hidden"}>{renderPetPage()}</div>
+        <div className={activeTab === "study" ? "" : "hidden"}>{renderStudyPage()}</div>
+        <div className={activeTab === "settings" ? "" : "hidden"}>{renderSettingsPage()}</div>
       </main>
 
       {/* 底部导航栏 */}

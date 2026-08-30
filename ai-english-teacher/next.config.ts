@@ -16,9 +16,6 @@ const nextConfig: NextConfig = {
       }),
   env: {
     NEXT_PUBLIC_BASE_PATH: isBuildForPages ? "/AI-techer" : "",
-    NEXT_PUBLIC_TTS_WORKER_URL: process.env.NEXT_PUBLIC_TTS_WORKER_URL || '',
-    NEXT_PUBLIC_TTS_VOICE_ZH: process.env.NEXT_PUBLIC_TTS_VOICE_ZH || '',
-    NEXT_PUBLIC_TTS_VOICE_EN: process.env.NEXT_PUBLIC_TTS_VOICE_EN || '',
   },
   allowedDevOrigins: [
     "run-agent-*.remote-agent.svc.cluster.local",

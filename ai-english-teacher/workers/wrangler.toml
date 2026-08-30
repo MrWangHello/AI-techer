@@ -1,3 +1,0 @@
-name = "ai-teacher-tts"
-main = "edge-tts.js"
-compatibility_date = "2024-12-01"
