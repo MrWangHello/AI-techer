@@ -653,6 +653,7 @@ export default function HomePage() {
         words={studyWords}
         onWordLearned={handleWordLearned}
         onQuizResult={handleQuizResult}
+        voiceSpeed={pet.voiceSpeed}
       />
 
       {/* 学习统计 */}

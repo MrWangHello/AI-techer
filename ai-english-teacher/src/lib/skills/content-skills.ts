@@ -172,7 +172,14 @@ export const ASYNC_SKILLS: AsyncSkill[] = [
   },
   {
     id: "english.lookup",
-    keywords: ["什么意思", "翻译", "释义"],
+    keywords: [
+      "什么意思",
+      "翻译",
+      "释义",
+      "查单词",
+      "词典",
+      "英文单词",
+    ],
     execute: async (text, normalized) => {
       const enMatch = text.match(/[a-zA-Z]{2,}/);
       const word = enMatch?.[0] ?? normalized.replace(/什么意思|翻译|释义/g, "");

@@ -97,7 +97,7 @@ export default function MathDrill({ question, streak = 0, onAnswer }: MathDrillP
         </button>
       </div>
 
-      <p className="text-center text-[10px] text-gray-400 mt-3">点数字拼答案，点确定提交 · 也可语音说答案</p>
+      <p className="text-center text-[10px] text-gray-400 mt-3">点数字拼答案后点确定 · 语音直接说「8」或「答案是8」</p>
     </div>
   );
 }

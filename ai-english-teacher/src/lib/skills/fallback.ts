@@ -11,7 +11,7 @@ const FALLBACKS: AgentResponse[] = [
     intent: "unknown",
     emotion: "thinking",
     action: "none",
-    reply: "这个我不太懂呢。你可以说「每日英语」「背古诗」或「开始学习」~",
+    reply: "这个我不太懂呢。试试说「讲故事」「背古诗」，或「书本用英语怎么说」「apple什么意思」查词~",
   },
   {
     intent: "unknown",

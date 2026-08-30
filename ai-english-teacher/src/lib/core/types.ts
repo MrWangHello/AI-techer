@@ -45,6 +45,8 @@ export interface SessionContext {
   channel: UserMessage["channel"];
   lastStudySection?: string;
   mathDrillActive?: boolean;
+  /** 最近一次可朗读的正文（「朗读」「读一下」用） */
+  lastSpeakableText?: string;
 }
 
 export interface RuleEntry {

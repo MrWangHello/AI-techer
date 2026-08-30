@@ -91,16 +91,20 @@ export function matchMathDrillAnswer(text: string, _ctx: SessionContext): AgentR
   let num = extractDrillAnswer(text);
   if (num === null) return null;
 
-  if (num < 10 && q.answer >= 10) {
+  if (num < 10 && q.answer >= 10 && num >= 0) {
     const merged = mergeVoiceDrillDigit(num, q.answer);
     if (merged === null) {
       return {
         intent: "math_drill_buffer",
         emotion: "neutral",
         action: "study",
-        reply: "继续说出个位数，或者说「十」",
+        reply: `听到 ${num} 了，继续说出个位数，或者说「${q.answer}」`,
         navigate: "study",
         studySection: "math.drill",
+        contentCard: {
+          type: "math-drill",
+          payload: { question: q },
+        },
       };
     }
     num = merged;

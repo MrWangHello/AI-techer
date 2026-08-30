@@ -4,6 +4,8 @@ import type { ContentCard } from "@/lib/core/types";
 import type { Word } from "@/lib/words";
 import StudyCards from "@/components/StudyCards";
 import MathDrill from "@/components/MathDrill";
+import SpeakAloudButton from "@/components/SpeakAloudButton";
+import { getSpeakableFromCard } from "@/lib/content/speakable";
 import type { MathQuestion } from "@/lib/math/generator";
 import {
   parseStudySection,
@@ -28,95 +30,151 @@ interface StudyPanelProps {
   words: Word[];
   onWordLearned: (word: { en: string; zh: string }) => void;
   onQuizResult: (correct: boolean) => void;
+  voiceSpeed?: number;
 }
 
 const SUBJECTS: StudySubject[] = ["english", "chinese", "math", "reading", "explore"];
 
-function ContentCardView({ card }: { card: ContentCard }) {
+const SECTION_VOICE_HINTS: Record<string, string> = {
+  "reading.story": "💡 说「讲故事」或「朗读」· 点 🔊 也可听",
+  "reading.joke": "💡 说「讲笑话」或点 🔊",
+  "chinese.poetry": "💡 说「背古诗」「读古诗」或点 🔊",
+  "chinese.hanzi": "💡 说「汉字」「换一个」刷新 · 点 🔊 听例句",
+  "chinese.pinyin": "💡 说「拼音」学韵母 · 点 🔊",
+  "chinese.sentence": "💡 说「读句子」· 点 🔊",
+  "chinese.idiom": "💡 说「成语」换一个 · 点 🔊",
+  "english.words": "💡 说「书本用英语怎么说」「apple什么意思」查词",
+  "english.sentence": "💡 说「每日英语」· 点 🔊 听句子",
+  "math.drill": "💡 口算中：直接说数字或「答案是几」· 键盘点确定",
+  "math.word-problem": "💡 语音说出答案数字",
+  "explore.weather": "💡 说「北京天气」",
+  "explore.wiki": "💡 说「猫是什么」查百科",
+  "chinese.quote": "💡 说「美句」来一句 · 点 🔊",
+};
+
+function CardShell({
+  children,
+  speakText,
+  voiceSpeed,
+}: {
+  children: React.ReactNode;
+  speakText?: string;
+  voiceSpeed?: number;
+}) {
+  return (
+    <div className="relative">
+      {children}
+      {speakText && (
+        <div className="flex justify-center mt-3">
+          <SpeakAloudButton text={speakText} voiceSpeed={voiceSpeed} />
+        </div>
+      )}
+    </div>
+  );
+}
+
+function ContentCardView({ card, voiceSpeed }: { card: ContentCard; voiceSpeed?: number }) {
+  const speakText = getSpeakableFromCard(card);
   const p = card.payload as Record<string, unknown> | undefined;
 
   switch (card.type) {
     case "pinyin": {
       const item = p?.item as { display: string; tip: string; emoji: string; example: string };
       return (
-        <div className="bg-white rounded-2xl p-6 text-center border border-pink-100">
-          <div className="text-5xl mb-2">{item.emoji}</div>
-          <div className="text-6xl font-bold text-pink-600 mb-2">{item.display}</div>
-          <p className="text-sm text-gray-600">{item.tip}</p>
-          <p className="text-xs text-gray-400 mt-2">例：{item.example}</p>
-        </div>
+        <CardShell speakText={speakText} voiceSpeed={voiceSpeed}>
+          <div className="bg-white rounded-2xl p-6 text-center border border-pink-100">
+            <div className="text-5xl mb-2">{item.emoji}</div>
+            <div className="text-6xl font-bold text-pink-600 mb-2">{item.display}</div>
+            <p className="text-sm text-gray-600">{item.tip}</p>
+            <p className="text-xs text-gray-400 mt-2">例：{item.example}</p>
+          </div>
+        </CardShell>
       );
     }
     case "hanzi": {
       const item = p?.item as { char: string; emoji: string; pinyin: string; words: string[]; sentence: string };
       return (
-        <div className="bg-white rounded-2xl p-6 text-center border border-pink-100">
-          <div className="text-4xl mb-2">{item.emoji}</div>
-          <div className="text-7xl font-bold text-gray-800 mb-1">{item.char}</div>
-          <p className="text-sm text-pink-500">{item.pinyin}</p>
-          <p className="text-xs text-gray-500 mt-2">组词：{item.words.join(" · ")}</p>
-          <p className="text-sm text-gray-600 mt-3">{item.sentence}</p>
-        </div>
+        <CardShell speakText={speakText} voiceSpeed={voiceSpeed}>
+          <div className="bg-white rounded-2xl p-6 text-center border border-pink-100">
+            <div className="text-4xl mb-2">{item.emoji}</div>
+            <div className="text-7xl font-bold text-gray-800 mb-1">{item.char}</div>
+            <p className="text-sm text-pink-500">{item.pinyin}</p>
+            <p className="text-xs text-gray-500 mt-2">组词：{item.words.join(" · ")}</p>
+            <p className="text-sm text-gray-600 mt-3">{item.sentence}</p>
+          </div>
+        </CardShell>
       );
     }
     case "sentence": {
       const item = p?.item as { text: string; hint?: string };
       return (
-        <div className="bg-white rounded-2xl p-6 border border-pink-100">
-          <p className="text-2xl leading-relaxed text-gray-800 text-center tracking-widest">{item.text}</p>
-          {item.hint && <p className="text-xs text-center text-gray-400 mt-3">{item.hint}</p>}
-        </div>
+        <CardShell speakText={speakText} voiceSpeed={voiceSpeed}>
+          <div className="bg-white rounded-2xl p-6 border border-pink-100">
+            <p className="text-2xl leading-relaxed text-gray-800 text-center tracking-widest">{item.text}</p>
+            {item.hint && <p className="text-xs text-center text-gray-400 mt-3">{item.hint}</p>}
+          </div>
+        </CardShell>
       );
     }
     case "idiom": {
       const item = p?.item as { word: string; pinyin: string; meaning: string; example: string };
       return (
-        <div className="bg-white rounded-2xl p-5 border border-amber-100">
-          <h3 className="text-2xl font-bold text-amber-800">{item.word}</h3>
-          <p className="text-xs text-gray-400">{item.pinyin}</p>
-          <p className="text-sm text-gray-700 mt-2">{item.meaning}</p>
-          <p className="text-xs text-gray-500 mt-2">例：{item.example}</p>
-        </div>
+        <CardShell speakText={speakText} voiceSpeed={voiceSpeed}>
+          <div className="bg-white rounded-2xl p-5 border border-amber-100">
+            <h3 className="text-2xl font-bold text-amber-800">{item.word}</h3>
+            <p className="text-xs text-gray-400">{item.pinyin}</p>
+            <p className="text-sm text-gray-700 mt-2">{item.meaning}</p>
+            <p className="text-xs text-gray-500 mt-2">例：{item.example}</p>
+          </div>
+        </CardShell>
       );
     }
     case "english-sentence": {
       const item = p?.item as { en: string; zh: string; emoji: string };
       return (
-        <div className="bg-white rounded-2xl p-6 text-center border border-blue-100">
-          <div className="text-4xl mb-2">{item.emoji}</div>
-          <p className="text-lg font-semibold text-blue-700">{item.en}</p>
-          <p className="text-sm text-gray-500 mt-2">{item.zh}</p>
-        </div>
+        <CardShell speakText={speakText} voiceSpeed={voiceSpeed}>
+          <div className="bg-white rounded-2xl p-6 text-center border border-blue-100">
+            <div className="text-4xl mb-2">{item.emoji}</div>
+            <p className="text-lg font-semibold text-blue-700">{item.en}</p>
+            <p className="text-sm text-gray-500 mt-2">{item.zh}</p>
+          </div>
+        </CardShell>
       );
     }
     case "word-problem": {
       const item = p?.item as { question: string; emoji: string; answer: number; explain: string };
       return (
-        <div className="bg-white rounded-2xl p-5 border border-green-100">
-          <div className="text-3xl text-center mb-2">{item.emoji}</div>
-          <p className="text-sm text-gray-800 leading-relaxed">{item.question}</p>
-          <p className="text-xs text-gray-400 mt-3">语音说出答案，或说「答案是 {item.answer}」</p>
-        </div>
+        <CardShell speakText={speakText} voiceSpeed={voiceSpeed}>
+          <div className="bg-white rounded-2xl p-5 border border-green-100">
+            <div className="text-3xl text-center mb-2">{item.emoji}</div>
+            <p className="text-sm text-gray-800 leading-relaxed">{item.question}</p>
+            <p className="text-xs text-gray-400 mt-3">语音说出答案，或说「答案是 {item.answer}」</p>
+          </div>
+        </CardShell>
       );
     }
     case "poetry": {
       const item = p as { title?: string; author?: string; content?: string };
       return (
-        <div className="bg-gradient-to-b from-amber-50 to-white rounded-2xl p-5 border border-amber-100">
-          <h3 className="text-lg font-bold text-amber-900">《{item.title}》</h3>
-          <p className="text-xs text-gray-500">{item.author}</p>
-          <p className="text-sm text-gray-700 mt-3 whitespace-pre-line leading-loose">{item.content}</p>
-        </div>
+        <CardShell speakText={speakText} voiceSpeed={voiceSpeed}>
+          <div className="bg-gradient-to-b from-amber-50 to-white rounded-2xl p-5 border border-amber-100">
+            <h3 className="text-lg font-bold text-amber-900">《{item.title}》</h3>
+            <p className="text-xs text-gray-500">{item.author}</p>
+            <p className="text-sm text-gray-700 mt-3 whitespace-pre-line leading-loose">{item.content}</p>
+          </div>
+        </CardShell>
       );
     }
     default: {
       const text = (p?.text as string) || (p?.zh as string) || "";
       const title = p?.title as string | undefined;
       return text ? (
-        <div className="bg-white rounded-2xl p-4 border border-pink-100">
-          {title && <p className="text-sm font-bold text-gray-700 mb-2">{title}</p>}
-          <p className="text-sm text-gray-700 leading-relaxed">{text}</p>
-        </div>
+        <CardShell speakText={speakText || text} voiceSpeed={voiceSpeed}>
+          <div className="bg-white rounded-2xl p-4 border border-pink-100">
+            {title && <p className="text-sm font-bold text-gray-700 mb-2">{title}</p>}
+            <p className="text-sm text-gray-700 leading-relaxed">{text}</p>
+          </div>
+        </CardShell>
       ) : null;
     }
   }
@@ -133,8 +191,10 @@ export default function StudyPanel({
   words,
   onWordLearned,
   onQuizResult,
+  voiceSpeed = 1,
 }: StudyPanelProps) {
   const { subject, sub } = parseStudySection(studySection);
+  const voiceHint = SECTION_VOICE_HINTS[studySection];
 
   const setSubject = (s: StudySubject) => {
     const defaultSub =
@@ -195,8 +255,12 @@ export default function StudyPanel({
         </div>
       )}
 
+      {voiceHint && (
+        <p className="text-[10px] text-center text-pink-400 leading-relaxed px-2">{voiceHint}</p>
+      )}
+
       {/* 内容区 */}
-      {contentCard && <ContentCardView card={contentCard} />}
+      {contentCard && <ContentCardView card={contentCard} voiceSpeed={voiceSpeed} />}
 
       {subject === "english" && sub === "words" && (
         <StudyCards words={words} onWordLearned={onWordLearned} onQuizResult={onQuizResult} />
@@ -233,7 +297,7 @@ export default function StudyPanel({
           </button>
         )}
 
-      <p className="text-[10px] text-center text-gray-300">💡 点击说话或长按 · 说「汉字」「口算」也能直达</p>
+      <p className="text-[10px] text-center text-gray-300">💡 点击说话或长按 · 说「帮助」查看全部语音指令</p>
     </div>
   );
 }
