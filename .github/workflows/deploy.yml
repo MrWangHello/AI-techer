@@ -44,40 +44,14 @@ jobs:
         id: cf-deploy
         working-directory: ./ai-english-teacher/workers
         run: |
-          set -e  # 临时启用错误退出，但用 || true 处理已知可能失败的步骤
-
-          echo "::group::Deploying Cloudflare Worker via API"
-
-          # 1. 上传 Worker 脚本（通过 HTTP 头设置元数据，避免 multipart 兼容问题）
-          echo "Uploading worker script..."
-          UPLOAD_RESPONSE=$(curl -s -X PUT \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/ai-teacher-tts" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/javascript" \
-            -H "CF-Worker-Compatibility-Date: 2024-12-01" \
-            -H "CF-Worker-Compatibility-Flags: nodejs_compat" \
-            --data-binary "@edge-tts.js")
-          echo "$UPLOAD_RESPONSE" | head -10
-          if echo "$UPLOAD_RESPONSE" | grep -q '"success":true'; then
-            echo "✅ Worker script uploaded successfully"
-          else
-            echo "⚠️ Worker upload may have failed, checking response..."
-            echo "$UPLOAD_RESPONSE"
-          fi
-
+          echo "::group::Deploying Cloudflare Worker"
+          npm install wrangler@3.90.0 2>&1
+          # 部署 Worker（service worker 格式）
+          OUTPUT=$(npx --no-install wrangler deploy edge-tts.js --name ai-teacher-tts 2>&1) || true
+          echo "$OUTPUT"
           echo "::endgroup::"
 
-          # 2. 尝试启用 workers.dev 子域名（可能因权限失败，但脚本已上传）
-          echo "::group::Enabling workers.dev subdomain"
-          SUBDOMAIN_RESPONSE=$(curl -s -X PUT \
-            "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/ai-teacher-tts/subdomain" \
-            -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -H "Content-Type: application/json" \
-            --data '{"enabled": true}') || true
-          echo "$SUBDOMAIN_RESPONSE" | head -3
-          echo "::endgroup::"
-
-          # 3. 获取 Workers 子域名
+          # 获取 Workers 子域名（通过 API）
           echo "::group::Getting Workers Subdomain"
           SUBDOMAIN_INFO=$(curl -s \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/subdomain" \
@@ -89,20 +63,14 @@ jobs:
             echo "Constructed Worker URL: $URL"
           else
             echo "::warning::Could not determine Workers subdomain from API"
-            # 尝试另一种方式获取子域名
-            echo "Trying alternative method..."
-            # 清除 set -e 的影响
+            # 兜底：从 wrangler whoami 获取
             set +e
-            npm install wrangler@3.90.0 2>&1 | tail -3
             WHOAMI=$(npx --no-install wrangler whoami 2>&1) || true
-            echo "$WHOAMI"
             SUBDOMAIN=$(echo "$WHOAMI" | grep -oP "Workers\s*·\s*\K[a-z0-9-]+" | head -1)
             if [ -n "$SUBDOMAIN" ]; then
               URL="https://ai-teacher-tts.$SUBDOMAIN.workers.dev"
-              echo "Got subdomain from wrangler: $SUBDOMAIN"
             else
-              # 最后的兜底：假设 Worker 已部署，使用固定子域名格式
-              echo "::warning::Could not determine Workers subdomain, using fallback URL"
+              echo "::warning::Could not determine Workers subdomain, using fallback"
               URL="https://ai-teacher-tts.example.workers.dev"
             fi
           fi
