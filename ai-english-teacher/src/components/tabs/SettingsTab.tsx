@@ -136,7 +136,7 @@ export default function SettingsTab({
         <div className="mt-3 space-y-1 text-sm text-gray-600">
           <p>
             浏览器播报:{" "}
-            {speechSupported === null ? "检测中..." : speechSupported ? "有" : "没有（荣耀、微信常没有，用下面的离线嘴巴）"}
+            {speechSupported === null ? "检测中..." : speechSupported ? "有" : "没有（QQ、荣耀浏览器常没有，用下面的离线嘴巴）"}
           </p>
           <p>浏览器识别: {sttSupported === null ? "检测中..." : sttSupported ? "有" : "没有（可打字，或用离线耳朵）"}</p>
         </div>
@@ -195,8 +195,8 @@ export default function SettingsTab({
             </button>
           )}
           <p className="text-sm leading-relaxed text-gray-500">
-            进页面先探测。Chrome 能听能说就不下包。荣耀、华为、微信没有系统播报时，从本站装离线耳朵（约 42MB）和离线嘴巴（约
-            20MB），跟网页同一个地址，不连国外模型站。
+            进页面先探测。Chrome 能听能说就不下包。QQ、荣耀、华为没有系统播报时，从本站依次装离线耳朵（约 42MB）和离线嘴巴（约
+            20MB），跟网页同一个地址，不连国外模型站，也不会两个包同时抢网速。
           </p>
         </div>
       </Card>
