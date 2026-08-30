@@ -3,7 +3,7 @@
 import { useState, useEffect } from "react";
 import type { MathQuestion } from "@/lib/math/generator";
 import { renderEmojiCount } from "@/lib/math/generator";
-import SpeakableText from "@/components/ui/SpeakableText";
+import SpeakableLine from "@/components/ui/SpeakableLine";
 
 interface MathDrillProps {
   question: MathQuestion;
@@ -41,35 +41,31 @@ export default function MathDrill({ question, streak = 0, onAnswer, voiceSpeed =
 
   return (
     <div
-      className="bg-gradient-to-br from-amber-50 to-orange-50 rounded-2xl p-5 border border-amber-100 shadow-sm"
+      className="rounded-2xl border border-amber-100 bg-gradient-to-br from-amber-50 to-orange-50 p-5 shadow-sm"
       onPointerDown={stopBubble}
       onClick={stopBubble}
     >
-      <div className="text-center mb-3">
+      <div className="mb-2 text-center">
         <span className="text-3xl">{question.emoji}</span>
-        <SpeakableText
+        <SpeakableLine
           text={question.scenario}
           lang="zh"
           voiceSpeed={voiceSpeed}
           align="center"
-          className="mt-2"
+          className="mt-1"
           textClassName="text-base text-amber-800 font-medium"
         />
       </div>
 
-      <div className="flex justify-center items-center gap-2 text-3xl font-bold text-gray-800 mb-2">
+      <div className="mb-2 flex items-center justify-center gap-2 text-3xl font-bold text-gray-800">
         <span>{renderEmojiCount(question.a, question.emoji)}</span>
-        {question.op === "+" ? (
-          <span className="text-amber-600">+</span>
-        ) : (
-          <span className="text-rose-500">−</span>
-        )}
+        {question.op === "+" ? <span className="text-amber-600">+</span> : <span className="text-rose-500">−</span>}
         <span>{renderEmojiCount(question.b, question.emoji)}</span>
         <span className="text-gray-400">=</span>
         <span className="text-pink-500">{input || "?"}</span>
       </div>
 
-      <SpeakableText
+      <SpeakableLine
         text={exprSpeak}
         lang="zh"
         voiceSpeed={voiceSpeed}
@@ -78,30 +74,28 @@ export default function MathDrill({ question, streak = 0, onAnswer, voiceSpeed =
         textClassName="text-xl font-semibold text-gray-700"
       >
         {question.a} {question.op} {question.b} = ?
-      </SpeakableText>
+      </SpeakableLine>
 
-      {streak > 0 && (
-        <p className="text-center text-base text-green-600 mb-3">连对 {streak} 题！</p>
-      )}
+      {streak > 0 && <p className="mb-3 text-center text-base text-green-600">连对 {streak} 题！</p>}
 
-      <div className="grid grid-cols-5 gap-2 max-w-xs mx-auto">
+      <div className="mx-auto grid max-w-xs grid-cols-5 gap-2">
         {nums.map((n) => (
           <button
             key={n}
             type="button"
             onClick={() => appendDigit(n)}
-            className="h-12 rounded-xl bg-white border border-amber-200 text-xl font-bold text-gray-700 hover:bg-amber-100 active:scale-95 transition-all"
+            className="h-12 rounded-xl border border-amber-200 bg-white text-xl font-bold text-gray-700 transition-all hover:bg-amber-100 active:scale-95"
           >
             {n}
           </button>
         ))}
       </div>
 
-      <div className="flex gap-2 max-w-xs mx-auto mt-3">
+      <div className="mx-auto mt-3 flex max-w-xs gap-2">
         <button
           type="button"
           onClick={() => setInput("")}
-          className="flex-1 min-h-12 rounded-xl bg-white border border-gray-200 text-base text-gray-600 active:scale-95"
+          className="min-h-12 flex-1 rounded-xl border border-gray-200 bg-white text-base text-gray-600 active:scale-95"
         >
           清除
         </button>
@@ -109,13 +103,11 @@ export default function MathDrill({ question, streak = 0, onAnswer, voiceSpeed =
           type="button"
           onClick={submit}
           disabled={!input}
-          className="flex-1 min-h-12 rounded-xl bg-pink-500 text-white text-base font-medium disabled:opacity-40 active:scale-95"
+          className="min-h-12 flex-1 rounded-xl bg-pink-500 text-base font-medium text-white active:scale-95 disabled:opacity-40"
         >
           确定
         </button>
       </div>
-
-      <p className="text-center text-sm text-gray-500 mt-3">点数字拼答案后点确定 · 也可以直接说「8」</p>
     </div>
   );
 }

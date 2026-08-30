@@ -397,6 +397,7 @@ export default function HomePage() {
       onDismissAchievement={() => setAchievementMsg("")}
       lastUserText={lastUserText}
       lastReply={lastReply}
+      compactReply={activeTab === "study" && !!contentCard}
       onDismissReply={() => {
         setLastReply("");
         setLastUserText("");

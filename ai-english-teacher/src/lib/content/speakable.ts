@@ -109,6 +109,15 @@ export function getSpeakableFields(card: ContentCard): SpeakableField[] {
   }
 }
 
+/** 故事/古诗按行或按句拆开，方便整行点读。 */
+export function splitSpeakableLines(text: string): string[] {
+  return text
+    .split(/\n+/)
+    .flatMap((line) => line.split(/(?<=[。！？!?])/))
+    .map((s) => s.trim())
+    .filter(Boolean);
+}
+
 /** 从内容卡片提取可朗读文本（供 🔊 按钮与「朗读」指令） */
 export function getSpeakableFromCard(card: ContentCard): string {
   const fields = getSpeakableFields(card);

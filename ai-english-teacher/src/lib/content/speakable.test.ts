@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { getSpeakableFields, getSpeakableFromCard } from "./speakable";
+import { getSpeakableFields, getSpeakableFromCard, splitSpeakableLines } from "./speakable";
 
 describe("getSpeakableFromCard", () => {
   it("joins hanzi fields", () => {
@@ -19,6 +19,16 @@ describe("getSpeakableFromCard", () => {
     });
     expect(text).toContain("笑话");
     expect(text).toContain("为什么书会走路");
+  });
+});
+
+describe("splitSpeakableLines", () => {
+  it("splits story by sentence and line", () => {
+    expect(splitSpeakableLines("小兔子去采蘑菇。太阳公公笑了。")).toEqual([
+      "小兔子去采蘑菇。",
+      "太阳公公笑了。",
+    ]);
+    expect(splitSpeakableLines("床前明月光\n疑是地上霜")).toEqual(["床前明月光", "疑是地上霜"]);
   });
 });
 

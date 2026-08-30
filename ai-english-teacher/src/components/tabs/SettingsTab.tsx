@@ -5,7 +5,6 @@ import KbSettingsCard from "@/components/KbSettingsCard";
 import VoiceHintBar from "@/components/VoiceHintBar";
 import Button from "@/components/ui/Button";
 import Card from "@/components/ui/Card";
-import SpeakableText from "@/components/ui/SpeakableText";
 import { TAB_VOICE_HINTS } from "@/lib/voice-hints";
 import type { PetData } from "@/lib/pet-data";
 
@@ -103,13 +102,9 @@ export default function SettingsTab({
           <Button variant="secondary" className="w-full" onClick={() => onPreviewVoiceSpeed(pet.voiceSpeed)}>
             试听当前语速
           </Button>
-          <SpeakableText
-            text="拖动滑块约半秒后会自动试听；部分手机浏览器对语速支持有限，以试听为准。"
-            lang="zh"
-            voiceSpeed={voiceSpeed}
-            className="items-start"
-            textClassName="text-sm text-gray-500 leading-relaxed"
-          />
+          <p className="text-sm leading-relaxed text-gray-500">
+            拖动滑块约半秒后会自动试听；部分手机浏览器对语速支持有限，以试听为准。
+          </p>
         </div>
         <div className="mt-3 space-y-1 text-sm text-gray-600">
           <p>语音合成: {speechSupported === null ? "检测中..." : speechSupported ? "支持" : "不支持（建议使用 Chrome）"}</p>
@@ -154,13 +149,9 @@ export default function SettingsTab({
 
       <Card>
         <h3 className="text-lg font-bold text-gray-700 mb-3">关于</h3>
-        <SpeakableText
-          text="AI 英语教师 Bella 是一款语音驱动的英语学习工具。通过虚拟宠物和语音交互，让学习更轻松有趣。"
-          lang="zh"
-          voiceSpeed={voiceSpeed}
-          className="items-start"
-          textClassName="text-base text-gray-600 leading-relaxed"
-        />
+        <p className="text-base leading-relaxed text-gray-600">
+          AI 英语教师 Bella 是一款语音驱动的英语学习工具。通过虚拟宠物和语音交互，让学习更轻松有趣。
+        </p>
         <p className="text-sm text-gray-400 mt-3">Version 1.0.0 · 纯 Web 版</p>
       </Card>
     </div>

@@ -35,9 +35,9 @@ test.describe("Study content loads on tab click", () => {
 });
 
 test.describe("Voice bar UI", () => {
-  test("shows tap-to-speak label", async ({ page }) => {
+  test("shows tap-to-speak control", async ({ page }) => {
     await page.goto("/");
-    await expect(page.getByText("点击说话 · 长按连说")).toBeVisible();
+    await expect(page.getByRole("button", { name: /点击说话/ })).toBeVisible();
   });
 });
 

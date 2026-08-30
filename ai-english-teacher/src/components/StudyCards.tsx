@@ -3,9 +3,9 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { Word, loadWordBatch, refreshWordBatch } from "@/lib/words";
 import { warmUpSpeech } from "@/lib/speech";
-import { RefreshCw } from "lucide-react";
+import { Eye, EyeOff, RefreshCw } from "lucide-react";
 import SpeakIcon from "@/components/ui/SpeakIcon";
-import SpeakableText from "@/components/ui/SpeakableText";
+import SpeakableLine from "@/components/ui/SpeakableLine";
 
 interface StudyCardsProps {
   words?: Word[];
@@ -100,24 +100,20 @@ export default function StudyCards({
   };
 
   if (!currentWord) {
-    return (
-      <div className="bg-white/80 rounded-2xl p-5 text-center text-base text-gray-500">
-        词库加载中…
-      </div>
-    );
+    return <div className="rounded-2xl bg-white/80 p-5 text-center text-base text-gray-500">词库加载中…</div>;
   }
 
   if (mode === "quiz") {
     return (
-      <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-sm border border-pink-100">
-        <div className="flex items-center justify-between mb-4">
+      <div className="rounded-2xl border border-pink-100 bg-white/80 p-5 shadow-sm backdrop-blur-sm">
+        <div className="mb-4 flex items-center justify-between">
           <h3 className="text-lg font-bold text-gray-700">单词测验</h3>
           <span className="text-base text-gray-500">
             得分: {score}/{quizIndex + 1}
           </span>
         </div>
 
-        <SpeakableText
+        <SpeakableLine
           text={quiz.correctWord.zh}
           lang="zh"
           voiceSpeed={voiceSpeed}
@@ -125,11 +121,11 @@ export default function StudyCards({
           className="mb-2"
           textClassName="text-3xl font-bold text-pink-600"
         />
-        <p className="text-base text-gray-500 text-center mb-4">请选择对应的英文</p>
+        <p className="mb-4 text-center text-base text-gray-500">请选择对应的英文</p>
 
         {quizResult !== null && (
           <div
-            className={`text-center py-2 rounded-lg mb-3 text-base ${
+            className={`mb-3 rounded-lg py-2 text-center text-base ${
               quizResult ? "bg-green-50 text-green-600" : "bg-red-50 text-red-500"
             }`}
           >
@@ -139,31 +135,40 @@ export default function StudyCards({
 
         <div className="grid grid-cols-2 gap-2">
           {quiz.options.map((word, i) => (
-            <div key={`${word.en}-${i}`} className="flex items-center gap-1">
+            <div key={`${word.en}-${i}`} className="relative">
               <button
+                type="button"
                 onClick={() => handleQuizAnswer(word)}
                 disabled={quizResult !== null}
                 className={`
-                  flex-1 min-h-12 py-3 px-3 rounded-xl font-medium text-base transition-all duration-200
+                  min-h-12 w-full rounded-xl px-3 py-3 pr-8 text-base font-medium transition-all duration-200
                   ${
                     quizResult !== null
                       ? word.en === quiz.correctWord.en
                         ? "bg-green-500 text-white"
                         : "bg-gray-100 text-gray-400"
-                      : "bg-pink-50 hover:bg-pink-100 text-gray-700 active:scale-95"
+                      : "bg-pink-50 text-gray-700 hover:bg-pink-100 active:scale-95"
                   }
                 `}
               >
                 {word.en}
               </button>
-              <SpeakIcon text={word.en} lang="en" voiceSpeed={voiceSpeed} label={`朗读 ${word.en}`} />
+              <SpeakIcon
+                size="sm"
+                text={word.en}
+                lang="en"
+                voiceSpeed={voiceSpeed}
+                label={`朗读 ${word.en}`}
+                className="absolute top-1 right-1"
+              />
             </div>
           ))}
         </div>
 
         <button
+          type="button"
           onClick={backToLearn}
-          className="mt-4 w-full min-h-11 py-2 text-center text-base text-gray-500 hover:text-gray-700"
+          className="mt-4 min-h-11 w-full py-2 text-center text-base text-gray-500 hover:text-gray-700"
         >
           返回学习模式
         </button>
@@ -172,36 +177,39 @@ export default function StudyCards({
   }
 
   return (
-    <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-sm border border-pink-100">
-      <div className="flex items-center justify-between mb-3 gap-2">
+    <div className="rounded-2xl border border-pink-100 bg-white/80 p-5 shadow-sm backdrop-blur-sm">
+      <div className="mb-3 flex items-center justify-between gap-2">
         <h3 className="text-lg font-bold text-gray-700">单词学习</h3>
         <div className="flex gap-2">
           <button
+            type="button"
             onClick={handleRefreshBatch}
-            className="text-sm bg-purple-100 text-purple-600 min-h-11 px-3 rounded-full hover:bg-purple-200 flex items-center gap-1"
+            className="flex min-h-10 items-center gap-1 rounded-full bg-purple-100 px-3 text-sm text-purple-600 hover:bg-purple-200"
           >
-            <RefreshCw className="w-4 h-4" />
+            <RefreshCw className="h-4 w-4" />
             换一批
           </button>
           <button
+            type="button"
             onClick={startQuiz}
-            className="text-sm bg-pink-100 text-pink-600 min-h-11 px-3 rounded-full hover:bg-pink-200"
+            className="min-h-10 rounded-full bg-pink-100 px-3 text-sm text-pink-600 hover:bg-pink-200"
           >
             开始测验
           </button>
         </div>
       </div>
 
-      <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-2xl p-6 text-center mb-4 space-y-3">
-        <SpeakableText
+      <div className="mb-4 space-y-2 rounded-2xl bg-gradient-to-br from-pink-50 to-purple-50 p-5 text-center">
+        <SpeakableLine
           text={currentWord.en}
           lang="en"
           voiceSpeed={voiceSpeed}
           align="center"
+          size="hero"
           textClassName="text-4xl font-bold text-gray-800"
         />
         {showAnswer && (
-          <SpeakableText
+          <SpeakableLine
             text={currentWord.zh}
             lang="zh"
             voiceSpeed={voiceSpeed}
@@ -211,7 +219,7 @@ export default function StudyCards({
           />
         )}
         {showAnswer && (
-          <SpeakableText
+          <SpeakableLine
             text={currentWord.sentence}
             lang="en"
             voiceSpeed={voiceSpeed}
@@ -220,31 +228,29 @@ export default function StudyCards({
             textClassName="text-base text-gray-500 italic"
           >
             “{currentWord.sentence}”
-          </SpeakableText>
+          </SpeakableLine>
         )}
       </div>
 
-      <div className="flex justify-center mb-4">
+      <div className="mb-3 flex justify-center">
         <button
+          type="button"
           onClick={() => setShowAnswer(!showAnswer)}
-          className="min-h-12 bg-gray-500 text-white px-5 rounded-full text-base hover:bg-gray-600 active:scale-95 transition-all"
+          className="flex min-h-11 items-center gap-1.5 rounded-full bg-gray-500 px-4 text-sm text-white hover:bg-gray-600 active:scale-95"
         >
+          {showAnswer ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           {showAnswer ? "隐藏意思" : "显示意思"}
         </button>
       </div>
 
-      <p className="text-sm text-center text-pink-600 bg-pink-50 px-3 py-2 rounded-xl mb-3 leading-relaxed">
-        可说「apple什么意思」「书本用英语怎么说」「换一批单词」
-      </p>
-
-      <div className="flex justify-between items-center">
-        <button onClick={prevWord} className="text-gray-500 hover:text-pink-500 text-base min-h-11 px-2">
+      <div className="flex items-center justify-between">
+        <button type="button" onClick={prevWord} className="min-h-11 px-2 text-sm text-gray-500 hover:text-pink-500">
           ← 上一个
         </button>
         <span className="text-sm text-gray-500">
           {currentIndex + 1} / {words.length}
         </span>
-        <button onClick={nextWord} className="text-gray-500 hover:text-pink-500 text-base min-h-11 px-2">
+        <button type="button" onClick={nextWord} className="min-h-11 px-2 text-sm text-gray-500 hover:text-pink-500">
           下一个 →
         </button>
       </div>

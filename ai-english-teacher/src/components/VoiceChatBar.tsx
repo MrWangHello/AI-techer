@@ -316,11 +316,11 @@ export default function VoiceChatBar({
   const busy = listening || speaking || thinking;
 
   return (
-    <div className="shrink-0 bg-white border-t border-pink-100 px-3 pt-2 pb-2 max-w-lg mx-auto w-full">
-      {hint && <p className="text-sm text-amber-700 text-center mb-1.5 animate-fadeIn">{hint}</p>}
+    <div className="w-full shrink-0 bg-white px-3 pb-1.5 pt-1.5">
+      {hint && <p className="mb-1 text-center text-sm text-amber-700 animate-fadeIn">{hint}</p>}
 
       {interimText && (holding || listening) && (
-        <p className="text-sm text-gray-600 text-center mb-1.5 px-2 break-words whitespace-pre-wrap">{interimText}</p>
+        <p className="mb-1 break-words whitespace-pre-wrap px-2 text-center text-sm text-gray-600">{interimText}</p>
       )}
 
       <div className="flex items-end gap-2">
@@ -328,62 +328,46 @@ export default function VoiceChatBar({
           type="button"
           onClick={toggleMode}
           disabled={busy}
-          className="shrink-0 w-12 h-12 flex items-center justify-center rounded-full text-gray-500 hover:text-pink-500 hover:bg-pink-50 active:scale-95 transition-all disabled:opacity-40"
+          className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full text-gray-500 transition-all hover:bg-pink-50 hover:text-pink-500 active:scale-95 disabled:opacity-40"
           aria-label={mode === "voice" ? "切换到键盘输入" : "切换到语音输入"}
         >
-          {mode === "voice" ? <Keyboard className="w-6 h-6" /> : <Mic className="w-6 h-6" />}
+          {mode === "voice" ? <Keyboard className="h-6 w-6" /> : <Mic className="h-6 w-6" />}
         </button>
 
         {mode === "voice" ? (
           <button
             ref={voiceBtnRef}
             type="button"
+            aria-label="点击说话"
             onPointerDown={onVoicePressStart}
             onPointerUp={onVoicePressEnd}
             onPointerCancel={onVoicePressCancel}
             onContextMenu={(e) => e.preventDefault()}
             disabled={speaking || thinking}
             className={`
-              flex-1 min-h-14 h-14 rounded-full flex items-center justify-center gap-2
-              text-base font-medium transition-all select-none touch-none
+              flex h-14 min-h-14 flex-1 items-center justify-center rounded-full
+              select-none touch-none transition-all
               ${
                 holding
-                  ? "bg-red-50 text-red-500 border border-red-200 scale-[0.98]"
+                  ? "scale-[0.98] border border-red-200 bg-red-50 text-red-500"
                   : listening
-                  ? "bg-red-50 text-red-500 border border-red-200 animate-pulse"
-                  : thinking
-                  ? "bg-amber-50 text-amber-600 border border-amber-200"
-                  : speaking
-                  ? "bg-green-50 text-green-600 border border-green-200"
-                  : "bg-pink-50 text-pink-600 border border-pink-100 hover:bg-pink-100 active:scale-[0.98]"
+                    ? "animate-pulse border border-red-200 bg-red-50 text-red-500"
+                    : thinking
+                      ? "border border-amber-200 bg-amber-50 text-amber-600"
+                      : speaking
+                        ? "border border-green-200 bg-green-50 text-green-600"
+                        : "border border-pink-100 bg-pink-50 text-pink-600 hover:bg-pink-100 active:scale-[0.98]"
               }
             `}
           >
-            {holding ? (
-              <>
-                <Mic className="w-6 h-6 animate-pulse" />
-                松手发送...
-              </>
-            ) : listening ? (
-              <>
-                <Mic className="w-6 h-6" />
-                正在听...
-              </>
+            {holding || listening ? (
+              <Mic className="h-8 w-8 animate-pulse" />
             ) : thinking ? (
-              <>
-                <Loader2 className="w-6 h-6 animate-spin" />
-                Bella 在想...
-              </>
+              <Loader2 className="h-7 w-7 animate-spin" />
             ) : speaking ? (
-              <>
-                <Volume1 className="w-6 h-6 animate-pulse" />
-                Bella 正在说话...
-              </>
+              <Volume1 className="h-7 w-7 animate-pulse" />
             ) : (
-              <>
-                <Mic className="w-6 h-6" />
-                点击说话 · 长按连说
-              </>
+              <Mic className="h-8 w-8" />
             )}
           </button>
         ) : (
@@ -395,7 +379,7 @@ export default function VoiceChatBar({
             onKeyDown={(e) => e.key === "Enter" && submitText()}
             placeholder="输入文字与 Bella 对话..."
             disabled={thinking}
-            className="flex-1 min-h-14 h-14 px-4 text-base bg-gray-50 border border-pink-100 rounded-full focus:outline-none focus:border-pink-300 focus:bg-white disabled:opacity-60"
+            className="h-14 min-h-14 flex-1 rounded-full border border-pink-100 bg-gray-50 px-4 text-base focus:border-pink-300 focus:bg-white focus:outline-none disabled:opacity-60"
           />
         )}
 
@@ -404,14 +388,13 @@ export default function VoiceChatBar({
             type="button"
             onClick={submitText}
             disabled={!textInput.trim() || thinking}
-            className="shrink-0 w-12 h-12 flex items-center justify-center rounded-full bg-pink-500 text-white hover:bg-pink-600 disabled:opacity-40 active:scale-95 transition-all"
+            className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-pink-500 text-white transition-all hover:bg-pink-600 active:scale-95 disabled:opacity-40"
             aria-label="发送"
           >
-            {thinking ? <Loader2 className="w-5 h-5 animate-spin" /> : <Send className="w-5 h-5" />}
+            {thinking ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send className="h-5 w-5" />}
           </button>
         )}
       </div>
-      <p className="text-sm text-center text-gray-500 mt-1.5">轻点说一句 · 长按连续说 · 键盘切文字</p>
     </div>
   );
 }
