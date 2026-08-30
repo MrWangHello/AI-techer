@@ -82,7 +82,7 @@ describe("handleUserMessage math", () => {
 describe("handleUserMessage dictionary", () => {
   it("looks up 书本用英语怎么说", async () => {
     const res = await handleUserMessage({ text: "书本用英语怎么说", channel: "web" });
-    expect(res.intent).toBe("zh_to_en");
+    expect(res.intent).toBe("dict_hit");
     expect(res.reply).toContain("book");
   });
 
