@@ -152,15 +152,24 @@ export default function SettingsTab({
           <p className="text-sm text-gray-500">
             离线包：
             {pack.status === "downloading"
-              ? `正在装 ${pack.progress}%`
+              ? `正在装 ${pack.progress}%（先走国内镜像）`
               : pack.ready || pack.status === "ready"
                 ? "已在这台浏览器里"
                 : pack.status === "error"
                   ? `装不上（${pack.error || "请检查网络"}）`
                   : "还没下载。Chrome 能认就不下。"}
           </p>
+          {pack.status === "error" && (
+            <button
+              type="button"
+              onClick={() => void ensureLocalModel()}
+              className="min-h-11 rounded-full border border-pink-200 bg-white px-3 text-sm text-pink-600"
+            >
+              再试一次
+            </button>
+          )}
           <p className="text-sm leading-relaxed text-gray-500">
-            进页面会先探测。浏览器耳朵够用就不下包。荣耀、华为、QQ 或探测失败，才会后台给 Bella 装离线耳朵。
+            进页面会先探测。浏览器耳朵够用就不下包。荣耀、华为、QQ 或探测失败，才会后台装离线耳朵（国内先走镜像，连不上再换线路）。
           </p>
         </div>
       </Card>

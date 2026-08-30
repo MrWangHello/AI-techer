@@ -111,10 +111,14 @@ export default function VoiceChatBar({
           }, 2500);
         } else {
           setPackHint(null);
-          if (!web) {
+          if (web) {
+            setSttEngine("webspeech");
+            setSttAvailable(true);
+            setHint("离线包装不上，先用浏览器听。也可以打字。");
+          } else {
             setSttAvailable(false);
             setMode("text");
-            setHint("离线语音包装不上，请用文字输入");
+            setHint("离线包装不上，请用文字输入");
           }
         }
       });
@@ -134,6 +138,8 @@ export default function VoiceChatBar({
     return subscribeLocalStt((s) => {
       if (s.status === "downloading" && s.progress > 0) {
         setPackHint(`正在给 Bella 装耳朵… ${s.progress}%`);
+      } else if (s.status === "error") {
+        setPackHint(null);
       }
     });
   }, []);

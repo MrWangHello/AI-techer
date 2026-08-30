@@ -78,7 +78,8 @@
 |----|------|
 | 探测 | `speech-probe.ts`：Chrome+GMS 不下包；无 API / 荣耀华为 QQ Firefox / 设置强制离线 → 后台预取 |
 | 可跑包 | `@huggingface/transformers` + `Xenova/whisper-tiny` 中文短句（约 40MB，缓存后不再下） |
-| 说明 | SenseVoice 同管道可换 MODEL_ID；先保证浏览器里真能转写 |
+| 国内 | 先探测 `hf-mirror.com`，连不上再试 `huggingface.co`。卡 1% 后 Failed to fetch = 模型站被墙/超时 |
+| 失败 | 文案改成「模型站连不上」；有 Web Speech 就回退浏览器识别；设置里可再试一次 |
 | 文件 | `speech-probe.ts`, `speech-local.ts`, `VoiceChatBar.tsx` |
 
 ---
@@ -218,14 +219,13 @@
 | 修复 | CSS mask 羽化 + 背景色 `#f0ebe4` 匹配 |
 | 限制 | 视频源自带实心底，无法完全透明 |
 
-### 5.6 宠物动作预览片 + 甲兜底 `[preview]`
+### 5.6 宠物主屏固定 + 旧 mood 片双缓冲 `[preview]`
 
 | 项 | 内容 |
 |----|------|
-| 乙 | `public/videos/actions/{idle,eat,play,bathe,sleep}.mp4` 480p 短片；点喂/玩/洗/睡播对应片，播完回 idle |
-| 甲 | 旧 5 段 mood 片未删；动作片 2s 内未出画或 onError → 旧片 + 🐟🧶🫧Zz 贴花 |
-| 体积 | idle ~70KB，动作约 25KB；仅 idle 预载 |
-| 背景 | 宠物卡改为粉白渐变（与页面 `#fdf2f8` 一致）；视频用更紧的椭圆 mask 裁掉窗台，避免米色底和卡片打架 |
+| 还原 | 喂/玩/洗/睡不再播合成静帧，改回旧 5 段 mood MP4（happy/sleepy）+ 🐟🧶🫧Zz |
+| 卡顿 | 根因：每次切 mood 都 `key` 重挂 + `video.load()` + 手机不缓存。现五段约 470KB 全部 blob 预载，双 video 交叉淡入，旧片继续播到新片 canplay |
+| 主屏 | 宠物 Tab 不再上下滑；猫固定占满舞台，动作在右侧，状态条压在底部，成就从顶栏🏅弹出层 |
 
 ---
 

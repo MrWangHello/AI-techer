@@ -103,7 +103,11 @@ export default function AppShell({
       )}
 
       <div className="relative min-h-0 flex-1">
-        <main className="absolute inset-0 overflow-y-auto hide-scrollbar px-4 pb-8">
+        <main
+          className={`absolute inset-0 px-3 ${
+            activeTab === "pet" ? "overflow-hidden pb-2" : "hide-scrollbar overflow-y-auto px-4 pb-8"
+          }`}
+        >
           {children}
         </main>
         <VoicePeek

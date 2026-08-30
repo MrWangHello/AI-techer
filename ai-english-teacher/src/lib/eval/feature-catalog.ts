@@ -45,7 +45,7 @@ export const FEATURE_CASES: FeatureCase[] = [
     tapFallback: true,
     offline: true,
     status: "partial",
-    notes: "进页先探测；高危机或无 Web Speech 才后台下离线包。当前可跑 Whisper tiny 中文短句，管道可换成 SenseVoice",
+    notes: "进页先探测；高危机或无 Web Speech 才后台下。Whisper tiny 先走 hf-mirror，连不上再试 huggingface。Failed to fetch 会回退浏览器识别",
   },
   {
     id: "nav.home",

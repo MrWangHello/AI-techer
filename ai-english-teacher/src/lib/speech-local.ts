@@ -1,12 +1,15 @@
 /**
  * 浏览器本地识别：首次需要时下载离线包，之后走缓存。
- * 当前可运行包是 Whisper tiny（中文短句）。探测/下载管道与 SenseVoice 相同，换模型只改 MODEL_ID。
+ * 国内优先走 hf-mirror，连不上再试 huggingface.co。
+ * 当前可运行包是 Whisper tiny（中文短句）。
  */
 
 export type LocalSttStatus = "idle" | "downloading" | "ready" | "error";
 
 const MODEL_ID = "Xenova/whisper-tiny";
 const READY_KEY = "bella_local_stt_ready";
+
+export const MODEL_HOSTS = ["https://hf-mirror.com/", "https://huggingface.co/"] as const;
 
 type AsrPipe = (audio: Float32Array, opts?: Record<string, unknown>) => Promise<{ text?: string }>;
 
@@ -41,6 +44,56 @@ export function isLocalSttReady(): boolean {
   return !!pipe || status === "ready";
 }
 
+/** transformers 进度是 0–100；少数回调会给 0–1 的小数（1 本身按 1% 算） */
+export function displayPackProgress(raw: number): number {
+  if (!Number.isFinite(raw) || raw < 0) return 1;
+  const pct = raw > 0 && raw < 1 ? raw * 100 : raw;
+  return Math.max(1, Math.min(99, Math.round(pct)));
+}
+
+export function friendlyPackError(err: unknown): string {
+  const msg = err instanceof Error ? err.message : String(err);
+  if (/failed to fetch|networkerror|load failed|abort|timeout|network/i.test(msg)) {
+    return "模型站连不上，可换网络或改用浏览器识别";
+  }
+  return msg.slice(0, 80) || "离线语音包装不上";
+}
+
+export async function pickReachableHost(fetchImpl: typeof fetch = fetch): Promise<string> {
+  for (const host of MODEL_HOSTS) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), 5000);
+    try {
+      const res = await fetchImpl(`${host}${MODEL_ID}/resolve/main/config.json`, {
+        method: "GET",
+        signal: ctrl.signal,
+        cache: "no-store",
+      });
+      if (res.ok) return host;
+    } catch {
+      // try next
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+  return MODEL_HOSTS[0];
+}
+
+async function loadPipelineFromHost(host: string): Promise<AsrPipe> {
+  const { pipeline, env } = await import("@huggingface/transformers");
+  env.allowRemoteModels = true;
+  env.remoteHost = host;
+  const created = await pipeline("automatic-speech-recognition", MODEL_ID, {
+    progress_callback: (info: { status?: string; progress?: number }) => {
+      if (typeof info.progress === "number") {
+        progress = displayPackProgress(info.progress);
+        emit();
+      }
+    },
+  });
+  return created as unknown as AsrPipe;
+}
+
 export async function ensureLocalModel(): Promise<boolean> {
   if (pipe) {
     status = "ready";
@@ -58,23 +111,15 @@ export async function ensureLocalModel(): Promise<boolean> {
     lastError = "";
     emit();
     try {
-      const { pipeline } = await import("@huggingface/transformers");
-      const created = await pipeline("automatic-speech-recognition", MODEL_ID, {
-        progress_callback: (info: { status?: string; progress?: number }) => {
-          if (typeof info.progress === "number") {
-            progress = Math.max(1, Math.min(99, Math.round(info.progress)));
-            emit();
-          }
-        },
-      });
-      pipe = created as unknown as AsrPipe;
+      const host = await pickReachableHost();
+      pipe = await loadPipelineFromHost(host);
       status = "ready";
       progress = 100;
       if (typeof window !== "undefined") window.localStorage.setItem(READY_KEY, "1");
       emit();
     } catch (err) {
       status = "error";
-      lastError = err instanceof Error ? err.message : "离线语音包装不上";
+      lastError = friendlyPackError(err);
       pipe = null;
       loadPromise = null;
       emit();
