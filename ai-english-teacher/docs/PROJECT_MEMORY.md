@@ -216,6 +216,7 @@
 | 乙 | `public/videos/actions/{idle,eat,play,bathe,sleep}.mp4` 480p 短片；点喂/玩/洗/睡播对应片，播完回 idle |
 | 甲 | 旧 5 段 mood 片未删；动作片 2s 内未出画或 onError → 旧片 + 🐟🧶🫧Zz 贴花 |
 | 体积 | idle ~70KB，动作约 25KB；仅 idle 预载 |
+| 背景 | 宠物卡改为粉白渐变（与页面 `#fdf2f8` 一致）；视频用更紧的椭圆 mask 裁掉窗台，避免米色底和卡片打架 |
 
 ---
 

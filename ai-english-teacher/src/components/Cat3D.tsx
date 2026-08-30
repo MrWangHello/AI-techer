@@ -66,12 +66,12 @@ const MOOD_GLOWS: Record<string, string> = {
   thinking: "rgba(99, 102, 241, 0.08)",
 };
 
-/** 与 MP4 源视频背景色一致，消除「视频框」感 */
-const SCENE_BG = "#f0ebe4";
+/** 卡片同色：浅粉白。不再用旧片米色，避免「一块片子贴在卡片上」 */
+const SCENE_BG = "transparent";
 
-/** 椭圆 mask：中心保留猫，边缘完全透明 */
+/** 只留猫身，裁掉视频里的窗台/墙，边缘溶进卡片 */
 const VIDEO_MASK =
-  "radial-gradient(ellipse 58% 58% at 50% 46%, black 48%, transparent 92%)";
+  "radial-gradient(ellipse 48% 56% at 50% 54%, black 36%, transparent 72%)";
 
 /** 移动端避免 blob 缓存多路视频导致 Tab 崩溃，桌面端可缓存当前路 */
 const videoCache = new Map<string, string>();
@@ -219,10 +219,7 @@ export default function Cat3D({
   } as React.CSSProperties;
 
   return (
-    <div
-      className="relative w-full h-full flex items-center justify-center overflow-hidden select-none"
-      style={{ backgroundColor: SCENE_BG }}
-    >
+    <div className="relative w-full h-full flex items-center justify-center overflow-hidden select-none bg-transparent">
       {/* mood 色调光晕（极淡，不盖视频背景） */}
       <div
         className="absolute inset-0 transition-all duration-700 pointer-events-none"
@@ -290,14 +287,21 @@ export default function Cat3D({
         }}
       >
         <div
-          className="relative w-52 h-52 md:w-60 md:h-60 lg:w-64 lg:h-64"
-          style={{ backgroundColor: SCENE_BG }}
+          aria-hidden
+          className="absolute left-1/2 bottom-10 -translate-x-1/2 w-44 h-10 md:w-52 md:h-12 rounded-full bg-pink-100/70 blur-md pointer-events-none"
+        />
+        <div
+          className="relative w-60 h-60 md:w-72 md:h-72 lg:w-80 lg:h-80"
+          style={{
+            backgroundColor: SCENE_BG,
+            filter: "drop-shadow(0 16px 22px rgba(236, 72, 153, 0.12))",
+          }}
         >
           {videoError ? (
             <img
               src={currentPoster}
               alt="Bella"
-              className="absolute inset-0 w-full h-full object-cover"
+              className="absolute inset-0 w-full h-full object-cover scale-[1.12]"
               style={maskStyle}
             />
           ) : (
@@ -318,7 +322,7 @@ export default function Cat3D({
                   ref={videoRef}
                   poster={currentPoster}
                   preload={action === "idle" ? "auto" : "metadata"}
-                  className={`absolute inset-0 w-full h-full object-cover transition-opacity duration-300 ${
+                  className={`absolute inset-0 w-full h-full object-cover scale-[1.12] transition-opacity duration-300 ${
                     videoLoaded ? "opacity-100" : "opacity-0"
                   } ${
                     displayMood === "happy"

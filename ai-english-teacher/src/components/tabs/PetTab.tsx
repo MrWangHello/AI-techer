@@ -45,8 +45,8 @@ export default function PetTab({
 
   return (
     <div className="space-y-4 animate-slideUp">
-      <div className="rounded-2xl shadow-sm border border-pink-100/40 overflow-hidden">
-        <div className="aspect-[4/5] max-h-[500px] relative">
+      <div className="rounded-2xl shadow-sm border border-pink-50 bg-white/80 overflow-hidden">
+        <div className="aspect-[4/5] max-h-[500px] relative bg-gradient-to-b from-pink-50/90 to-white">
           <Cat3D mood={mood} action={action} speaking={speaking} onTap={onTapCat} onActionEnd={onActionEnd} />
         </div>
       </div>
