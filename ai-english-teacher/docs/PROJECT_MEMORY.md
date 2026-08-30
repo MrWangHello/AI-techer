@@ -270,3 +270,4 @@
 | 2026-08-30 | 仓库清理：删 Flutter 遗留、建立本记忆库 |
 | 2026-08-30 | 功能目录 + 评测方案固化（FEATURES / EVALUATION / feature-catalog） |
 | 2026-08-30 | 知识库：public/kb/pack.json + 设置导入；查词/故事运行时合并 |
+| 2026-08-30 | 知识库方案改定为：Postgres 分批粘贴入库、存啥读啥（见 KB_DESIGN） |
