@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { Home, PawPrint, BookOpen, Settings, RotateCcw } from "lucide-react";
 import RealisticCat from "@/components/Cat3D";
 import VoiceChatBar from "@/components/VoiceChatBar";
@@ -25,7 +25,7 @@ import {
   ACHIEVEMENTS,
   PetData,
 } from "@/lib/pet-data";
-import { speak } from "@/lib/speech";
+import { speak, stopSpeaking } from "@/lib/speech";
 import { isSpeechSupported, isSTTSupported } from "@/lib/speech";
 import { handleUserMessage, AgentResponse } from "@/lib/mock-agent";
 import type { ContentCard } from "@/lib/core/types";
@@ -63,6 +63,7 @@ export default function HomePage() {
   const [contentCard, setContentCard] = useState<ContentCard | null>(null);
   const [mathQuestion, setMathQuestion] = useState<MathQuestion | null>(null);
   const [mathStreak, setMathStreak] = useState(0);
+  const speedPreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const speakWithSpeed = useCallback(
     (text: string, onEnd?: () => void) => {
@@ -380,6 +381,18 @@ export default function HomePage() {
 
   const handleVoiceSpeedChange = (speed: number) => {
     setPet((prev) => ({ ...prev, voiceSpeed: speed }));
+  };
+
+  const previewVoiceSpeed = useCallback((speed: number) => {
+    stopSpeaking();
+    setCatSpeaking(true);
+    speak(`当前语速 ${speed.toFixed(1)} 倍`, () => setCatSpeaking(false), speed);
+  }, []);
+
+  const handleVoiceSpeedSlider = (speed: number) => {
+    handleVoiceSpeedChange(speed);
+    if (speedPreviewTimer.current) clearTimeout(speedPreviewTimer.current);
+    speedPreviewTimer.current = setTimeout(() => previewVoiceSpeed(speed), 500);
   };
 
   const tabs = [
@@ -763,7 +776,7 @@ export default function HomePage() {
             max="2.0"
             step="0.1"
             value={pet.voiceSpeed}
-            onChange={(e) => handleVoiceSpeedChange(parseFloat(e.target.value))}
+            onChange={(e) => handleVoiceSpeedSlider(parseFloat(e.target.value))}
             className="w-full accent-pink-500"
           />
           <div className="flex justify-between text-xs text-gray-300">
@@ -771,6 +784,16 @@ export default function HomePage() {
             <span>正常</span>
             <span>快</span>
           </div>
+          <button
+            type="button"
+            onClick={() => previewVoiceSpeed(pet.voiceSpeed)}
+            className="mt-2 w-full py-2 text-xs text-pink-600 bg-pink-50 border border-pink-200 rounded-xl active:scale-[0.98]"
+          >
+            🔊 试听当前语速
+          </button>
+          <p className="text-[10px] text-gray-400 leading-relaxed">
+            拖动滑块约 0.5 秒后会自动试听；部分手机浏览器对语速支持有限，以试听为准。
+          </p>
         </div>
         <div className="mt-3 space-y-1 text-xs text-gray-500">
           <p>语音合成: {speechSupported === null ? "检测中..." : speechSupported ? "✅ 支持" : "❌ 不支持（建议使用 Chrome）"}</p>

@@ -54,6 +54,24 @@
 
 见 §7.1 — 已改用 Web Speech API，勿再配置 Worker。
 
+### 1.6 语速滑块听不出差别
+
+| 项 | 内容 |
+|----|------|
+| 现象 | 设置里拖 1.2x/1.7x 感觉「假的」 |
+| 根因 | 无试听；单词卡 `speakEnglish` 未传 `voiceSpeed`；部分手机 TTS 对 rate 支持弱 |
+| 修复 | 滑块防抖自动试听 +「试听当前语速」；StudyCards 传入语速 |
+| 文件 | `page.tsx`, `StudyCards.tsx` |
+
+### 1.7 查词时整页黑屏（Chrome This page couldn't load）
+
+| 项 | 内容 |
+|----|------|
+| 现象 | 手机查词/查百科时偶发整页崩溃，只有 Reload/Back |
+| 根因 | 词霸 API 超时；旧 WebView 无 `AbortSignal.timeout`；Cat3D 移动端预载多路视频 blob OOM |
+| 修复 | `fetchWithTimeout`；移动端视频直连；`error.tsx` 应用内重试 |
+| 文件 | `safe-fetch.ts`, `Cat3D.tsx`, `iciba.ts` |
+
 ---
 
 ## 2. 意图路由 / Skills

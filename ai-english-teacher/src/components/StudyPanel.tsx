@@ -247,7 +247,12 @@ export default function StudyPanel({
       {contentCard && <ContentCardView card={contentCard} voiceSpeed={voiceSpeed} />}
 
       {subject === "english" && sub === "words" && (
-        <StudyCards words={words} onWordLearned={onWordLearned} onQuizResult={onQuizResult} />
+        <StudyCards
+          words={words}
+          voiceSpeed={voiceSpeed}
+          onWordLearned={onWordLearned}
+          onQuizResult={onQuizResult}
+        />
       )}
 
       {subject === "math" && sub === "drill" && mathQuestion && (
