@@ -12,6 +12,8 @@ import {
   CHINESE_SUB_LABELS,
   ENGLISH_SUB_LABELS,
   MATH_SUB_LABELS,
+  READING_SUB_LABELS,
+  EXPLORE_SUB_LABELS,
   type StudySubject,
 } from "@/lib/study-nav";
 
@@ -22,6 +24,7 @@ interface StudyPanelProps {
   mathQuestion?: MathQuestion | null;
   mathStreak?: number;
   onMathAnswer?: (n: number) => void;
+  onRefreshContent?: () => void;
   words: Word[];
   onWordLearned: (word: { en: string; zh: string }) => void;
   onQuizResult: (correct: boolean) => void;
@@ -108,8 +111,12 @@ function ContentCardView({ card }: { card: ContentCard }) {
     }
     default: {
       const text = (p?.text as string) || (p?.zh as string) || "";
+      const title = p?.title as string | undefined;
       return text ? (
-        <div className="bg-white rounded-2xl p-4 border border-pink-100 text-sm text-gray-700">{text}</div>
+        <div className="bg-white rounded-2xl p-4 border border-pink-100">
+          {title && <p className="text-sm font-bold text-gray-700 mb-2">{title}</p>}
+          <p className="text-sm text-gray-700 leading-relaxed">{text}</p>
+        </div>
       ) : null;
     }
   }
@@ -122,6 +129,7 @@ export default function StudyPanel({
   mathQuestion,
   mathStreak,
   onMathAnswer,
+  onRefreshContent,
   words,
   onWordLearned,
   onQuizResult,
@@ -145,6 +153,10 @@ export default function StudyPanel({
       ? Object.entries(ENGLISH_SUB_LABELS)
       : subject === "math"
       ? Object.entries(MATH_SUB_LABELS)
+      : subject === "reading"
+      ? Object.entries(READING_SUB_LABELS)
+      : subject === "explore"
+      ? Object.entries(EXPLORE_SUB_LABELS)
       : [];
 
   return (
@@ -197,31 +209,31 @@ export default function StudyPanel({
       {subject === "math" && sub === "drill" && !mathQuestion && (
         <div className="bg-amber-50 rounded-2xl p-6 text-center border border-amber-100">
           <p className="text-3xl mb-2">🐵</p>
-          <p className="text-sm text-gray-600">说「口算」或「算一算」开始练习！</p>
+          <p className="text-sm text-gray-600 mb-3">口算练习加载中…</p>
+          {onRefreshContent && (
+            <button
+              type="button"
+              onClick={onRefreshContent}
+              className="text-xs text-pink-600 bg-white px-3 py-1.5 rounded-full border border-pink-200"
+            >
+              开始口算
+            </button>
+          )}
         </div>
       )}
 
-      {subject === "reading" && (
-        <div className="bg-purple-50 rounded-2xl p-5 text-center border border-purple-100">
-          <p className="text-sm text-gray-600">说「讲笑话」或「讲故事」~</p>
-        </div>
-      )}
+      {onRefreshContent &&
+        (subject === "chinese" || subject === "reading" || subject === "explore" || (subject === "math" && sub === "word-problem") || (subject === "english" && sub === "sentence")) && (
+          <button
+            type="button"
+            onClick={onRefreshContent}
+            className="w-full text-xs text-pink-600 py-2 rounded-xl bg-pink-50 border border-pink-100 active:scale-[0.98]"
+          >
+            🔄 换一个
+          </button>
+        )}
 
-      {subject === "explore" && (
-        <div className="bg-sky-50 rounded-2xl p-5 text-center border border-sky-100">
-          <p className="text-sm text-gray-600">说「北京天气」或「猫是什么」~</p>
-        </div>
-      )}
-
-      {subject === "chinese" && !contentCard && ["pinyin", "hanzi", "sentence"].includes(sub) && (
-        <div className="bg-rose-50 rounded-2xl p-5 text-center border border-rose-100">
-          <p className="text-sm text-gray-600">
-            说「{CHINESE_SUB_LABELS[sub]}」开始，例如：认字、读拼音、读句子
-          </p>
-        </div>
-      )}
-
-      <p className="text-[10px] text-center text-gray-300">💡 按住底部麦克风说话，自动跳转到这里</p>
+      <p className="text-[10px] text-center text-gray-300">💡 点击说话或长按 · 说「汉字」「口算」也能直达</p>
     </div>
   );
 }

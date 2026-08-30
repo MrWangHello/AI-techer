@@ -24,6 +24,8 @@ interface VoiceChatBarProps {
   voiceSpeed?: number;
 }
 
+const HOLD_DELAY_MS = 400;
+
 export default function VoiceChatBar({
   onAgentResponse,
   onTranscript,
@@ -43,8 +45,15 @@ export default function VoiceChatBar({
   const isMounted = useRef(true);
   const inputRef = useRef<HTMLInputElement>(null);
   const holdActive = useRef(false);
+  const holdMode = useRef(false);
+  const pressTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const interimRef = useRef("");
 
   const stopListeningUi = useCallback(() => {
+    if (pressTimer.current) {
+      clearTimeout(pressTimer.current);
+      pressTimer.current = null;
+    }
     stopListening();
     if (isMounted.current) {
       setListening(false);
@@ -52,6 +61,8 @@ export default function VoiceChatBar({
       setInterimText("");
     }
     holdActive.current = false;
+    holdMode.current = false;
+    interimRef.current = "";
   }, []);
 
   useEffect(() => {
@@ -69,7 +80,7 @@ export default function VoiceChatBar({
     };
   }, []);
 
-  const showHint = useCallback((msg: string, ms = 3000) => {
+  const showHint = useCallback((msg: string, ms = 3500) => {
     setHint(msg);
     setTimeout(() => {
       if (isMounted.current) setHint(null);
@@ -146,21 +157,18 @@ export default function VoiceChatBar({
     else switchToVoice();
   }, [mode, switchToText, switchToVoice]);
 
-  /** 点按模式（备用） */
+  /** 点击说话（更稳定，恢复原有模式） */
   const startTapVoice = useCallback(() => {
-    if (thinking || speaking) return;
+    if (thinking || speaking || listening) return;
     if (!sttAvailable) {
       switchToText();
       showHint("语音识别不可用，已切换为文字输入");
       return;
     }
-    if (listening) {
-      stopListeningUi();
-      return;
-    }
 
     stopSpeaking();
     setListening(true);
+    setInterimText("");
 
     startListening(
       (text) => {
@@ -173,15 +181,25 @@ export default function VoiceChatBar({
         if (!isMounted.current) return;
         stopListeningUi();
         const soft = ["没有检测到语音", "被中断", "网络不稳定"].some((s) => err.includes(s));
+        showHint(soft ? `${err}（再点一次试试）` : `${err}，已切换文字输入`);
         if (!soft) switchToText();
-        showHint(soft ? `${err}（仍可继续用语音）` : `${err}，已切换文字输入`);
       },
       () => {
         if (!isMounted.current) return;
         setListening(false);
       }
     );
-  }, [sttAvailable, listening, thinking, speaking, onTranscript, handleAgentReply, switchToText, showHint, stopListeningUi]);
+  }, [
+    sttAvailable,
+    listening,
+    thinking,
+    speaking,
+    onTranscript,
+    handleAgentReply,
+    switchToText,
+    showHint,
+    stopListeningUi,
+  ]);
 
   const beginHold = useCallback(() => {
     if (thinking || speaking || holdActive.current) return;
@@ -192,12 +210,15 @@ export default function VoiceChatBar({
 
     stopSpeaking();
     holdActive.current = true;
+    holdMode.current = true;
     setHolding(true);
     setListening(true);
     setInterimText("");
+    interimRef.current = "";
 
     startHoldListening(
       (text) => {
+        interimRef.current = text;
         if (isMounted.current) setInterimText(text);
       },
       (err) => {
@@ -217,15 +238,50 @@ export default function VoiceChatBar({
     endHoldListening(
       (text) => {
         setInterimText("");
+        interimRef.current = "";
         onTranscript?.(text);
         void handleAgentReply(text, true);
       },
       () => {
         setInterimText("");
-        showHint("没听到声音，请再试一次");
-      }
+        interimRef.current = "";
+        showHint("没听清，请再试一次（也可点一下说话）");
+      },
+      interimRef.current
     );
   }, [onTranscript, handleAgentReply, showHint]);
+
+  const onVoicePressStart = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      if (thinking || speaking) return;
+      holdMode.current = false;
+      if (pressTimer.current) clearTimeout(pressTimer.current);
+      pressTimer.current = setTimeout(() => {
+        pressTimer.current = null;
+        beginHold();
+      }, HOLD_DELAY_MS);
+    },
+    [thinking, speaking, beginHold]
+  );
+
+  const onVoicePressEnd = useCallback(
+    (e: React.PointerEvent) => {
+      e.preventDefault();
+      if (pressTimer.current) {
+        clearTimeout(pressTimer.current);
+        pressTimer.current = null;
+        if (!holdMode.current && !thinking && !speaking) {
+          startTapVoice();
+        }
+        return;
+      }
+      if (holdMode.current) {
+        finishHold();
+      }
+    },
+    [startTapVoice, finishHold, thinking, speaking]
+  );
 
   const busy = listening || speaking || thinking;
 
@@ -233,8 +289,8 @@ export default function VoiceChatBar({
     <div className="shrink-0 bg-white border-t border-pink-100 px-3 pt-2 pb-2">
       {hint && <p className="text-[10px] text-amber-600 text-center mb-1.5 animate-fadeIn">{hint}</p>}
 
-      {interimText && holding && (
-        <p className="text-[10px] text-gray-500 text-center mb-1 truncate">{interimText}</p>
+      {interimText && (holding || listening) && (
+        <p className="text-[10px] text-gray-500 text-center mb-1 truncate px-2">{interimText}</p>
       )}
 
       <div className="flex items-end gap-2">
@@ -251,17 +307,9 @@ export default function VoiceChatBar({
         {mode === "voice" ? (
           <button
             type="button"
-            onPointerDown={(e) => {
-              e.preventDefault();
-              beginHold();
-            }}
-            onPointerUp={(e) => {
-              e.preventDefault();
-              finishHold();
-            }}
-            onPointerLeave={() => {
-              if (holding) finishHold();
-            }}
+            onPointerDown={onVoicePressStart}
+            onPointerUp={onVoicePressEnd}
+            onPointerCancel={onVoicePressEnd}
             onContextMenu={(e) => e.preventDefault()}
             disabled={speaking || thinking}
             className={`
@@ -270,6 +318,8 @@ export default function VoiceChatBar({
               ${
                 holding
                   ? "bg-red-50 text-red-500 border border-red-200 scale-[0.98]"
+                  : listening
+                  ? "bg-red-50 text-red-500 border border-red-200 animate-pulse"
                   : thinking
                   ? "bg-amber-50 text-amber-600 border border-amber-200"
                   : speaking
@@ -282,6 +332,11 @@ export default function VoiceChatBar({
               <>
                 <Mic className="w-4 h-4 animate-pulse" />
                 松手发送...
+              </>
+            ) : listening ? (
+              <>
+                <Mic className="w-4 h-4" />
+                正在听...
               </>
             ) : thinking ? (
               <>
@@ -296,7 +351,7 @@ export default function VoiceChatBar({
             ) : (
               <>
                 <Mic className="w-4 h-4" />
-                按住说话
+                点击说话 · 长按连说
               </>
             )}
           </button>
@@ -325,7 +380,7 @@ export default function VoiceChatBar({
           </button>
         )}
       </div>
-      <p className="text-[9px] text-center text-gray-300 mt-1">轻点键盘图标可切换文字输入</p>
+      <p className="text-[9px] text-center text-gray-300 mt-1">轻点=说一句 · 长按=连续说 · 键盘图标切文字</p>
     </div>
   );
 }

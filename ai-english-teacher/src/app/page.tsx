@@ -29,6 +29,7 @@ import { handleUserMessage, AgentResponse } from "@/lib/mock-agent";
 import type { ContentCard } from "@/lib/core/types";
 import type { MathQuestion } from "@/lib/math/generator";
 import { getStreak } from "@/lib/math/drill-state";
+import { loadDefaultContentForSection } from "@/lib/study-content-loader";
 import { Word, getAllWords, loadWordBatch, refreshWordBatch } from "@/lib/words";
 
 type Tab = "home" | "pet" | "study" | "settings";
@@ -119,6 +120,14 @@ export default function HomePage() {
     return data;
   }, []);
 
+  const applyStudySection = useCallback((section: string) => {
+    setStudySection(section);
+    const loaded = loadDefaultContentForSection(section);
+    setContentCard(loaded.contentCard);
+    setMathQuestion(loaded.mathQuestion);
+    setMathStreak(getStreak());
+  }, []);
+
   // AI Agent 回复处理
   const handleAgentResponse = useCallback(
     (response: AgentResponse) => {
@@ -130,16 +139,20 @@ export default function HomePage() {
         setActiveTab(response.navigate);
       }
 
-      if (response.studySection) {
-        setStudySection(response.studySection);
-      }
-
       if (response.contentCard) {
         setContentCard(response.contentCard);
         if (response.contentCard.type === "math-drill") {
           const q = (response.contentCard.payload as { question?: MathQuestion })?.question;
           if (q) setMathQuestion(q);
         }
+      } else if (response.studySection) {
+        const loaded = loadDefaultContentForSection(response.studySection);
+        if (loaded.contentCard) setContentCard(loaded.contentCard);
+        if (loaded.mathQuestion) setMathQuestion(loaded.mathQuestion);
+      }
+
+      if (response.studySection) {
+        setStudySection(response.studySection);
       }
 
       if (response.sideEffect === "word.refresh") {
@@ -266,10 +279,13 @@ export default function HomePage() {
     [handleAgentResponse, speakWithSpeed]
   );
 
-  const goStudy = useCallback((section: string) => {
-    setActiveTab("study");
-    setStudySection(section);
-  }, []);
+  const goStudy = useCallback(
+    (section: string) => {
+      setActiveTab("study");
+      applyStudySection(section);
+    },
+    [applyStudySection]
+  );
 
   // 按钮互动
   const handleFeed = () => {
@@ -464,7 +480,7 @@ export default function HomePage() {
             </button>
           ))}
         </div>
-        <p className="text-[10px] text-gray-300 text-center mt-2">按住说话：说「汉字」「口算」也能直达</p>
+        <p className="text-[10px] text-gray-300 text-center mt-2">点击说话：说「汉字」「口算」也能直达</p>
       </div>
 
       {/* 快捷操作 */}
@@ -484,7 +500,7 @@ export default function HomePage() {
           <div className="text-xs text-gray-500">玩耍</div>
         </button>
         <button
-          onClick={() => setActiveTab("study")}
+          onClick={() => goStudy("english.words")}
           className="bg-white rounded-2xl p-4 shadow-sm border border-pink-50 hover:shadow-md active:scale-95 transition-all"
         >
           <div className="text-2xl mb-1">📚</div>
@@ -628,11 +644,12 @@ export default function HomePage() {
     <div className="space-y-4">
       <StudyPanel
         studySection={studySection}
-        onSectionChange={setStudySection}
+        onSectionChange={applyStudySection}
         contentCard={contentCard}
         mathQuestion={mathQuestion}
         mathStreak={mathStreak}
         onMathAnswer={handleMathAnswer}
+        onRefreshContent={() => applyStudySection(studySection)}
         words={studyWords}
         onWordLearned={handleWordLearned}
         onQuizResult={handleQuizResult}
