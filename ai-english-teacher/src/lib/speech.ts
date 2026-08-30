@@ -23,11 +23,73 @@ const VOICES = {
   'en-US': process.env.NEXT_PUBLIC_TTS_VOICE_EN || 'en-US-AriaNeural',
 };
 
+// ============ TTS 检测状态 ============
+let ttsAvailable = false;
+let ttsDetectionPromise: Promise<boolean> | null = null;
+
+// 后台检测 TTS 服务是否可用
+export async function detectTTSAvailability(): Promise<boolean> {
+  if (ttsDetectionPromise) {
+    console.log('[TTS] TTS detection already in progress');
+    return ttsDetectionPromise;
+  }
+
+  if (!TTS_WORKER_CONFIGURED) {
+    console.log('[TTS] TTS Worker not configured, using native fallback');
+    ttsAvailable = false;
+    ttsDetectionPromise = Promise.resolve(false);
+    return ttsDetectionPromise;
+  }
+
+  console.log('[TTS] Starting TTS detection...');
+  ttsDetectionPromise = (async () => {
+    try {
+      console.log('[TTS] Testing TTS Worker connection...');
+      console.log('[TTS] TTS Worker URL:', TTS_WORKER_URL);
+      const resp = await fetch(`${TTS_WORKER_URL}/`, {
+        method: 'GET',
+        signal: AbortSignal.timeout(3000),
+      });
+      console.log('[TTS] TTS Worker response status:', resp.status);
+      ttsAvailable = resp.ok;
+      console.log('[TTS] TTS detection result:', ttsAvailable ? 'available' : 'unavailable');
+      return ttsAvailable;
+    } catch (e) {
+      console.warn('[TTS] TTS detection failed:', e);
+      ttsAvailable = false;
+      return false;
+    } finally {
+      ttsDetectionPromise = null;
+    }
+  })();
+
+  return ttsDetectionPromise;
+}
+
+// 获取 TTS 检测结果
+export function isTTSAvailable(): boolean {
+  return ttsAvailable;
+}
+
+// 等待 TTS 检测完成
+export async function waitForTTSDetection(): Promise<void> {
+  if (ttsDetectionPromise) {
+    await ttsDetectionPromise;
+  }
+}
+
 // ============ 语音合成状态管理 ============
 
 let currentAudio: HTMLAudioElement | null = null;
 let nativeUtterance: SpeechSynthesisUtterance | null = null;
 let isSpeaking = false;
+
+// ============ 初始化 ============
+// 在应用启动时自动检测 TTS 服务
+if (typeof window !== 'undefined') {
+  console.log('[TTS] Initializing TTS detection...');
+  detectTTSAvailability();
+}
 
 type SpeakingStateCallback = (speaking: boolean) => void;
 let onSpeakingStateChange: SpeakingStateCallback | null = null;
@@ -42,6 +104,9 @@ export function setSpeakingStateCallback(cb: SpeakingStateCallback): void {
  * 获取可用音色列表
  */
 export async function getAvailableVoices(): Promise<Array<{ name: string; locale: string; gender: string; friendlyName: string }>> {
+  // 确保检测完成
+  await waitForTTSDetection();
+
   try {
     const resp = await fetch(`${TTS_WORKER_URL}/voices`, {
       method: 'GET',
@@ -162,7 +227,7 @@ function synthesizeViaNative(
 }
 
 /**
- * 内部：合成并播放（优先 Edge-TTS Worker，失败回退原生 SpeechSynthesis）
+ * 内部：合成并播放（根据检测结果选择 TTS 服务）
  */
 async function synthesizeAndPlay(
   text: string,
@@ -179,17 +244,20 @@ async function synthesizeAndPlay(
 
   let success = false;
 
-  // 1. 优先使用 Edge-TTS Worker（已配置时）
-  if (TTS_WORKER_CONFIGURED) {
+  // 1. 检查 TTS 服务是否可用
+  const ttsAvailable = isTTSAvailable();
+  
+  // 2. 根据检测结果选择 TTS 服务
+  if (ttsAvailable && TTS_WORKER_CONFIGURED) {
     try {
       success = await synthesizeViaWorker(text, voice, lang, speed);
     } catch (e) {
-      console.warn('[TTS] Edge-TTS Worker failed, falling back to native:', (e as Error).message);
+      console.warn('[TTS] Edge-TTS Worker failed:', (e as Error).message);
       success = false;
     }
   }
 
-  // 2. 回退到浏览器原生 SpeechSynthesis
+  // 3. 如果 TTS 不可用或失败，回退到浏览器原生 SpeechSynthesis
   if (!success) {
     success = await synthesizeViaNative(text, lang, speed);
     if (!success) {
@@ -243,6 +311,8 @@ export function speak(text: string, onEnd?: () => void, speed?: number): boolean
     onEnd?.();
     return false;
   }
+  // 确保检测完成
+  waitForTTSDetection();
   // 异步触发，返回 true 表示已发起请求（Worker 不可用时自动回退原生）
   synthesizeAndPlay(text, VOICES['zh-CN'], 'zh-CN', onEnd, speed);
   return true;
