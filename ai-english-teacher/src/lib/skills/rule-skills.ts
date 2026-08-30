@@ -83,7 +83,20 @@ export const RULE_SKILLS: RuleEntry[] = [
   },
   {
     skillId: "word.refresh",
-    keywords: ["换一批", "刷新单词", "换单词", "再来一批", "换一批单词", "重新换"],
+    keywords: [
+      "换一批",
+      "刷新单词",
+      "换单词",
+      "再来一批",
+      "换一批单词",
+      "重新换",
+      "换一篇",
+      "换一个",
+      "下一批",
+      "再来一个",
+      "重新换词",
+      "换一组",
+    ],
     response: {
       intent: "word_refresh",
       emotion: "happy",

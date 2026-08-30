@@ -4,13 +4,24 @@ import { RULE_SKILLS } from "@/lib/skills/rule-skills";
 import { ASYNC_SKILLS, tryEnglishLookup } from "@/lib/skills/content-skills";
 import { fallbackSkill } from "@/lib/skills/fallback";
 
+function matchFuzzyRefresh(normalized: string): AgentResponse | null {
+  // 「换一首」走 poetry Skill，不归入换词
+  if (/换一首|再来一首|下一首/.test(normalized)) return null;
+  if (!/换一[篇个批组]|再来一[篇个]|下一批/.test(normalized)) return null;
+  if (/诗|古诗|词|笑话|故事|英语|单词/.test(normalized)) return null;
+
+  const refresh = RULE_SKILLS.find((r) => r.skillId === "word.refresh");
+  if (!refresh) return null;
+  return { ...refresh.response };
+}
+
 function matchRuleSkills(normalized: string): AgentResponse | null {
   for (const rule of RULE_SKILLS) {
     if (matchKeywords(normalized, rule.keywords)) {
       return { ...rule.response, intent: rule.response.intent || rule.skillId };
     }
   }
-  return null;
+  return matchFuzzyRefresh(normalized);
 }
 
 function matchAsyncSkillId(normalized: string, raw: string): string | null {

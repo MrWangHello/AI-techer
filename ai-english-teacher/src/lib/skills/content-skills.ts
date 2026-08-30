@@ -35,7 +35,7 @@ export const ASYNC_SKILLS: AsyncSkill[] = [
   },
   {
     id: "poetry.random",
-    keywords: ["古诗", "诗词", "背诗", "来首诗", "唐诗", "宋词"],
+    keywords: ["古诗", "诗词", "背诗", "来首诗", "唐诗", "宋词", "换一首", "再来一首", "下一首"],
     execute: async () => {
       try {
         const p = await fetchRandomPoem();
@@ -106,7 +106,7 @@ export const ASYNC_SKILLS: AsyncSkill[] = [
   },
   {
     id: "joke.tell",
-    keywords: ["笑话", "讲笑话", "搞笑", "joke", "乐一下"],
+    keywords: ["笑话", "讲笑话", "讲个笑话", "搞笑", "joke", "乐一下", "换一个笑话", "再来一个笑话"],
     execute: async () => ({
       intent: "joke",
       emotion: "happy",
@@ -116,7 +116,7 @@ export const ASYNC_SKILLS: AsyncSkill[] = [
   },
   {
     id: "story.tell",
-    keywords: ["故事", "讲故事", "story", "童话", "小故事"],
+    keywords: ["故事", "讲故事", "story", "童话", "小故事", "换一篇故事", "换一个故事", "再来一个故事"],
     execute: async () => ({
       intent: "story",
       emotion: "happy",

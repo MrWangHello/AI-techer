@@ -15,6 +15,8 @@ import { handleUserMessage, AgentResponse } from "@/lib/mock-agent";
 
 export type InputMode = "voice" | "text";
 
+const LISTEN_TIMEOUT_MS = 12000;
+
 interface VoiceChatBarProps {
   onAgentResponse: (response: AgentResponse) => void;
   onTranscript?: (text: string) => void;
@@ -38,6 +40,20 @@ export default function VoiceChatBar({
   const [ttsAvailable, setTtsAvailable] = useState(true);
   const isMounted = useRef(true);
   const inputRef = useRef<HTMLInputElement>(null);
+  const listenTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  const clearListenTimeout = useCallback(() => {
+    if (listenTimeoutRef.current) {
+      clearTimeout(listenTimeoutRef.current);
+      listenTimeoutRef.current = null;
+    }
+  }, []);
+
+  const stopListeningUi = useCallback(() => {
+    clearListenTimeout();
+    stopListening();
+    if (isMounted.current) setListening(false);
+  }, [clearListenTimeout]);
 
   useEffect(() => {
     isMounted.current = true;
@@ -47,12 +63,13 @@ export default function VoiceChatBar({
     if (!stt) setMode("text");
     return () => {
       isMounted.current = false;
+      clearListenTimeout();
       try {
         stopListening();
       } catch (_) {}
       stopSpeaking();
     };
-  }, []);
+  }, [clearListenTimeout]);
 
   const showHint = useCallback((msg: string, ms = 3000) => {
     setHint(msg);
@@ -88,6 +105,7 @@ export default function VoiceChatBar({
 
   const handleAgentReply = useCallback(
     async (text: string, afterMic: boolean) => {
+      stopListeningUi();
       setThinking(true);
       try {
         const response = await handleUserMessage({ text, channel: "web" });
@@ -102,7 +120,7 @@ export default function VoiceChatBar({
         if (isMounted.current) setThinking(false);
       }
     },
-    [onAgentResponse, playReply, showHint]
+    [onAgentResponse, playReply, showHint, stopListeningUi]
   );
 
   const submitText = useCallback(() => {
@@ -114,9 +132,10 @@ export default function VoiceChatBar({
   }, [textInput, thinking, onTranscript, handleAgentReply]);
 
   const switchToText = useCallback(() => {
+    stopListeningUi();
     setMode("text");
     setTimeout(() => inputRef.current?.focus(), 100);
-  }, []);
+  }, [stopListeningUi]);
 
   const switchToVoice = useCallback(() => {
     if (!sttAvailable) {
@@ -139,26 +158,37 @@ export default function VoiceChatBar({
       return;
     }
     if (listening) {
-      stopListening();
-      setListening(false);
+      stopListeningUi();
       return;
     }
 
     stopSpeaking();
     setListening(true);
+    clearListenTimeout();
+    listenTimeoutRef.current = setTimeout(() => {
+      if (!isMounted.current) return;
+      stopListeningUi();
+      showHint("没听到声音，请再试一次");
+    }, LISTEN_TIMEOUT_MS);
 
     startListening(
       (text) => {
         if (!isMounted.current) return;
+        clearListenTimeout();
         setListening(false);
         onTranscript?.(text);
         void handleAgentReply(text, true);
       },
       (err) => {
         if (!isMounted.current) return;
-        setListening(false);
+        stopListeningUi();
         switchToText();
         showHint(err.includes("权限") ? `${err}，已切换文字输入` : `${err}，请用文字输入`);
+      },
+      () => {
+        if (!isMounted.current) return;
+        clearListenTimeout();
+        setListening(false);
       }
     );
   }, [
@@ -170,6 +200,8 @@ export default function VoiceChatBar({
     handleAgentReply,
     switchToText,
     showHint,
+    clearListenTimeout,
+    stopListeningUi,
   ]);
 
   const busy = listening || speaking || thinking;

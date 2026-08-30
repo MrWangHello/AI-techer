@@ -320,7 +320,7 @@ export async function speakAfterMic(
 ): Promise<boolean> {
   stopListening();
   stopSpeaking();
-  await new Promise((r) => setTimeout(r, 180));
+  await new Promise((r) => setTimeout(r, 280));
   return speak(text, onEnd, speed);
 }
 
@@ -336,7 +336,8 @@ export const cancelSpeech = stopSpeaking;
 
 export function startListening(
   onResult: (text: string) => void,
-  onError?: (error: string) => void
+  onError?: (error: string) => void,
+  onEnd?: () => void
 ): void {
   if (typeof window === "undefined") return;
 
@@ -384,6 +385,7 @@ export function startListening(
 
     recognition.onend = () => {
       isListening = false;
+      onEnd?.();
     };
 
     recognition.start();
