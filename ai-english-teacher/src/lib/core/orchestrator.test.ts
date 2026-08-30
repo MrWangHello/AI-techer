@@ -64,4 +64,32 @@ describe("handleUserMessage math", () => {
     const res = await handleUserMessage({ text: "10个", channel: "web" });
     expect(["math_drill_correct", "math_drill_wrong"]).toContain(res.intent);
   });
+
+  it("blocks navigation during active drill", async () => {
+    await handleUserMessage({ text: "口算", channel: "web" });
+    const res = await handleUserMessage({ text: "故事", channel: "web" });
+    expect(res.intent).toBe("math_drill_hint");
+    expect(res.studySection).toBe("math.drill");
+  });
+
+  it("exits drill on 停止口算", async () => {
+    await handleUserMessage({ text: "口算", channel: "web" });
+    const res = await handleUserMessage({ text: "停止口算", channel: "web" });
+    expect(res.intent).toBe("math_drill_exit");
+  });
+});
+
+describe("handleUserMessage dictionary", () => {
+  it("looks up 书本用英语怎么说", async () => {
+    const res = await handleUserMessage({ text: "书本用英语怎么说", channel: "web" });
+    expect(res.intent).toBe("zh_to_en");
+    expect(res.reply).toContain("book");
+  });
+
+  it("loads story content for 故事 shortcut", async () => {
+    const res = await handleUserMessage({ text: "故事", channel: "web" });
+    expect(res.intent).toBe("story");
+    expect(res.contentCard?.type).toBe("text");
+    expect(res.reply.length).toBeGreaterThan(20);
+  });
 });

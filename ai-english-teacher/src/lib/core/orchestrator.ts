@@ -9,10 +9,48 @@ import {
   matchMathDrillAnswer,
   buildMathDrillStartResponse,
 } from "@/lib/skills/math-skills";
+import { matchShortcutContent, enrichNavWithContent, matchReadAloud } from "@/lib/skills/nav-content";
+import { drillActiveFallback, buildDrillExitResponse } from "@/lib/skills/drill-hint";
+import { tryChineseToEnglishLookup, looksLikeChineseLookup } from "@/lib/providers/english-lookup";
 import { fallbackSkill } from "@/lib/skills/fallback";
 import { getSession, updateSession } from "@/lib/session-store";
+import { isDrillActive } from "@/lib/math/drill-state";
 
 const ALL_RULES = [...NAV_SKILLS, ...CHINESE_CONTENT_SKILLS, ...RULE_SKILLS];
+
+const NAV_WITH_CONTENT = new Set([
+  "nav.reading",
+  "nav.chinese",
+  "nav.hanzi",
+  "nav.pinyin",
+  "nav.sentence",
+  "nav.english.sentence",
+  "nav.math",
+  "math.drill.start",
+]);
+
+const RESOLVABLE_NAV = new Set([
+  "nav.chinese",
+  "nav.pinyin",
+  "nav.hanzi",
+  "nav.sentence",
+  "nav.english.sentence",
+  "idiom.random",
+  "word-problem.random",
+  "chinese.pinyin.show",
+]);
+
+const DRILL_EXIT = /^(停止|退出|结束|暂停|不要了)(口算|练习)?$|^不做了$|^停止口算$/;
+
+function trackResponse(response: AgentResponse): AgentResponse {
+  if (response.contentCard && response.reply) {
+    updateSession({ lastSpeakableText: response.reply });
+  }
+  if (response.studySection) {
+    updateSession({ lastStudySection: response.studySection });
+  }
+  return response;
+}
 
 function matchFuzzyRefresh(normalized: string, ctx: SessionContext): AgentResponse | null {
   if (/换一首|再来一首|下一首/.test(normalized)) return null;
@@ -20,9 +58,7 @@ function matchFuzzyRefresh(normalized: string, ctx: SessionContext): AgentRespon
 
   const section = ctx.lastStudySection ?? "";
 
-  if (/诗|古诗|词/.test(normalized) || section.includes("poetry")) {
-    return null; // poetry async skill
-  }
+  if (/诗|古诗|词/.test(normalized) || section.includes("poetry")) return null;
   if (/笑话/.test(normalized) || section === "reading.joke") return null;
   if (/故事/.test(normalized) || section === "reading.story") return null;
   if (/成语/.test(normalized) || section === "chinese.idiom") {
@@ -64,26 +100,15 @@ function matchRuleSkills(normalized: string): { skillId: string; response: Agent
   return null;
 }
 
-const RESOLVABLE_NAV = new Set([
-  "nav.chinese",
-  "nav.pinyin",
-  "nav.hanzi",
-  "nav.sentence",
-  "nav.english.sentence",
-  "idiom.random",
-  "word-problem.random",
-  "chinese.pinyin.show",
-]);
-
 function enrichRuleHit(skillId: string, response: AgentResponse): AgentResponse {
   if (skillId === "math.drill.start" || response.sideEffect === "math.drill.start") {
     return buildMathDrillStartResponse();
   }
+  if (NAV_WITH_CONTENT.has(skillId)) {
+    return enrichNavWithContent(skillId, response);
+  }
   if (RESOLVABLE_NAV.has(skillId)) {
     return resolveChineseContent(skillId) ?? response;
-  }
-  if (response.studySection) {
-    updateSession({ lastStudySection: response.studySection });
   }
   return response;
 }
@@ -107,58 +132,88 @@ async function executeAsyncSkill(
 ): Promise<AgentResponse> {
   const skill = ASYNC_SKILLS.find((s) => s.id === skillId);
   if (!skill) return fallbackSkill();
-  const result = await skill.execute(text, normalized, ctx);
-  if (result.studySection) {
-    updateSession({ lastStudySection: result.studySection });
-  }
-  return result;
+  return skill.execute(text, normalized, ctx);
 }
 
-/**
- * Mock Agent 统一入口 — 后续只替换这里的「意图识别」层即可接 LLM
- */
+/** 口算进行中：除答题/退出/帮助外，不跑导航与查词，避免「半天没反应」 */
+function handleDrillMode(normalized: string): AgentResponse | null {
+  if (!isDrillActive()) return null;
+
+  if (DRILL_EXIT.test(normalized)) {
+    return buildDrillExitResponse();
+  }
+
+  if (/帮助|help|指令|功能|怎么用/.test(normalized)) {
+    const help = RULE_SKILLS.find((r) => r.skillId === "help.list");
+    if (help) return { ...help.response };
+  }
+
+  return drillActiveFallback();
+}
+
 export async function handleUserMessage(
   msg: UserMessage,
   ctx: SessionContext = getSession()
 ): Promise<AgentResponse> {
   const text = applySttCorrections(msg.text.trim());
-  if (!text) return fallbackSkill();
+  if (!text) {
+    const drillHint = handleDrillMode("");
+    return trackResponse(drillHint ?? fallbackSkill());
+  }
 
   const normalized = normalizeInput(text);
   const session = { ...getSession(), ...ctx };
 
   const mathCalc = matchMathCalc(text, normalized);
-  if (mathCalc) return mathCalc;
+  if (mathCalc) return trackResponse(mathCalc);
 
   const drillAnswer = matchMathDrillAnswer(text, session);
-  if (drillAnswer) return drillAnswer;
+  if (drillAnswer) return trackResponse(drillAnswer);
+
+  const drillBlock = handleDrillMode(normalized);
+  if (drillBlock) return trackResponse(drillBlock);
+
+  const readAloud = matchReadAloud(normalized, session);
+  if (readAloud) return trackResponse(readAloud);
 
   const fuzzy = matchFuzzyRefresh(normalized, session);
-  if (fuzzy) return fuzzy;
+  if (fuzzy) return trackResponse(fuzzy);
+
+  const shortcut = matchShortcutContent(normalized);
+  if (shortcut) return trackResponse(shortcut);
+
+  if (looksLikeChineseLookup(text)) {
+    const zhToEn = await tryChineseToEnglishLookup(text);
+    if (zhToEn) return trackResponse(zhToEn);
+  }
 
   const ruleHit = matchRuleSkills(normalized);
-  if (ruleHit) return enrichRuleHit(ruleHit.skillId, ruleHit.response);
+  if (ruleHit) return trackResponse(enrichRuleHit(ruleHit.skillId, ruleHit.response));
 
   const asyncId = matchAsyncSkillId(normalized, text);
   if (asyncId) {
-    return executeAsyncSkill(asyncId, text, normalized, session);
+    const result = await executeAsyncSkill(asyncId, text, normalized, session);
+    return trackResponse(result);
   }
+
+  const zhToEn = await tryChineseToEnglishLookup(text);
+  if (zhToEn) return trackResponse(zhToEn);
 
   const lookup = await tryEnglishLookup(text);
   if (lookup) {
-    updateSession({ lastStudySection: "english.words" });
-    return { ...lookup, navigate: "study", studySection: "english.words" };
+    return trackResponse({ ...lookup, navigate: "study", studySection: "english.words" });
   }
 
-  return fallbackSkill();
+  return trackResponse(fallbackSkill());
 }
 
-/** 同步兼容（仅规则，不调 API） */
 export function processUserInput(input: string): AgentResponse {
   const normalized = normalizeInput(input);
+  const shortcut = matchShortcutContent(normalized);
+  if (shortcut) return trackResponse(shortcut);
   const ruleHit = matchRuleSkills(normalized);
-  if (ruleHit) return enrichRuleHit(ruleHit.skillId, ruleHit.response);
-  return fallbackSkill();
+  if (ruleHit) return trackResponse(enrichRuleHit(ruleHit.skillId, ruleHit.response));
+  return trackResponse(fallbackSkill());
 }
 
 export type { AgentResponse, TabTarget } from "@/lib/core/types";

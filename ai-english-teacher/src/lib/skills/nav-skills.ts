@@ -42,8 +42,8 @@ export const NAV_SKILLS: RuleEntry[] = [
   },
   {
     skillId: "nav.english",
-    keywords: ["英语", "学英语", "英文"],
-    response: nav("english.words", "好的！来学英语单词~"),
+    keywords: ["学英语", "学英文", "英语单词", "英文单词"],
+    response: nav("english.words", "好的！来学英语单词~ 也可以说「书本用英语怎么说」查词"),
   },
   {
     skillId: "nav.english.sentence",
@@ -59,7 +59,7 @@ export const NAV_SKILLS: RuleEntry[] = [
   },
   {
     skillId: "nav.reading",
-    keywords: ["阅读", "看书", "读故事"],
+    keywords: ["阅读", "看书", "读故事", "故事"],
     response: nav("reading.story", "来看故事吧！"),
   },
   {
