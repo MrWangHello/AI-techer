@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useEffect, useState } from "react";
 import KbChrome from "@/components/KbChrome";
-import { cloudKbStatusText } from "@/lib/kb/cloud";
+import { cloudKbStatusText, refreshCloudKb } from "@/lib/kb/cloud";
 import { getKbEntries, type KbEntry } from "@/lib/kb/entries";
 
 function label(row: KbEntry): string {
@@ -22,15 +22,19 @@ const KIND_LABEL: Record<KbEntry["kind"], string> = {
 
 export default function KbListPage() {
   const [rows, setRows] = useState<KbEntry[]>([]);
+  const [status, setStatus] = useState(cloudKbStatusText());
 
   useEffect(() => {
-    setRows(getKbEntries());
+    void refreshCloudKb().then((res) => {
+      setRows(getKbEntries());
+      setStatus(res.message);
+    });
   }, []);
 
   return (
     <KbChrome title="知识库" backHref="/?tab=settings" backLabel="返回设置">
       <p className="text-base text-gray-600 mb-3">
-        已上架 {rows.length} 条。{cloudKbStatusText()}
+        已上架 {rows.length} 条。{status}
       </p>
       <Link
         href="/kb/new"

@@ -344,7 +344,7 @@ export const FEATURE_CASES: FeatureCase[] = [
     tapFallback: true,
     offline: true,
     status: "partial",
-    notes: "设置来源勾选 + /kb 粘贴预览已做；云库写入待配 Supabase",
+    notes: "设置来源勾选 + /kb 粘贴预览；写入用邮箱口令接 Supabase",
   },
   {
     id: "chat.greeting",

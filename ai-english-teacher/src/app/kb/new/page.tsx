@@ -5,6 +5,7 @@ import KbChrome from "@/components/KbChrome";
 import { insertCloudEntries } from "@/lib/kb/cloud";
 import type { KbKind } from "@/lib/kb/entries";
 import { aiPromptFor, splitPaste, type PreviewRow } from "@/lib/kb/parse-paste";
+import { checkWriteKey, writeKeyHint } from "@/lib/kb/write-key";
 
 const KINDS: { id: KbKind; label: string }[] = [
   { id: "word", label: "单词" },
@@ -30,6 +31,8 @@ export default function KbNewPage() {
   const [zh, setZh] = useState("");
   const [en, setEn] = useState("");
   const [promptCopied, setPromptCopied] = useState(false);
+  const [pin, setPin] = useState("");
+  const [saving, setSaving] = useState(false);
 
   const placeholder =
     kind === "word"
@@ -70,7 +73,13 @@ export default function KbNewPage() {
       setMessage("没有可入库的行。先拆开预览，改掉红行。");
       return;
     }
+    if (!checkWriteKey(pin)) {
+      setMessage("口令不对。填你的邮箱再确认。");
+      return;
+    }
+    setSaving(true);
     const result = await insertCloudEntries(ready.map((r) => ({ kind: r.kind, payload: r.payload })));
+    setSaving(false);
     setMessage(result.message);
   };
 
@@ -167,12 +176,24 @@ export default function KbNewPage() {
         </div>
       )}
 
+      <label className="block mb-3">
+        <span className="block text-base text-gray-600 mb-1">{writeKeyHint()}</span>
+        <input
+          type="text"
+          autoComplete="username"
+          value={pin}
+          onChange={(e) => setPin(e.target.value)}
+          placeholder="填你的邮箱"
+          className="w-full min-h-12 px-3 text-base border border-pink-200 rounded-xl"
+        />
+      </label>
       <button
         type="button"
+        disabled={saving}
         onClick={onConfirm}
-        className="w-full min-h-14 rounded-2xl bg-pink-500 text-white text-lg font-semibold mb-3"
+        className="w-full min-h-14 rounded-2xl bg-pink-500 text-white text-lg font-semibold mb-3 disabled:opacity-60"
       >
-        确认入库
+        {saving ? "正在入库…" : "确认入库"}
       </button>
       {message && <p className="text-base text-amber-800 bg-amber-50 rounded-xl px-3 py-2">{message}</p>}
     </KbChrome>
