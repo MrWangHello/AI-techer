@@ -18,7 +18,8 @@ const nextConfig: NextConfig = {
     NEXT_PUBLIC_BASE_PATH: isBuildForPages ? "/AI-techer" : "",
     NEXT_PUBLIC_SUPABASE_URL: process.env.NEXT_PUBLIC_SUPABASE_URL || "",
     NEXT_PUBLIC_SUPABASE_ANON_KEY: process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY || "",
-    NEXT_PUBLIC_KB_WRITE_KEY: process.env.NEXT_PUBLIC_KB_WRITE_KEY || "563876951@qq.com",
+    NEXT_PUBLIC_KB_WRITE_KEY:
+      (process.env.NEXT_PUBLIC_KB_WRITE_KEY || "").trim() || "563876951@qq.com",
   },
   allowedDevOrigins: [
     "run-agent-*.remote-agent.svc.cluster.local",

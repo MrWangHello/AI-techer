@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { splitPaste } from "./parse-paste";
+import { aiPromptFor, splitPaste } from "./parse-paste";
 
 describe("splitPaste words", () => {
   it("parses zh en, comma, colon, and leftover sentence", () => {
@@ -27,6 +27,30 @@ describe("splitPaste words", () => {
   });
 });
 
+describe("splitPaste hanzi", () => {
+  it("parses char pinyin words sentence", () => {
+    const [row] = splitPaste("hanzi", "天 tiān 天空、天气 今天天气真好。");
+    expect(row).toMatchObject({
+      ok: true,
+      kind: "hanzi",
+      payload: { char: "天", pinyin: "tiān", words: ["天空", "天气"], sentence: "今天天气真好。" },
+    });
+  });
+
+  it("parses tab-separated hanzi", () => {
+    const [row] = splitPaste("hanzi", "地\tdì\t土地、大地\t大地绿油油的。");
+    expect(row).toMatchObject({
+      ok: true,
+      payload: { char: "地", pinyin: "dì", words: ["土地", "大地"] },
+    });
+  });
+
+  it("marks a line without pinyin as error", () => {
+    const [row] = splitPaste("hanzi", "只有汉字");
+    expect(row.ok).toBe(false);
+  });
+});
+
 describe("splitPaste stories and problems", () => {
   it("splits stories on ---", () => {
     const rows = splitPaste("story", "小熊猫\n\n找妈妈。\n---\n笑话\n\n哈哈。");
@@ -48,5 +72,18 @@ describe("splitPaste stories and problems", () => {
   it("rejects a problem without a trailing number", () => {
     const [row] = splitPaste("word_problem", "一共几个？");
     expect(row.ok).toBe(false);
+  });
+});
+
+describe("aiPromptFor", () => {
+  it("includes input and output examples for every kind", () => {
+    for (const kind of ["word", "hanzi", "story", "word_problem", "joke"] as const) {
+      const prompt = aiPromptFor(kind);
+      expect(prompt).toContain("输入例子");
+      expect(prompt).toContain("输出例子");
+      expect(prompt).toContain("原文：");
+    }
+    expect(aiPromptFor("joke")).toContain("不要拆成单词");
+    expect(aiPromptFor("hanzi")).toContain("天\ttiān");
   });
 });

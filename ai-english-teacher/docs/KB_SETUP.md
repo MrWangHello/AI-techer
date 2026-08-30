@@ -54,7 +54,7 @@
 ```sql
 create table if not exists content_entries (
   id uuid primary key default gen_random_uuid(),
-  kind text not null check (kind in ('word', 'story', 'word_problem', 'joke', 'poem', 'hint')),
+  kind text not null check (kind in ('word', 'hanzi', 'story', 'word_problem', 'joke', 'poem', 'hint')),
   payload jsonb not null,
   locale text not null default 'zh',
   enabled boolean not null default true,
@@ -90,12 +90,20 @@ create policy "anon_insert_entries"
   with check (true);
 ```
 
+表已经建好、但还没有「语文」类型时，再跑：
+
+```sql
+alter table content_entries drop constraint if exists content_entries_kind_check;
+alter table content_entries add constraint content_entries_kind_check
+  check (kind in ('word','story','word_problem','joke','poem','hint','hanzi'));
+```
+
 ---
 
 ## 第四步：家长口令（不再开邮箱登录）
 
-口令**只在 Bella 添加内容那一页的输入框里填**，填 `563876951@qq.com`。  
-不要填到 GitHub Secret，不要填到 Supabase 用户表。防的是孩子乱点确认。
+口令**只在 Bella 添加内容那一页的输入框里填**，填邮箱就行。  
+页面上不会写出具体地址。不要填到 GitHub Secret，不要填到 Supabase 用户表。防的是孩子乱点确认。
 
 ---
 
@@ -121,5 +129,5 @@ create policy "anon_insert_entries"
 
 - SQL 跑完，Table Editor 有 `content_entries`  
 - GitHub 仓库有那两条 Actions secrets  
-- 添加内容时口令填邮箱，设置里把「知识库」勾上  
+- 添加内容时家长口令填邮箱，设置里把「知识库」勾上  
 - 没有把 `service_role` 写进仓库

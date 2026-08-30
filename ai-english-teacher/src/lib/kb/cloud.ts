@@ -7,7 +7,7 @@ export { isCloudKbConfigured } from "./client";
 
 export function cloudKbStatusText(): string {
   if (!isCloudKbConfigured()) return "还没配置知识库地址，确认入库不会写进数据库。";
-  return "知识库已接上。入库时填家长口令（你的邮箱）。";
+  return "知识库已接上。入库时填家长口令，填邮箱就行。";
 }
 
 export async function refreshCloudKb(): Promise<{ ok: boolean; message: string; count: number }> {
@@ -54,6 +54,12 @@ export async function insertCloudEntries(
         ok: false,
         message:
           "库拒绝写入。表已经有了，不要再建表。到 SQL Editor 再跑「允许网页写入」那 4 行（本页可复制）。",
+      };
+    }
+    if (/kind|check constraint/i.test(error.message)) {
+      return {
+        ok: false,
+        message: "库还不允许语文汉字。到 SQL Editor 跑「允许语文」那段（本页可复制）。",
       };
     }
     return { ok: false, message: `入库失败：${error.message}` };
