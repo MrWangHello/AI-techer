@@ -183,6 +183,7 @@ function escapeXml(text) {
 
 async function synthesizeAudio(connectionId, ssml) {
   const wsUrl = `${WSS_URL}?TrustedClientToken=${TRUSTED_CLIENT_TOKEN}&ConnectionId=${connectionId}`;
+  console.log('WebSocket URL:', wsUrl);
 
   return new Promise((resolve, reject) => {
     let audioChunks = [];
@@ -191,6 +192,7 @@ async function synthesizeAudio(connectionId, ssml) {
 
     try {
       const ws = new WebSocket(wsUrl);
+      console.log('WebSocket created');
 
       // 超时保护
       timeoutId = setTimeout(() => {
@@ -199,6 +201,7 @@ async function synthesizeAudio(connectionId, ssml) {
       }, 30000);
 
       ws.onopen = () => {
+        console.log('WebSocket opened');
         // 发送配置消息
         const configMsg = JSON.stringify({
           context: {
@@ -214,10 +217,13 @@ async function synthesizeAudio(connectionId, ssml) {
           },
         });
         ws.send(configMsg);
+        console.log('Config message sent');
 
         // 发送 SSML
         ws.send(ssml);
-      };
+        console.log('SSML sent');
+
+      }; // 修复：添加分号
 
       ws.onmessage = (event) => {
         // 二进制消息 = 音频数据
