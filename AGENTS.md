@@ -17,8 +17,8 @@
 - ✅ **全局 VoiceChatBar** — 类微信/豆包，语音+键盘双模式，任意 Tab 可用
 - ✅ **全局 VoiceReplyBar** — 文字回复保底
 - ✅ **导航指令词** — 首页/宠物/学习/设置 + 帮助
-- 📋 Phase 2：StudyCards 子指令（朗读/下一个/测验）
-- 📋 **开放问答 / 故事机内容** — Tier1 实测清单见 [`CONTENT_API_RESEARCH.md`](ai-english-teacher/docs/CONTENT_API_RESEARCH.md)；国内搜索不可用见 [`OPEN_QA_PLAN.md` §10](ai-english-teacher/docs/OPEN_QA_PLAN.md)
+- 📋 **系统架构重构** — Skill 分层 + 词库刷新 + 微信通道，见 [`SYSTEM_ARCHITECTURE.md`](ai-english-teacher/docs/SYSTEM_ARCHITECTURE.md)
+- 📋 **开放问答 / 故事机内容** — Tier1 实测见 [`CONTENT_API_RESEARCH.md`](ai-english-teacher/docs/CONTENT_API_RESEARCH.md)
 
 ## 待测试
 
@@ -42,7 +42,8 @@
 | [`docs/ARCHITECTURE.md`](ai-english-teacher/docs/ARCHITECTURE.md) | 完整架构：宠物 mood 映射、语音方案、部署、排错 |
 | [`docs/VOICE_UX_PLAN.md`](ai-english-teacher/docs/VOICE_UX_PLAN.md) | **规划稿**：全局悬浮语音入口 + 指令词体系 |
 | [`docs/BROWSER_COMPAT_PLAN.md`](ai-english-teacher/docs/BROWSER_COMPAT_PLAN.md) | 浏览器兼容 + 双通道降级 + **用户 FAQ（§11）** |
-| [`docs/OPEN_QA_PLAN.md`](ai-english-teacher/docs/OPEN_QA_PLAN.md) | **规划稿**：开放问答（天气/搜索/LLM 路由方案） |
+| [`docs/OPEN_QA_PLAN.md`](ai-english-teacher/docs/OPEN_QA_PLAN.md) | 开放问答路由 + 国内搜索实测 §10 |
+| [`docs/SYSTEM_ARCHITECTURE.md`](ai-english-teacher/docs/SYSTEM_ARCHITECTURE.md) | **分层架构**：Channel→Router→Skills→Providers；微信通道 |
 | 本文件 | 项目记忆与变更摘要 |
 
 ## 语音方案（2026-08-30 确定）
