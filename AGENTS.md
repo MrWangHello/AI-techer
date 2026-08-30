@@ -18,7 +18,7 @@
 - ✅ **全局 VoiceReplyBar** — 文字回复保底
 - ✅ **导航指令词** — 首页/宠物/学习/设置 + 帮助
 - 📋 Phase 2：StudyCards 子指令（朗读/下一个/测验）
-- 📋 **开放问答** — 国内实测：**Worker 搜索不可用**；改用 Open-Meteo + 词霸/维基/诗词，见 [`OPEN_QA_PLAN.md` §10](ai-english-teacher/docs/OPEN_QA_PLAN.md)
+- 📋 **开放问答 / 故事机内容** — Tier1 实测清单见 [`CONTENT_API_RESEARCH.md`](ai-english-teacher/docs/CONTENT_API_RESEARCH.md)；国内搜索不可用见 [`OPEN_QA_PLAN.md` §10](ai-english-teacher/docs/OPEN_QA_PLAN.md)
 
 ## 待测试
 
