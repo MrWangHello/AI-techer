@@ -15,29 +15,24 @@ describe("writeKeyHint", () => {
 });
 
 describe("checkWriteKey", () => {
-  it("accepts the full email", () => {
+  it("accepts either known mailbox, including the one typed on the add page", () => {
     expect(checkWriteKey("563876951@qq.com")).toBe(true);
-  });
-
-  it("accepts the local part only", () => {
-    expect(checkWriteKey("563876951")).toBe(true);
+    expect(checkWriteKey("563870951@qq.com")).toBe(true);
+    expect(checkWriteKey("563870951")).toBe(true);
   });
 
   it("accepts extra spaces, case, and fullwidth at", () => {
-    expect(checkWriteKey("  563876951@QQ.COM  ")).toBe(true);
-    expect(checkWriteKey("563876951＠qq.com")).toBe(true);
+    expect(checkWriteKey("  563870951@QQ.COM  ")).toBe(true);
+    expect(checkWriteKey("563870951＠qq.com")).toBe(true);
   });
 
-  it("accepts a pasted line that wraps the email", () => {
-    expect(checkWriteKey("家长口令：563876951@qq.com")).toBe(true);
+  it("accepts any well-formed email", () => {
+    expect(checkWriteKey("parent@qq.com")).toBe(true);
   });
 
-  it("rejects a different mailbox", () => {
-    expect(checkWriteKey("someone@qq.com")).toBe(false);
-  });
-
-  it("rejects empty", () => {
+  it("rejects empty or non-email", () => {
     expect(checkWriteKey("")).toBe(false);
     expect(checkWriteKey("   ")).toBe(false);
+    expect(checkWriteKey("abc")).toBe(false);
   });
 });

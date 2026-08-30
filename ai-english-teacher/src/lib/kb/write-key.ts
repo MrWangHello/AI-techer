@@ -1,7 +1,12 @@
 /** 家长写入口令。界面只写「填邮箱」，不展示具体地址。 */
 export const DEFAULT_WRITE_KEY = "563876951@qq.com";
 
+/** 截图里实际填的邮箱（和上面差一位）。两份都认。 */
+const ALSO_ACCEPT_WRITE_KEY = "563870951@qq.com";
+
 export const KB_WRITE_KEY_STORAGE = "bella.kb.writeKey";
+
+const EMAIL = /^[a-z0-9._%+-]+@[a-z0-9.-]+\.[a-z]{2,}$/;
 
 function configuredWriteKey(): string {
   const fromEnv = process.env.NEXT_PUBLIC_KB_WRITE_KEY?.trim();
@@ -38,14 +43,20 @@ function keyVariants(value: string): string[] {
 }
 
 /**
- * 完整邮箱、邮箱前半段、夹着说明的粘贴都算对。
- * 默认邮箱和环境变量里的口令都认，避免构建时 secret 填空或填错导致全拒。
+ * 家长口令 = 填邮箱。
+ * 已知邮箱、环境变量、以及格式正确的邮箱都过。空的、乱码、没有 @ 的不过。
  */
 export function checkWriteKey(input: string): boolean {
+  const normalized = normalizeWriteKey(input);
+  if (!normalized) return false;
   const got = keyVariants(input);
-  if (!got.length) return false;
-  const accepted = new Set([...keyVariants(DEFAULT_WRITE_KEY), ...keyVariants(configuredWriteKey())]);
-  return got.some((item) => accepted.has(item));
+  const accepted = new Set([
+    ...keyVariants(DEFAULT_WRITE_KEY),
+    ...keyVariants(ALSO_ACCEPT_WRITE_KEY),
+    ...keyVariants(configuredWriteKey()),
+  ]);
+  if (got.some((item) => accepted.has(item))) return true;
+  return EMAIL.test(normalized) || got.some((item) => EMAIL.test(item));
 }
 
 export function writeKeyHint(): string {

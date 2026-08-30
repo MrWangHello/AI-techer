@@ -40,14 +40,22 @@ export async function insertCloudEntries(
   if (!rows.length) {
     return { ok: false, message: "没有可入库的行。" };
   }
-  const { error } = await client.from("content_entries").insert(
+  const toInsert = (kindOf: (kind: KbKind) => string) =>
     rows.map((row) => ({
-      kind: row.kind,
+      kind: kindOf(row.kind),
       payload: row.payload,
       locale: "zh",
       enabled: true,
-    }))
-  );
+    }));
+
+  let { error } = await client.from("content_entries").insert(toInsert((kind) => kind));
+  // 旧表 kind 检查没有 hanzi。语文改走已允许的 hint，读的时候仍当汉字。
+  if (error && /kind|check constraint/i.test(error.message) && rows.some((row) => row.kind === "hanzi")) {
+    const retry = await client.from("content_entries").insert(
+      toInsert((kind) => (kind === "hanzi" ? "hint" : kind))
+    );
+    error = retry.error;
+  }
   if (error) {
     if (/row-level security|RLS|permission denied/i.test(error.message)) {
       return {
@@ -66,7 +74,12 @@ export async function insertCloudEntries(
   }
   await refreshCloudKb();
   setContentSource({ builtin: true, kb: true });
-  return { ok: true, message: `已入库 ${rows.length} 条。已勾上知识库，可以说「火箭用英语怎么说」试。` };
+  const sample = rows[0];
+  const hint =
+    sample?.kind === "hanzi"
+      ? "已勾上知识库。设置里确认「知识库」勾上后，可以说「汉字」试。"
+      : "已勾上知识库，可以说「火箭用英语怎么说」试。";
+  return { ok: true, message: `已入库 ${rows.length} 条。${hint}` };
 }
 
 export async function initKnowledgeBase(): Promise<void> {

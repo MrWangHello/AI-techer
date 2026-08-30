@@ -25,6 +25,19 @@ describe("mapCloudRow", () => {
     });
   });
 
+  it("maps a hint row with hanzi payload as 语文", () => {
+    const row = mapCloudRow({
+      id: "3",
+      kind: "hint",
+      enabled: true,
+      payload: { char: "西", pinyin: "xī", words: ["西风", "西边"], sentence: "" },
+    });
+    expect(row).toMatchObject({
+      kind: "hanzi",
+      payload: { char: "西", pinyin: "xī", words: ["西风", "西边"] },
+    });
+  });
+
   it("drops incomplete payloads", () => {
     expect(mapCloudRow({ id: "1", kind: "word", payload: { zh: "火箭" } })).toBeNull();
     expect(mapCloudRow({ id: "1", kind: "hanzi", payload: { char: "天" } })).toBeNull();
