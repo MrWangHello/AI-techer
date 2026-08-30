@@ -1,5 +1,6 @@
 import type { AgentResponse, AsyncSkill } from "@/lib/core/types";
-import { fetchDailyEnglish, lookupWord } from "@/lib/providers/iciba";
+import { fetchDailyEnglish } from "@/lib/providers/daily-english";
+import { lookupWord } from "@/lib/providers/iciba";
 import { fetchRandomPoem } from "@/lib/providers/poetry";
 import { fetchWeather } from "@/lib/providers/weather";
 import { fetchWikiSummary } from "@/lib/providers/wiki";
@@ -18,15 +19,25 @@ function failReply(intent: string, fallback: string): AgentResponse {
 export const ASYNC_SKILLS: AsyncSkill[] = [
   {
     id: "english.daily",
-    keywords: ["每日英语", "来句英语", "英语句子", "今日英语", "一句英语"],
+    keywords: [
+      "每日英语",
+      "每人英语",
+      "来句英语",
+      "英语句子",
+      "今日英语",
+      "一句英语",
+      "每日一句",
+      "英语每日",
+    ],
     execute: async () => {
       try {
         const d = await fetchDailyEnglish();
+        const suffix = d.source === "builtin" ? "（离线句库）" : "";
         return {
           intent: "english_daily",
           emotion: "happy",
           action: "none",
-          reply: `${d.content} ${d.note}`,
+          reply: `${d.content} ${d.note}${suffix}`,
         };
       } catch {
         return failReply("english_daily", "每日英语暂时拉不到，稍后再试~");

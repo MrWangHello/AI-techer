@@ -37,7 +37,8 @@
 
 | 文档 | 内容 |
 |------|------|
-| [`docs/SYSTEM_ARCHITECTURE.md`](ai-english-teacher/docs/SYSTEM_ARCHITECTURE.md) | **分层架构** §12 实现状态；§11 语音中断修复 |
+| [`docs/SYSTEM_ARCHITECTURE.md`](ai-english-teacher/docs/SYSTEM_ARCHITECTURE.md) | 分层架构 §11 语音修复 §12 Skills |
+| [`docs/CONTENT_UI_PLAN.md`](ai-english-teacher/docs/CONTENT_UI_PLAN.md) | **多主题内容卡片 UI 方案**（古诗/英语浮层） |
 | [`docs/CONTENT_API_RESEARCH.md`](ai-english-teacher/docs/CONTENT_API_RESEARCH.md) | 故事机式内容 API 实测 |
 | [`docs/BROWSER_COMPAT_PLAN.md`](ai-english-teacher/docs/BROWSER_COMPAT_PLAN.md) | 浏览器兼容 FAQ §11 |
 | [`docs/ARCHITECTURE.md`](ai-english-teacher/docs/ARCHITECTURE.md) | 宠物 mood、部署、排错 |

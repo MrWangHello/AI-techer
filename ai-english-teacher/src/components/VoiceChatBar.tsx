@@ -182,8 +182,10 @@ export default function VoiceChatBar({
       (err) => {
         if (!isMounted.current) return;
         stopListeningUi();
-        switchToText();
-        showHint(err.includes("权限") ? `${err}，已切换文字输入` : `${err}，请用文字输入`);
+        const softErrors = ["没有检测到语音", "被中断", "网络不稳定"];
+        const isSoft = softErrors.some((s) => err.includes(s));
+        if (!isSoft) switchToText();
+        showHint(isSoft ? `${err}（仍可继续用语音）` : `${err}，已切换文字输入`);
       },
       () => {
         if (!isMounted.current) return;

@@ -1,5 +1,5 @@
 import type { AgentResponse, SessionContext, UserMessage } from "@/lib/core/types";
-import { matchKeywords, normalizeInput } from "@/lib/core/normalize";
+import { matchKeywords, normalizeInput, applySttCorrections } from "@/lib/core/normalize";
 import { RULE_SKILLS } from "@/lib/skills/rule-skills";
 import { ASYNC_SKILLS, tryEnglishLookup } from "@/lib/skills/content-skills";
 import { fallbackSkill } from "@/lib/skills/fallback";
@@ -49,7 +49,7 @@ export async function handleUserMessage(
   msg: UserMessage,
   _ctx: SessionContext = { channel: msg.channel }
 ): Promise<AgentResponse> {
-  const text = msg.text.trim();
+  const text = applySttCorrections(msg.text.trim());
   if (!text) return fallbackSkill();
 
   const normalized = normalizeInput(text);

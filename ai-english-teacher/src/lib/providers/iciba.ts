@@ -1,15 +1,3 @@
-export interface DailyEnglish {
-  content: string;
-  note: string;
-}
-
-export async function fetchDailyEnglish(): Promise<DailyEnglish> {
-  const res = await fetch("https://open.iciba.com/dsapi/", { signal: AbortSignal.timeout(12000) });
-  if (!res.ok) throw new Error(`iciba: ${res.status}`);
-  const data = await res.json();
-  return { content: data.content ?? "", note: data.note ?? "" };
-}
-
 export async function lookupWord(word: string): Promise<string | null> {
   const q = word.trim().replace(/[^a-zA-Z-]/g, "");
   if (!q || q.length > 30) return null;
