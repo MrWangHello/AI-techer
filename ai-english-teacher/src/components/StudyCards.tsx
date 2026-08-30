@@ -7,11 +7,17 @@ import { Volume2, Volume1, RefreshCw } from "lucide-react";
 
 interface StudyCardsProps {
   words?: Word[];
+  voiceSpeed?: number;
   onWordLearned?: (word: Word) => void;
   onQuizResult?: (correct: boolean) => void;
 }
 
-export default function StudyCards({ words: wordsProp, onWordLearned, onQuizResult }: StudyCardsProps) {
+export default function StudyCards({
+  words: wordsProp,
+  voiceSpeed = 1,
+  onWordLearned,
+  onQuizResult,
+}: StudyCardsProps) {
   const [words, setWords] = useState<Word[]>(() => wordsProp ?? loadWordBatch());
   const [mode, setMode] = useState<"learn" | "quiz">("learn");
   const [currentIndex, setCurrentIndex] = useState(0);
@@ -52,7 +58,7 @@ export default function StudyCards({ words: wordsProp, onWordLearned, onQuizResu
     ensureWarmup();
     setTtsError(null);
     setSpeakingWord(true);
-    const success = speakEnglish(currentWord.en, () => setSpeakingWord(false));
+    const success = speakEnglish(currentWord.en, () => setSpeakingWord(false), voiceSpeed);
     if (!success) {
       setTtsError("语音合成不可用，请使用 Chrome 浏览器");
       setSpeakingWord(false);
@@ -64,7 +70,7 @@ export default function StudyCards({ words: wordsProp, onWordLearned, onQuizResu
     ensureWarmup();
     setTtsError(null);
     setSpeakingWord(true);
-    const success = speakEnglish(currentWord.sentence, () => setSpeakingWord(false));
+    const success = speakEnglish(currentWord.sentence, () => setSpeakingWord(false), voiceSpeed);
     if (!success) {
       setTtsError("语音合成不可用，请使用 Chrome 浏览器");
       setSpeakingWord(false);

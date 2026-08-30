@@ -42,19 +42,34 @@ const SCENE_BG = "#f0ebe4";
 const VIDEO_MASK =
   "radial-gradient(ellipse 58% 58% at 50% 46%, black 48%, transparent 92%)";
 
+/** 移动端避免 blob 缓存多路视频导致 Tab 崩溃，桌面端可缓存当前路 */
 const videoCache = new Map<string, string>();
+const MAX_VIDEO_CACHE = 2;
 
-async function prefetchVideo(url: string): Promise<string | null> {
+function isMobileDevice(): boolean {
+  if (typeof navigator === "undefined") return false;
+  return /Android|iPhone|iPad|iPod|Mobile/i.test(navigator.userAgent);
+}
+
+async function prefetchVideo(url: string, allowBlob = true): Promise<string | null> {
   if (videoCache.has(url)) return videoCache.get(url)!;
+  if (!allowBlob) return url;
   try {
     const res = await fetch(url);
-    if (!res.ok) return null;
+    if (!res.ok) return url;
     const blob = await res.blob();
     const blobUrl = URL.createObjectURL(blob);
+    if (videoCache.size >= MAX_VIDEO_CACHE) {
+      const oldest = videoCache.keys().next().value;
+      if (oldest) {
+        URL.revokeObjectURL(videoCache.get(oldest)!);
+        videoCache.delete(oldest);
+      }
+    }
     videoCache.set(url, blobUrl);
     return blobUrl;
   } catch {
-    return null;
+    return url;
   }
 }
 
@@ -79,14 +94,10 @@ export default function Cat3D({ mood = "neutral", onTap, speaking = false }: Cat
     setVideoError(false);
 
     const load = async () => {
-      const cached = await prefetchVideo(currentVideo);
+      const mobile = isMobileDevice();
+      const cached = await prefetchVideo(currentVideo, !mobile);
       if (cancelled) return;
       setActiveSrc({ url: currentVideo, src: cached || currentVideo });
-
-      // 后台预加载其余 mood
-      Object.values(MOOD_VIDEOS).forEach((url) => {
-        if (url !== currentVideo) prefetchVideo(url);
-      });
     };
 
     load();
