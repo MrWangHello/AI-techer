@@ -1,15 +1,30 @@
 /**
- * 浏览器本地识别：首次需要时下载离线包，之后走缓存。
- * 国内优先走 hf-mirror，连不上再试 huggingface.co。
- * 当前可运行包是 Whisper tiny（中文短句）。
+ * 浏览器本地识别：模型跟网页放在一起（GitHub Pages 同源），
+ * 不再去 huggingface / 镜像站拉权重。实测 hf-mirror 会 308 到源站，
+ * 大文件再跳 us.aws.cdn.hf.co，国内手机就是 Failed to fetch。
  */
 
 export type LocalSttStatus = "idle" | "downloading" | "ready" | "error";
 
-const MODEL_ID = "Xenova/whisper-tiny";
+const MODEL_ID = "whisper-tiny";
 const READY_KEY = "bella_local_stt_ready";
 
+/** 仅作探测对照；装包不再走这些站 */
 export const MODEL_HOSTS = ["https://hf-mirror.com/", "https://huggingface.co/"] as const;
+
+export function resolveModelDir(): string {
+  if (typeof window === "undefined") {
+    return `${process.cwd()}/public/models/`;
+  }
+  const base = process.env.NEXT_PUBLIC_BASE_PATH || "";
+  return `${base}/models/`;
+}
+
+export function resolveOrtDir(): string {
+  if (typeof window === "undefined") return "";
+  const base = process.env.NEXT_PUBLIC_BASE_PATH || "";
+  return `${base}/ort/`;
+}
 
 type AsrPipe = (audio: Float32Array, opts?: Record<string, unknown>) => Promise<{ text?: string }>;
 
@@ -79,11 +94,17 @@ export async function pickReachableHost(fetchImpl: typeof fetch = fetch): Promis
   return MODEL_HOSTS[0];
 }
 
-async function loadPipelineFromHost(host: string): Promise<AsrPipe> {
+async function loadSitePack(): Promise<AsrPipe> {
   const { pipeline, env } = await import("@huggingface/transformers");
-  env.allowRemoteModels = true;
-  env.remoteHost = host;
+  env.allowRemoteModels = false;
+  env.allowLocalModels = true;
+  env.localModelPath = resolveModelDir();
+  const wasmPaths = resolveOrtDir();
+  if (wasmPaths && env.backends?.onnx?.wasm) {
+    env.backends.onnx.wasm.wasmPaths = wasmPaths;
+  }
   const created = await pipeline("automatic-speech-recognition", MODEL_ID, {
+    dtype: "q8",
     progress_callback: (info: { status?: string; progress?: number }) => {
       if (typeof info.progress === "number") {
         progress = displayPackProgress(info.progress);
@@ -111,8 +132,7 @@ export async function ensureLocalModel(): Promise<boolean> {
     lastError = "";
     emit();
     try {
-      const host = await pickReachableHost();
-      pipe = await loadPipelineFromHost(host);
+      pipe = await loadSitePack();
       status = "ready";
       progress = 100;
       if (typeof window !== "undefined") window.localStorage.setItem(READY_KEY, "1");

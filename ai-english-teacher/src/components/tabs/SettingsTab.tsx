@@ -157,7 +157,7 @@ export default function SettingsTab({
                 ? "已在这台浏览器里"
                 : pack.status === "error"
                   ? `装不上（${pack.error || "请检查网络"}）`
-                  : "还没下载。Chrome 能认就不下。"}
+                  : "还没装进这台浏览器。Chrome 能认就不下。"}
           </p>
           {pack.status === "error" && (
             <button
@@ -169,7 +169,7 @@ export default function SettingsTab({
             </button>
           )}
           <p className="text-sm leading-relaxed text-gray-500">
-            进页面会先探测。浏览器耳朵够用就不下包。荣耀、华为、QQ 或探测失败，才会后台装离线耳朵（国内先走镜像，连不上再换线路）。
+            进页面会先探测。浏览器耳朵够用就不下包。荣耀、华为、QQ 或探测失败，才从本站装离线耳朵（跟网页同一个地址，不连国外模型站）。
           </p>
         </div>
       </Card>

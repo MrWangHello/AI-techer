@@ -77,9 +77,10 @@
 | 项 | 内容 |
 |----|------|
 | 探测 | `speech-probe.ts`：Chrome+GMS 不下包；无 API / 荣耀华为 QQ Firefox / 设置强制离线 → 后台预取 |
-| 可跑包 | `@huggingface/transformers` + `Xenova/whisper-tiny` 中文短句（约 40MB，缓存后不再下） |
-| 国内 | 先探测 `hf-mirror.com`，连不上再试 `huggingface.co`。卡 1% 后 Failed to fetch = 模型站被墙/超时 |
-| 失败 | 文案改成「模型站连不上」；有 Web Speech 就回退浏览器识别；设置里可再试一次 |
+| 可跑包 | 本站 `public/models/whisper-tiny`（q8，约 42MB）+ `public/ort` WASM。Node 实测能 `pipeline` 起来 |
+| 坑 | `hf-mirror.com` 对大文件 308 到 `huggingface.co`，再 302 到 `us.aws.cdn.hf.co`。国内手机 Failed to fetch 是这条链，不是进度条写错 |
+| 158MB | SenseVoice 是 sherpa-onnx WASM，权重约 239MB，和 transformers.js 不是同一套管线，先不换 |
+| 失败 | 有 Web Speech 就回退浏览器识别；设置里可再试一次 |
 | 文件 | `speech-probe.ts`, `speech-local.ts`, `VoiceChatBar.tsx` |
 
 ---

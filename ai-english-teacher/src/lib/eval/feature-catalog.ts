@@ -45,7 +45,7 @@ export const FEATURE_CASES: FeatureCase[] = [
     tapFallback: true,
     offline: true,
     status: "partial",
-    notes: "进页先探测；高危机或无 Web Speech 才后台下。Whisper tiny 先走 hf-mirror，连不上再试 huggingface。Failed to fetch 会回退浏览器识别",
+    notes: "进页先探测；需要时从本站 /models/whisper-tiny 装 q8 包（约 42MB），WASM 走 /ort。不连 huggingface。装不上回退浏览器识别",
   },
   {
     id: "nav.home",
