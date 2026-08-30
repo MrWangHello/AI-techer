@@ -61,7 +61,8 @@
 ### 3.1 英语
 
 - **单词卡**：`StudyCards`，词库 `words.json`（187）+ 换一批；朗读走 `voiceSpeed`
-- **词典**：本地同步查词，不请求外网；未收录立即 miss 提示；设置「知识库」或 `public/kb/pack.json` 可动态加词（见 `CONTENT_KB.md`）
+- **词典**：本地同步查词，不请求外网；未收录立即 miss 提示  
+- **知识库**：方案见 `KB_DESIGN.md`（主库未接，先不要当已上线功能）
 - **句子**：语音「每日英语」可走 API；点击子 Tab 用 `english-sentences/grade1.json`
 
 ### 3.2 语文
