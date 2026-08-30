@@ -48,14 +48,16 @@ jobs:
 
           echo "::group::Deploying Cloudflare Worker via API"
 
-          # 1. 上传 Worker 脚本
+          # 1. 上传 Worker 脚本（通过 HTTP 头设置元数据，避免 multipart 兼容问题）
           echo "Uploading worker script..."
           UPLOAD_RESPONSE=$(curl -s -X PUT \
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/ai-teacher-tts" \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
-            -F "metadata={\"compatibility_date\":\"2024-12-01\",\"compatibility_flags\":[\"nodejs_compat\"]};type=application/json" \
-            -F "main_module=@edge-tts.js;type=application/javascript")
-          echo "$UPLOAD_RESPONSE" | head -5
+            -H "Content-Type: application/javascript" \
+            -H "CF-Worker-Compatibility-Date: 2024-12-01" \
+            -H "CF-Worker-Compatibility-Flags: nodejs_compat" \
+            --data-binary "@edge-tts.js")
+          echo "$UPLOAD_RESPONSE" | head -10
           if echo "$UPLOAD_RESPONSE" | grep -q '"success":true'; then
             echo "✅ Worker script uploaded successfully"
           else
