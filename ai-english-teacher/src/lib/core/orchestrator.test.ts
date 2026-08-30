@@ -1,5 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { handleUserMessage, processUserInput } from "./orchestrator";
+import { applySttCorrections } from "@/lib/core/normalize";
 
 describe("processUserInput navigation", () => {
   it("routes 汉字 to chinese section", () => {
@@ -30,6 +31,14 @@ describe("handleUserMessage navigation", () => {
     expect(res.reply.length).toBeGreaterThan(10);
     expect(res.reply).not.toContain("暂时不可用");
   });
+
+  it("routes STT-corrected 美剧 to 美句", async () => {
+    const corrected = applySttCorrections("来说一句美剧");
+    const res = await handleUserMessage({ text: corrected, channel: "web" });
+    expect(res.intent).toBe("hitokoto");
+    expect(res.studySection).toBe("chinese.quote");
+    expect(res.reply.length).toBeGreaterThan(5);
+  });
 });
 
 describe("handleUserMessage math", () => {
@@ -43,5 +52,11 @@ describe("handleUserMessage math", () => {
     const res = await handleUserMessage({ text: "口算", channel: "web" });
     expect(res.studySection).toBe("math.drill");
     expect(res.contentCard?.type).toBe("math-drill");
+  });
+
+  it("accepts multi-digit drill answer", async () => {
+    await handleUserMessage({ text: "口算", channel: "web" });
+    const res = await handleUserMessage({ text: "答案是10", channel: "web" });
+    expect(["math_drill_correct", "math_drill_wrong"]).toContain(res.intent);
   });
 });

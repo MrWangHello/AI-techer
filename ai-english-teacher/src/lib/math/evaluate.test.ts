@@ -5,6 +5,7 @@ import {
   tryEvaluateFromText,
   parseAnswerNumber,
 } from "./evaluate";
+import { checkAnswer, startDrill, clearDrill } from "@/lib/math/drill-state";
 
 describe("parseMathExpression", () => {
   it("parses digit expressions", () => {
@@ -38,5 +39,24 @@ describe("parseAnswerNumber", () => {
   it("parses digits and Chinese numbers", () => {
     expect(parseAnswerNumber("8")).toBe(8);
     expect(parseAnswerNumber("八")).toBe(8);
+  });
+
+  it("parses multi-digit and 答案是 prefix", () => {
+    expect(parseAnswerNumber("12")).toBe(12);
+    expect(parseAnswerNumber("答案是12")).toBe(12);
+    expect(parseAnswerNumber("等于8")).toBe(8);
+    expect(parseAnswerNumber("十一")).toBe(11);
+    expect(parseAnswerNumber("十五")).toBe(15);
+  });
+});
+
+describe("math drill flow", () => {
+  it("checks answers correctly", () => {
+    clearDrill();
+    const q = startDrill(1);
+    const { correct, streak } = checkAnswer(q.answer);
+    expect(correct).toBe(true);
+    expect(streak).toBe(1);
+    clearDrill();
   });
 });

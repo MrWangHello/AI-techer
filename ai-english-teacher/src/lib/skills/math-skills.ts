@@ -66,6 +66,10 @@ export function matchMathDrillAnswer(text: string, _ctx: SessionContext): AgentR
     reply: `没关系，再想想~ 答案是 ${q.answer}。我们继续：${formatMathQuestion({ a: q.a, op: q.op, b: q.b })}`,
     navigate: "study",
     studySection: "math.drill",
+    contentCard: {
+      type: "math-drill",
+      payload: { question: q },
+    },
   };
 }
 

@@ -2,10 +2,11 @@ import { test, expect } from "@playwright/test";
 import { sendTextCommand, openStudyTab, openTab } from "./helpers";
 
 test.describe("全功能意图（文字模拟语音）", () => {
-  test("百科：猫是什么", async ({ page }) => {
+  test("百科：猫是什么（离线兜底）", async ({ page }) => {
     await page.goto("/");
     await sendTextCommand(page, "猫是什么");
-    await expect(page.getByText(/食肉|猫科|小型/).first()).toBeVisible({ timeout: 15000 });
+    await expect(page.getByText(/猫科|家养|宠物/).first()).toBeVisible({ timeout: 10000 });
+    await expect(page.getByText(/暂时不可用/)).not.toBeVisible();
   });
 
   test("百科：什么是恐龙", async ({ page }) => {
@@ -30,7 +31,7 @@ test.describe("全功能意图（文字模拟语音）", () => {
   test("导航：口算 → 数学练习", async ({ page }) => {
     await page.goto("/");
     await sendTextCommand(page, "口算");
-    await expect(page.getByText(/点数字作答/)).toBeVisible({ timeout: 8000 });
+    await expect(page.getByRole("button", { name: "确定" }).first()).toBeVisible({ timeout: 8000 });
   });
 
   test("内容：讲笑话", async ({ page }) => {
@@ -43,6 +44,29 @@ test.describe("全功能意图（文字模拟语音）", () => {
     await page.goto("/");
     await sendTextCommand(page, "1加1等于几");
     await expect(page.getByText(/等于 2|等于2/)).toBeVisible({ timeout: 8000 });
+  });
+
+  test("美句：STT误识别美剧也能触发", async ({ page }) => {
+    await page.goto("/");
+    await sendTextCommand(page, "来说一句美剧");
+    await expect(page.getByText(/——/).first()).toBeVisible({ timeout: 8000 });
+  });
+
+  test("语文美句 Tab 有内容", async ({ page }) => {
+    await openStudyTab(page);
+    await page.getByRole("button", { name: "语文", exact: true }).click();
+    await page.getByRole("button", { name: "美句", exact: true }).click();
+    await expect(page.getByText("✨ 美句")).toBeVisible({ timeout: 5000 });
+  });
+
+  test("数学口算：两位数输入需点确定", async ({ page }) => {
+    await openStudyTab(page);
+    await page.getByRole("button", { name: "数学", exact: true }).click();
+    const drill = page.locator(".border-amber-100").filter({ hasText: "确定" });
+    await expect(drill.getByRole("button", { name: "确定" })).toBeVisible();
+    await drill.getByRole("button", { name: "1", exact: true }).click();
+    await drill.getByRole("button", { name: "0", exact: true }).click();
+    await expect(drill.getByText("10")).toBeVisible();
   });
 });
 
