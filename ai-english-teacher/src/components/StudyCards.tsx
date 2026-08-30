@@ -10,6 +10,8 @@ interface StudyCardsProps {
   voiceSpeed?: number;
   onWordLearned?: (word: Word) => void;
   onQuizResult?: (correct: boolean) => void;
+  /** 递增时进入测验模式（语音「测验/考我」） */
+  startQuizToken?: number;
 }
 
 export default function StudyCards({
@@ -17,6 +19,7 @@ export default function StudyCards({
   voiceSpeed = 1,
   onWordLearned,
   onQuizResult,
+  startQuizToken = 0,
 }: StudyCardsProps) {
   const [words, setWords] = useState<Word[]>(() => wordsProp ?? loadWordBatch());
   const [mode, setMode] = useState<"learn" | "quiz">("learn");
@@ -36,6 +39,15 @@ export default function StudyCards({
       setShowAnswer(false);
     }
   }, [wordsProp]);
+
+  useEffect(() => {
+    if (startQuizToken > 0) {
+      setMode("quiz");
+      setQuizIndex(0);
+      setScore(0);
+      setQuizResult(null);
+    }
+  }, [startQuizToken]);
 
   const ensureWarmup = useCallback(() => {
     if (!warmedUp.current) {

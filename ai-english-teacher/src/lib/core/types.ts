@@ -8,7 +8,8 @@ export type SideEffect =
   | "word.refresh"
   | "math.drill.start"
   | "math.drill.next"
-  | "chinese.next";
+  | "chinese.next"
+  | "study.quiz.start";
 
 export interface ContentCard {
   type:

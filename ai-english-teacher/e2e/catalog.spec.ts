@@ -10,6 +10,8 @@ const SMOKE: { phrase: string; expectText: RegExp }[] = [
   { phrase: "apple什么意思", expectText: /apple|苹果/i },
   { phrase: "讲笑话", expectText: /./ },
   { phrase: "1加1等于几", expectText: /2/ },
+  { phrase: "考我", expectText: /测验/ },
+  { phrase: "应用题", expectText: /答案是几|想一想/ },
 ];
 
 test.describe("功能目录抽样（文字模拟语音）", () => {

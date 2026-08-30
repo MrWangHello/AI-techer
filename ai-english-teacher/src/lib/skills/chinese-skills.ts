@@ -16,6 +16,7 @@ import {
 } from "@/lib/providers/chinese-content";
 import { withStudyNav } from "@/lib/skills/nav-skills";
 import { updateSession } from "@/lib/session-store";
+import { setCurrentWordProblem } from "@/lib/math/word-problem-state";
 
 function card(
   type: NonNullable<AgentResponse["contentCard"]>["type"],
@@ -113,6 +114,7 @@ export function resolveChineseContent(skillId: string): AgentResponse | null {
     }
     case "word-problem.random": {
       const w = pickRandomWordProblem();
+      setCurrentWordProblem(w);
       updateSession({ lastStudySection: "math.word-problem" });
       return withStudyNav(
         {

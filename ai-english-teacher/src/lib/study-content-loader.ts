@@ -3,7 +3,7 @@
  */
 import type { ContentCard } from "@/lib/core/types";
 import type { MathQuestion } from "@/lib/math/generator";
-import { startDrill } from "@/lib/math/drill-state";
+import { clearDrill, startDrill } from "@/lib/math/drill-state";
 import {
   pickRandomPinyin,
   pickRandomHanzi,
@@ -15,6 +15,7 @@ import {
 import { pickRandomJoke, pickRandomQuote, pickRandomChineseStory } from "@/lib/providers/local-content";
 import { pickRandomShortPoem } from "@/lib/providers/poetry";
 import { parseStudySection } from "@/lib/study-nav";
+import { clearWordProblem, setCurrentWordProblem } from "@/lib/math/word-problem-state";
 
 export interface SectionContent {
   contentCard: ContentCard | null;
@@ -27,6 +28,13 @@ function card(type: ContentCard["type"], payload: Record<string, unknown>): Cont
 
 export function loadDefaultContentForSection(studySection: string): SectionContent {
   const { subject, sub } = parseStudySection(studySection);
+
+  if (!(subject === "math" && sub === "word-problem")) {
+    clearWordProblem();
+  }
+  if (!(subject === "math" && sub === "drill")) {
+    clearDrill();
+  }
 
   if (subject === "chinese") {
     if (sub === "pinyin") {
@@ -74,8 +82,10 @@ export function loadDefaultContentForSection(studySection: string): SectionConte
 
   if (subject === "math") {
     if (sub === "word-problem") {
+      const item = pickRandomWordProblem();
+      setCurrentWordProblem(item);
       return {
-        contentCard: card("word-problem", { item: pickRandomWordProblem() }),
+        contentCard: card("word-problem", { item }),
         mathQuestion: null,
       };
     }

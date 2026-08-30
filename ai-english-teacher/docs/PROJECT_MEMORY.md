@@ -170,6 +170,33 @@
 | 说明 | 键盘走 `submitDrillAnswer` 直连；语音走 `matchMathDrillAnswer` |
 | 注意 | 两者应共用 `buildDrillResult`，改逻辑时需测双路径 |
 
+### 4.4 应用题 hint 说谎、不判题 `[fixed 2026-08-30]`
+
+| 项 | 内容 |
+|----|------|
+| 现象 | 卡片写「语音说出答案」，说数字无反馈；还把正确答案写在 hint 里 |
+| 根因 | 只有出题 Skill，没有判分；UI 把 `item.answer` 拼进提示 |
+| 修复 | `word-problem-state` + `matchWordProblemAnswer` / `submitWordProblemAnswer`；`WordProblemCard` 数字键盘；hint 不再泄露答案 |
+| 文件 | `word-problem-skills.ts`, `WordProblemCard.tsx`, `orchestrator.ts` |
+
+### 4.5 「测验/考我」只回文字不进 UI `[fixed 2026-08-30]`
+
+| 项 | 内容 |
+|----|------|
+| 现象 | 说「测验」只有回复，StudyCards 仍停在学习模式 |
+| 根因 | `study.quiz` 未设 `studySection` / `sideEffect` |
+| 修复 | `sideEffect: study.quiz.start` + `StudyCards.startQuizToken` |
+| 文件 | `rule-skills.ts`, `StudyCards.tsx`, `page.tsx` |
+
+### 4.6 口算守卫挡住应用题/测验
+
+| 项 | 内容 |
+|----|------|
+| 现象 | 先点数学/口算后，说「应用题」或「考我」只回「口算中哦」 |
+| 根因 | `handleDrillMode` 拦截除答题/退出/帮助外的一切 |
+| 修复 | `DRILL_YIELD` 对应用题/测验放行并 `clearDrill`；切走口算分区时清 drill 状态 |
+| 文件 | `orchestrator.ts`, `study-content-loader.ts` |
+
 ---
 
 ## 5. UI / UX
@@ -269,3 +296,4 @@
 | 2026-08-30 | 口算守卫、中译英查词、🔊 朗读（PR #10） |
 | 2026-08-30 | 仓库清理：删 Flutter 遗留、建立本记忆库 |
 | 2026-08-30 | 功能目录 + 评测方案固化（FEATURES / EVALUATION / feature-catalog） |
+| 2026-08-30 | P0：应用题判分 + 语音「测验」进入测验 UI |

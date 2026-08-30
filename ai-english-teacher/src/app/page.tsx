@@ -32,8 +32,10 @@ import type { ContentCard } from "@/lib/core/types";
 import type { MathQuestion } from "@/lib/math/generator";
 import { getStreak } from "@/lib/math/drill-state";
 import { submitDrillAnswer } from "@/lib/skills/math-skills";
+import { submitWordProblemAnswer } from "@/lib/skills/word-problem-skills";
 import { loadDefaultContentForSection } from "@/lib/study-content-loader";
 import { Word, getAllWords, loadWordBatch, refreshWordBatch } from "@/lib/words";
+import { updateSession } from "@/lib/session-store";
 
 type Tab = "home" | "pet" | "study" | "settings";
 
@@ -63,6 +65,7 @@ export default function HomePage() {
   const [contentCard, setContentCard] = useState<ContentCard | null>(null);
   const [mathQuestion, setMathQuestion] = useState<MathQuestion | null>(null);
   const [mathStreak, setMathStreak] = useState(0);
+  const [quizStartToken, setQuizStartToken] = useState(0);
   const speedPreviewTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const speakWithSpeed = useCallback(
@@ -126,6 +129,7 @@ export default function HomePage() {
 
   const applyStudySection = useCallback((section: string) => {
     setStudySection(section);
+    updateSession({ lastStudySection: section });
     const loaded = loadDefaultContentForSection(section);
     setContentCard(loaded.contentCard);
     setMathQuestion(loaded.mathQuestion);
@@ -151,8 +155,12 @@ export default function HomePage() {
         }
       } else if (response.studySection) {
         const loaded = loadDefaultContentForSection(response.studySection);
-        if (loaded.contentCard) setContentCard(loaded.contentCard);
-        if (loaded.mathQuestion) setMathQuestion(loaded.mathQuestion);
+        setContentCard(loaded.contentCard);
+        setMathQuestion(loaded.mathQuestion);
+      }
+
+      if (response.sideEffect === "study.quiz.start") {
+        setQuizStartToken((n) => n + 1);
       }
 
       if (response.studySection) {
@@ -230,6 +238,13 @@ export default function HomePage() {
             return checkAndAwardAchievements(result.data);
           });
           break;
+        case "word_problem":
+        case "word_problem_correct":
+          feedLabel("📝", "应用题");
+          if (response.intent === "word_problem_correct") {
+            setPet((prev) => checkAndAwardAchievements({ ...prev, coins: prev.coins + 1 }));
+          }
+          break;
         case "quiz":
           addFeed("📝", "开始单词测验");
           break;
@@ -274,6 +289,17 @@ export default function HomePage() {
   const handleMathAnswer = useCallback(
     (n: number) => {
       const response = submitDrillAnswer(n);
+      if (!response) return;
+      handleAgentResponse(response);
+      setCatSpeaking(true);
+      speakWithSpeed(response.reply, () => setCatSpeaking(false));
+    },
+    [handleAgentResponse, speakWithSpeed]
+  );
+
+  const handleWordProblemAnswer = useCallback(
+    (n: number) => {
+      const response = submitWordProblemAnswer(n);
       if (!response) return;
       handleAgentResponse(response);
       setCatSpeaking(true);
@@ -667,10 +693,12 @@ export default function HomePage() {
         mathQuestion={mathQuestion}
         mathStreak={mathStreak}
         onMathAnswer={handleMathAnswer}
+        onWordProblemAnswer={handleWordProblemAnswer}
         onRefreshContent={() => applyStudySection(studySection)}
         words={studyWords}
         onWordLearned={handleWordLearned}
         onQuizResult={handleQuizResult}
+        startQuizToken={quizStartToken}
         voiceSpeed={pet.voiceSpeed}
       />
 

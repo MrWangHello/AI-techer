@@ -35,14 +35,14 @@
 | english.words | 学英语单词 | 学英语 | 是 | 是 | ok |
 | dict.en / dict.zh | 词典 | apple什么意思、书本用英语怎么说 | 是 | 是 | ok |
 | english.daily | 每日英语 | 每日英语 | 是 | 部分 | partial |
-| study.quiz | 单词测验 | 测验、考我 | 是（按钮） | 是 | partial |
+| study.quiz | 单词测验 | 测验、考我 | 是（按钮） | 是 | ok |
 | chinese.hanzi / pinyin / sentence | 汉字拼音句子 | 汉字、拼音、读句子 | 是 | 是 | ok |
 | chinese.poetry | 古诗 | 背古诗 | 是 | 是 | ok |
 | chinese.idiom | 成语 | 成语 | 是 | 是 | ok |
 | chinese.quote | 美句 | 美句 | 是 | 是 | ok |
 | math.drill | 口算 | 口算；说数字答题 | 是 | 是 | ok |
 | math.calc | 自由计算 | 1加1等于几 | 否 | 是 | ok |
-| math.word-problem | 应用题 | 应用题 | 是 | 是 | **broken** |
+| math.word-problem | 应用题 | 应用题 | 是 | 是 | ok |
 | reading.story / joke | 故事笑话 | 讲故事、讲笑话 | 是 | 是 | ok |
 | explore.weather | 天气 | 北京天气 | 提示文案 | 否 | partial |
 | explore.wiki | 百科 | 猫是什么 | 提示文案 | 是（snippets） | ok |
@@ -60,6 +60,7 @@
 ### 3.1 英语
 
 - **单词卡**：`StudyCards`，词库 `words.json`（187）+ 换一批；朗读走 `voiceSpeed`
+- **测验**：说「测验/考我」或点「开始测验」进入看中文选英文；点选项计分
 - **词典**：本地同步查词，不请求外网；未收录立即 miss 提示
 - **句子**：语音「每日英语」可走 API；点击子 Tab 用 `english-sentences/grade1.json`
 
@@ -72,7 +73,7 @@
 
 - **口算**：键盘缓冲 + 确定；语音数字 /「答案是8」/「10个」；口算中屏蔽导航
 - **自由计算**：非口算模式下「1加1等于几」
-- **应用题**：能出题，**不能判答案**（评测记 broken）
+- **应用题**：出题后语音说数字 /「答案是8」或点键盘确定；对了出下一题并讲解，错了给正确答案
 
 ### 3.4 阅读 / 探索
 
