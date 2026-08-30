@@ -157,10 +157,7 @@ export default function VoiceChatBar({
   ]);
 
   return (
-    <div
-      className="shrink-0 bg-white border-t border-pink-100 px-3 pt-2 pb-2"
-      style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))" }}
-    >
+    <div className="shrink-0 bg-white border-t border-pink-100 px-3 pt-2 pb-2">
       {hint && (
         <p className="text-[10px] text-amber-600 text-center mb-1.5 animate-fadeIn">{hint}</p>
       )}
