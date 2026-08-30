@@ -58,8 +58,9 @@ export async function insertCloudEntries(
     return { ok: false, message: `入库失败：${error.message}` };
   }
   await refreshCloudKb();
-  return { ok: true, message: `已入库 ${rows.length} 条。去设置把「知识库」勾上就能用。` };
-}
+  const { setContentSource } = await import("./source");
+  setContentSource({ builtin: true, kb: true });
+  return { ok: true, message: `已入库 ${rows.length} 条。已勾上知识库，可以说「火箭用英语怎么说」试。` };
 
 export async function initKnowledgeBase(): Promise<void> {
   const { getContentSource } = await import("./source");

@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { cloudKbStatusText, isCloudKbConfigured } from "@/lib/kb/cloud";
+import { cloudKbStatusText, isCloudKbConfigured, refreshCloudKb } from "@/lib/kb/cloud";
 import { getKbEntries } from "@/lib/kb/entries";
 import { getContentSource, setContentSource, type ContentSource } from "@/lib/kb/source";
 
@@ -12,8 +12,12 @@ export default function KbSettingsCard() {
   const [kbCount, setKbCount] = useState(0);
 
   useEffect(() => {
-    setSource(getContentSource());
+    const current = getContentSource();
+    setSource(current);
     setKbCount(getKbEntries().length);
+    if (current.kb) {
+      void refreshCloudKb().then((res) => setKbCount(res.count));
+    }
   }, []);
 
   const apply = (next: ContentSource) => {
@@ -29,6 +33,9 @@ export default function KbSettingsCard() {
       setWarn("");
     }
     setSource(setContentSource(next));
+    if (next.kb) {
+      void refreshCloudKb().then((res) => setKbCount(res.count));
+    }
   };
 
   return (

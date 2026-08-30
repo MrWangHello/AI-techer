@@ -50,7 +50,7 @@
 | study.checkin | 签到 | 签到 | 是 | 是 | ok |
 | pet.dressup | 装扮 | 装扮 | 否 | 是 | placeholder |
 | chat.greeting | 打招呼 | 你好 | 否 | 是 | ok |
-| kb.manage | 知识库 | 知识库、打开知识库 | 是（设置来源 + /kb + 邮箱口令入库） | 是 | **partial** |
+| kb.manage | 知识库 | 知识库、打开知识库 | 是（设置来源 + /kb + 邮箱口令入库） | 是 | ok |
 
 完整短语与期望 intent 以 `feature-catalog.ts` 为准。
 

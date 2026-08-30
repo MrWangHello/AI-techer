@@ -343,8 +343,8 @@ export const FEATURE_CASES: FeatureCase[] = [
     expected: { intent: "nav_settings", navigate: "settings" },
     tapFallback: true,
     offline: true,
-    status: "partial",
-    notes: "设置来源勾选 + /kb 粘贴预览；写入用邮箱口令接 Supabase",
+    status: "ok",
+    notes: "设置来源勾选 + /kb 粘贴预览；邮箱口令写入 Supabase",
   },
   {
     id: "chat.greeting",
