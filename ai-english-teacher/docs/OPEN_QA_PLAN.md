@@ -71,7 +71,7 @@ flowchart TB
 |--------|------|----------|------|
 | **P0** | 应用控制指令 | 现有 `RULES` 关键词（保持） | 「去首页」「喂食」「开始学习」 |
 | **P1** | 结构化开放问题 | **免费/低成本 API**，浏览器或 Worker 可直连 | 天气、时间、简单计算 |
-| **P2** | 通用开放问题 | **LLM**（+ 可选搜索增强）经 Worker | 「为什么天空是蓝的」「讲个笑话」 |
+| **P2** | 通用开放问题 | **免费搜索**（Worker）或 LLM | 「周杰伦是谁」「最新新闻」 |
 | **P3** | 兜底 | Bella 人设化引导 + 学英语牵引 | 「这个我再去查查，我们先学个单词？」 |
 
 ### 3.2 接口改造（由同步变异步）
@@ -113,8 +113,10 @@ VoiceChatBar
         ├─ tools/               // P1 工具
         │   ├─ weather.ts
         │   ├─ datetime.ts
-        │   └─ calculator.ts
-        └─ cloud-agent.ts       // P2 Worker 调用（可选）
+        │   ├─ calculator.ts
+        │   ├─ wikipedia.ts       // P2a 纯前端百科
+        │   └─ web-search.ts      // P2b Worker 全网搜
+        └─ cloud-agent.ts       // P2c LLM（可选）
     → handleAgentResponse()     // 不变：emotion / navigate / feed...
     → speak() + VoiceReplyBar
 ```
@@ -152,7 +154,17 @@ if (/等于|加|减|乘|除|\d+[\+\-\*\/]\d+/.test(input)) → calcReply()
 
 ---
 
-### Phase 2 — 云端 LLM（Bella 人设 + 通用问答）
+### Phase 1.5 — 免费搜索 MVP（推荐在 Phase 1 天气之后）
+
+- [ ] 部署 Cloudflare Worker 搜索网关（fork `endday/cloudflare-search` 或 `search-gateway`）
+- [ ] 环境变量 `NEXT_PUBLIC_SEARCH_WORKER_URL`
+- [ ] `tools/web-search.ts`：调用 Worker，取 top snippet
+- [ ] `tools/wikipedia.ts`：纯前端百科 fallback（`zh.wikipedia.org` + `origin=*`）
+- [ ] agent-router：关键词未命中 → 先 Wiki → 再 Worker 搜索
+- [ ] ReplyBar 显示「🔍 来源：…」可选
+- [ ] 超时 8s → 降级话术
+
+### Phase 2 — 云端 LLM（可选，通用聊天）
 
 **目标：** 任意开放问题有自然回答，仍保持「英语宠物教师」人设。
 
@@ -177,26 +189,71 @@ if (/等于|加|减|乘|除|\d+[\+\-\*\/]\d+/.test(input)) → calcReply()
 
 ---
 
-### Phase 3 — LLM + 搜索增强（最接近「查搜索引擎」）
+### Phase 3 — 免费开源搜索（「搜啥都行」，零 API Key）
 
-**目标：** 「最新新闻」「某某是谁」类问题，LLM 先 **search tool** 再总结。
+**目标：** 关键词未命中时，Bella **联网搜一下**，读摘要回答——让用户感知「有在帮忙查」。
+
+**前提：手机能联网 ✅**（WiFi/4G 均可）
+
+**关键限制：** 浏览器不能直接调搜索引擎（CORS），必须经 **Cloudflare Worker** 中转（免费档约 10 万次/天，个人项目够用）。
+
+#### 方案对比（免费优先）
+
+| 方案 | 类型 | 搜啥都行？ | 需 Worker？ | 国内手机 | 推荐度 |
+|------|------|-----------|------------|----------|--------|
+| **A. CF Worker 搜索网关** | 开源，解析 DDG/Startpage HTML | ✅ | ✅ 部署 Worker | ⚠️ 看线路 | ⭐⭐⭐ **最易落地** |
+| **B. SearXNG 自建** | 开源元搜索 [AGPL](https://github.com/searxng/searxng) | ✅ 聚合多引擎 | ✅ Docker + Worker 代理 | ⚠️ 看实例 | ⭐⭐⭐ 最正统 |
+| **C. 维基百科 API** | 官方免费 | ⚠️ 仅百科 | ❌ 纯前端 | ✅ 通常可用 | ⭐⭐ 并联 fallback |
+| **D. DuckDuckGo Instant Answer** | 官方免费 | ❌ 非完整搜索 | ❌ | ⚠️ | ⭐ 不够用 |
+| **E. 公共 SearXNG 实例** | 别人搭的 | 理论上 ✅ | ❌ | ❌ | ❌ **不可靠** |
+
+#### ❌ 公共 SearXNG：勿直接用
+
+社区实测：从 [searx.space](https://searx.space/) 抽 38 个在线实例，**0 个**稳定返回 `?format=json`——多数 **403** 或 **429**（防爬虫）。须**自建**或用 Worker 网关。
+
+#### ✅ 推荐：Cloudflare Worker 免费搜索网关
+
+开源项目（fork 部署，**零 API Key**）：
+
+| 项目 | 说明 |
+|------|------|
+| [endday/cloudflare-search](https://github.com/endday/cloudflare-search) | 多引擎（Startpage、DuckDuckGo、Mojeek…），Workers 免费档 |
+| [EitanWong/search-gateway](https://github.com/EitanWong/search-gateway) | 模板网关，可接自建 SearXNG |
+| [SearXNG](https://github.com/searxng/searxng) | 正统开源；Oracle 免费 VM / Fly.io 自建 |
+
+**手机联网调用链：**
 
 ```
-用户问题 → Worker → LLM function calling
-                        ├─ tool: web_search(query)  → Bing/Tavily/SerpAPI
-                        ├─ tool: get_weather(city)
-                        └─ tool: app_navigate(tab)
-                     → 汇总成 Bella 口吻回复
+用户：「周杰伦是谁」 / 「今天北京天气」
+  ↓
+关键词未命中 → agent-router
+  ↓
+[可选] zh.wikipedia.org API（纯前端，百科类）
+  ↓ 无结果
+fetch(SEARCH_WORKER/search?q=...)
+  ↓
+Worker → Startpage / DDG / SearXNG
+  ↓
+JSON [{ title, snippet, url }]
+  ↓
+Bella：「我查了一下：周杰伦是台湾流行歌手…」
 ```
 
-| 搜索服务 | 国内可用 | 免费额度 | 备注 |
-|----------|----------|----------|------|
-| Tavily | 需测 | 有 | AI 场景常用 |
-| Bing Web Search | 需 Azure | 有 | 微软生态 |
-| Serper (Google) | 需代理 | 有 | 海外友好 |
-| 百度搜索 API | ✅ | 试用 | 国内合规 |
+**纯前端百科补充（零 Worker 也可试）：**
 
-**注意：** 搜索 API 也**不是**调用户手机「默认搜索引擎」，而是服务端专用搜索接口；效果上接近「帮你搜了一下再回答」。
+```
+GET https://zh.wikipedia.org/w/api.php?action=query&generator=search
+  &gsrsearch=周杰伦&prop=extracts&exintro&explaintext&format=json&origin=*
+```
+
+#### Phase 3b（可选）— 搜索结果 + LLM 润色
+
+搜索 snippet → 免费 LLM（Groq/Gemini 额度）→ Bella 口吻总结。比硬读摘要自然，比纯 LLM 少幻觉。
+
+#### 国内注意
+
+- DuckDuckGo 可能慢/被墙 → Worker 内多引擎 fallback
+- 天气类仍优先 **Open-Meteo**（Phase 1），比搜网页更准
 
 ---
 
@@ -224,7 +281,7 @@ action: { type: "open_search", query: userText }
 | Phase 1 工具 API | ✅ 真天气 | 每类写一个工具 | 中等 |
 | Phase 2 LLM | ✅（+工具更好） | ✅ 通用 | 低（Prompt 统一） |
 
-**推荐组合：P0 关键词 + P1 高频工具 + P2 LLM 兜底。**
+**推荐组合：P0 关键词 + P1 工具 API + P1.5 免费搜索 + P2 LLM（可选）。**
 
 ---
 
@@ -257,7 +314,7 @@ VoiceReplyBar 显示 + TTS 朗读
 
 ## 7. 实施清单
 
-### Phase 1（建议下一步）
+### Phase 1（天气/时间/计算）
 
 - [ ] `mock-agent.ts` 拆为 `rules-engine.ts` + `agent-router.ts`
 - [ ] `processUserInput` → `processUserInputAsync`
@@ -267,17 +324,24 @@ VoiceReplyBar 显示 + TTS 朗读
 - [ ] 设置页：默认城市（天气 fallback）
 - [ ] 移除或降级现有「天气」假回复规则，改走工具
 
-### Phase 2
+### Phase 1.5（免费搜索 MVP）
+
+- [ ] 部署 Cloudflare Worker 搜索网关（fork `endday/cloudflare-search` 或 `search-gateway`）
+- [ ] 环境变量 `NEXT_PUBLIC_SEARCH_WORKER_URL`
+- [ ] `tools/web-search.ts` + `tools/wikipedia.ts`
+- [ ] agent-router：关键词未命中 → Wiki → Worker 搜索
+- [ ] 超时 8s → 降级话术
+
+### Phase 2（LLM，可选）
 
 - [ ] Cloudflare Worker `agent-chat.js`
 - [ ] 环境变量 `NEXT_PUBLIC_AGENT_WORKER_URL`
 - [ ] 设置页「智能对话」开关
 - [ ] Prompt 模板 + 人设约束
 
-### Phase 3
+### Phase 3（搜索 + LLM 润色，可选）
 
-- [ ] Worker 内 search tool（Tavily / 百度等）
-- [ ] LLM function calling 路由
+- [ ] LLM 总结搜索结果（Bella 口吻）
 - [ ] 敏感/query 过滤
 
 ---
@@ -286,12 +350,17 @@ VoiceReplyBar 显示 + TTS 朗读
 
 | 问题 | 结论 |
 |------|------|
-| 能用手机「系统搜索引擎」吗？ | **不能**直接调用；需搜索 API 或 LLM |
+| 能用手机「系统搜索引擎」吗？ | **不能**直接调用；需 Worker 代理 |
+| 手机能联网就能搜吗？ | **能**，经 Worker  outbound 请求搜索引擎 |
+| 有免费开源、搜啥都行的方案吗？ | **有**：CF Worker + SearXNG 自建，或 `cloudflare-search` 等多引擎网关（零 Key） |
+| 能直接用公共 SearXNG 吗？ | **不建议**；绝大多数实例禁用 JSON API（403/429） |
+| DuckDuckGo 官方 API 够吗？ | **不够**；Instant Answer 非完整搜索 |
+| 维基百科 API 呢？ | **免费可用**（纯前端），但只覆盖百科类问题 |
 | 最小改动让天气「像真的」？ | Phase 1：Open-Meteo 免费 API |
-| 完全开放聊？ | Phase 2 LLM Worker |
-| 最接近「帮你搜一下」？ | Phase 3 LLM + search tool |
-| 静态站无后端能做吗？ | Phase 1 纯前端可以；LLM/搜索需 Worker |
-| 关键词还要吗？ | **要**。控制类指令（导航/喂食）继续关键词，稳定且零延迟 |
+| 最小改动让「随便问」有响应？ | Phase 1.5：Worker 搜索 + Wiki fallback |
+| 完全开放聊？ | Phase 2 LLM（可选） |
+| 静态站无后端能做吗？ | Wiki 可以；全网搜索需 Worker（免费） |
+| 关键词还要吗？ | **要**。控制类指令继续关键词，零延迟 |
 
 ---
 

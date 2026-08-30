@@ -18,7 +18,7 @@
 - ✅ **全局 VoiceReplyBar** — 文字回复保底
 - ✅ **导航指令词** — 首页/宠物/学习/设置 + 帮助
 - 📋 Phase 2：StudyCards 子指令（朗读/下一个/测验）
-- 📋 **开放问答** — 天气/时间等工具 API + 可选 LLM，见 [`OPEN_QA_PLAN.md`](ai-english-teacher/docs/OPEN_QA_PLAN.md)
+- 📋 **开放问答** — 天气工具 + **免费 Worker 搜索** + 可选 LLM，见 [`OPEN_QA_PLAN.md`](ai-english-teacher/docs/OPEN_QA_PLAN.md)
 
 ## 待测试
 
