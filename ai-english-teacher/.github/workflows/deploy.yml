@@ -1,5 +1,8 @@
-# GitHub Pages 部署工作流
-# 使用 Next.js 静态导出（output: export）部署到 GitHub Pages
+# GitHub Pages 部署工作流 + Cloudflare Worker 自动部署
+# 推送 main 分支时自动：
+# 1. 部署 Edge-TTS Worker 到 Cloudflare
+# 2. 获取 Worker URL 传给 Next.js 构建
+# 3. 构建静态网站并部署到 GitHub Pages
 
 name: Deploy to GitHub Pages
 
@@ -33,11 +36,30 @@ jobs:
         working-directory: ./ai-english-teacher
         run: npm ci
 
+      # 部署 Cloudflare Worker 到生产环境
+      - name: Deploy Cloudflare Worker
+        id: cf-deploy
+        uses: cloudflare/wrangler-action@v3
+        with:
+          apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
+          workingDirectory: ./ai-english-teacher/workers
+          command: deploy edge-tts.js --name ai-teacher-tts
+
+      # 提取 Worker URL
+      - name: Extract Worker URL
+        id: cf-url
+        run: |
+          URL="${{ steps.cf-deploy.outputs.deployment-url }}"
+          echo "worker_url=$URL" >> $GITHUB_OUTPUT
+          echo "Deployed Worker URL: $URL"
+
+      # 构建 Next.js，传入 Worker URL 作为环境变量
       - name: Build for GitHub Pages
         working-directory: ./ai-english-teacher
         run: DEPLOY_TARGET=github-pages npm run build
         env:
           CI: true
+          NEXT_PUBLIC_TTS_WORKER_URL: ${{ steps.cf-url.outputs.worker_url }}
 
       - name: Upload artifact
         uses: actions/upload-pages-artifact@v3
