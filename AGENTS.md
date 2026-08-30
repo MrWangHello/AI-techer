@@ -43,6 +43,7 @@
 | [`docs/VOICE_UX_PLAN.md`](ai-english-teacher/docs/VOICE_UX_PLAN.md) | **规划稿**：全局悬浮语音入口 + 指令词体系 |
 | [`docs/BROWSER_COMPAT_PLAN.md`](ai-english-teacher/docs/BROWSER_COMPAT_PLAN.md) | 浏览器兼容 + 双通道降级 + **用户 FAQ（§11）** |
 | [`docs/OPEN_QA_PLAN.md`](ai-english-teacher/docs/OPEN_QA_PLAN.md) | 开放问答路由 + 国内搜索实测 §10 |
+| [`docs/CONTENT_API_RESEARCH.md`](ai-english-teacher/docs/CONTENT_API_RESEARCH.md) | 故事机式内容 API 实测 |
 | [`docs/SYSTEM_ARCHITECTURE.md`](ai-english-teacher/docs/SYSTEM_ARCHITECTURE.md) | **分层架构**：Channel→Router→Skills→Providers；微信通道 |
 | 本文件 | 项目记忆与变更摘要 |
 
