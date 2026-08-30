@@ -1,36 +1,35 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# AI English Teacher (Bella)
 
-## Getting Started
+Next.js Web 应用，面向 1–3 年级儿童的语音驱动学习助手。
 
-First, run the development server:
+**部署：** https://mrwanghello.github.io/AI-techer/
+
+## 开发
 
 ```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm ci
+npm run dev          # http://localhost:3000
+npm run test         # Vitest 单元测试
+npm run test:e2e     # Playwright e2e
+npm run test:all     # 全部测试
+npm run build        # 生产构建（GitHub Pages 需 DEPLOY_TARGET=github-pages）
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## 目录
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+| 路径 | 说明 |
+|------|------|
+| `src/app/page.tsx` | 主页面（四 Tab） |
+| `src/components/VoiceChatBar.tsx` | 全局语音入口 |
+| `src/lib/core/orchestrator.ts` | 意图路由 |
+| `src/lib/skills/` | 规则 Skill + 内容 Skill |
+| `src/data/` | 本地 JSON（词库、故事、古诗等） |
+| `docs/PROJECT_MEMORY.md` | 问题沉淀库 |
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## 文档
 
-## Learn More
+见 [`docs/`](docs/) 目录。Agent 必读 [`../AGENTS.md`](../AGENTS.md) 与 [`docs/PROJECT_MEMORY.md`](docs/PROJECT_MEMORY.md)。
 
-To learn more about Next.js, take a look at the following resources:
+## 部署
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+推送到 `main` 分支自动触发 `.github/workflows/deploy.yml`，构建产物输出到 `out/`。

@@ -1,8 +1,6 @@
 # 多主题内容卡片 UI 方案
 
-> 状态：**规划稿**（评审后分阶段实现）  
-> 关联：[SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md) · [CONTENT_API_RESEARCH.md](./CONTENT_API_RESEARCH.md)  
-> 日期：2026-08-30
+> 状态：**已并入 StudyPanel**（内容卡片已在学习分科 Tab 内实现）
 
 ---
 

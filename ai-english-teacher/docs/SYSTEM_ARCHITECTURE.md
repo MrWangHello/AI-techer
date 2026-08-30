@@ -1,6 +1,6 @@
 # Bella 系统架构方案（分层 + 多渠道 + 可扩展）
 
-> 状态：**架构设计稿**（评审通过后分阶段实现）
+> 状态：**已实现参考**（Mock Agent + Skills 分层已落地，见 `src/lib/core/orchestrator.ts`）
 > 关联：[ARCHITECTURE.md](./ARCHITECTURE.md) · [CONTENT_API_RESEARCH.md](./CONTENT_API_RESEARCH.md) · [OPEN_QA_PLAN.md](./OPEN_QA_PLAN.md)
 > 撰写日期：2026-08-30
 

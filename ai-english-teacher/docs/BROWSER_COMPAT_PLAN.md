@@ -50,7 +50,7 @@ onError(err) { switchToText(); showHint(...); }
 ### 2.2 语音入口位置
 
 `VoiceChatBar` 固定在 **所有 Tab** 底部导航上方，全局可用。  
-`VoiceController.tsx` 已废弃（逻辑由 VoiceChatBar 接管），可后续删除。
+`VoiceController.tsx` 已删除（逻辑由 `VoiceChatBar` 接管）。
 
 ### 2.3 TTS 降级
 

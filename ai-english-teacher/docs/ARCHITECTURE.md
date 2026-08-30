@@ -13,11 +13,13 @@ ai-english-teacher/
 │   ├── app/page.tsx          # 主页面（4 Tab：首页/宠物/学习/设置）
 │   ├── components/
 │   │   ├── Cat3D.tsx       # 3D 宠物（视频循环 + CSS mask）
-│   │   ├── VoiceController.tsx  # 麦克风 / 文字输入
+│   │   ├── VoiceChatBar.tsx  # 全局麦克风（点击/长按）
+│   │   ├── VoiceReplyBar.tsx # 全局回复条
+│   │   ├── StudyPanel.tsx    # 学习分科 + 内容卡片
 │   │   └── StudyCards.tsx    # 单词学习 + 朗读
 │   └── lib/
 │       ├── speech.ts         # TTS/STT（Web Speech API）
-│       ├── mock-agent.ts     # 关键词匹配 AI 回复
+│       ├── core/orchestrator.ts  # 意图路由
 │       └── pet-data.ts       # 宠物数据 localStorage
 ├── public/
 │   ├── videos/               # 5 个 mood MP4（480×480，共 ~470KB）
