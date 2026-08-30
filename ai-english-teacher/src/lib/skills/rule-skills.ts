@@ -68,13 +68,15 @@ export const RULE_SKILLS: RuleEntry[] = [
   // study / quiz
   {
     skillId: "study.quiz",
-    keywords: ["测验", "考试", "考我", "quiz", "test", "exam", "做题目"],
+    keywords: ["测验", "考试", "考我", "quiz", "test", "exam", "做题目", "开始测验"],
     response: {
       intent: "quiz",
       emotion: "surprised",
       action: "quiz",
-      reply: "准备好测验了吗？我来考考你！",
+      reply: "我们来做单词测验！看中文，选出正确的英文~",
       navigate: "study",
+      studySection: "english.words",
+      sideEffect: "study.quiz.start",
     },
   },
   {

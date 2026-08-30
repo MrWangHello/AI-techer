@@ -11,10 +11,12 @@ import {
 } from "@/lib/skills/math-skills";
 import { matchShortcutContent, enrichNavWithContent, matchReadAloud } from "@/lib/skills/nav-content";
 import { drillActiveFallback, buildDrillExitResponse } from "@/lib/skills/drill-hint";
+import { matchWordProblemAnswer } from "@/lib/skills/word-problem-skills";
 import { lookupDictionaryLocal, looksLikeChineseLookup } from "@/lib/providers/local-dictionary";
 import { fallbackSkill } from "@/lib/skills/fallback";
 import { getSession, updateSession } from "@/lib/session-store";
 import { isDrillActive } from "@/lib/math/drill-state";
+import { clearWordProblem } from "@/lib/math/word-problem-state";
 
 const ALL_RULES = [...NAV_SKILLS, ...CHINESE_CONTENT_SKILLS, ...RULE_SKILLS];
 
@@ -48,6 +50,12 @@ function trackResponse(response: AgentResponse): AgentResponse {
   }
   if (response.studySection) {
     updateSession({ lastStudySection: response.studySection });
+    if (response.studySection !== "math.word-problem") {
+      clearWordProblem();
+    }
+  }
+  if (response.navigate && response.navigate !== "study") {
+    clearWordProblem();
   }
   return response;
 }
@@ -172,6 +180,9 @@ export async function handleUserMessage(
 
   const drillBlock = handleDrillMode(normalized);
   if (drillBlock) return trackResponse(drillBlock);
+
+  const wordProblemAnswer = matchWordProblemAnswer(text, session);
+  if (wordProblemAnswer) return trackResponse(wordProblemAnswer);
 
   const readAloud = matchReadAloud(normalized, session);
   if (readAloud) return trackResponse(readAloud);

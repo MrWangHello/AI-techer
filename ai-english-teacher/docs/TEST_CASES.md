@@ -17,7 +17,7 @@
 
 由 `FEATURE_CASES` 自动生成，禁止只改测试不改目录。
 
-覆盖：帮助、四 Tab 导航、学英语、英/中查词、每日英语、测验（partial）、汉字拼音句子古诗成语美句、口算、1加1、应用题（broken 仍测「能出题」）、故事笑话、天气百科、宠物四动作、签到、装扮占位、你好。
+覆盖：帮助、四 Tab 导航、学英语、英/中查词、每日英语、测验（进 UI）、汉字拼音句子古诗成语美句、口算、1加1、应用题（出题+判分）、故事笑话、天气百科、宠物四动作、签到、装扮占位、你好。
 
 ## 3. 专项用例（已有）
 
@@ -27,6 +27,8 @@
 | U-MATH-02 | 口算开始 + 10个 | orchestrator / drill-answer |
 | U-MATH-03 | 口算中说故事被拦截 | orchestrator |
 | U-MATH-04 | 键盘 1+0 再确定 | e2e features |
+| U-MATH-05 | 应用题出题 + 说数字判对错 | orchestrator / word-problem-skills / e2e |
+| U-QUIZ-01 | 「考我/测验」进入单词测验 UI | orchestrator / e2e features |
 | U-DICT-01 | 书本→book、apple→苹果 | local-dictionary |
 | U-STT-01 | 美剧→美句 | normalize / orchestrator / e2e |
 | U-WIKI-01 | 猫/恐龙离线 | wiki.test / e2e |
@@ -41,6 +43,8 @@
 - [ ] 设置 1.7x 试听有快慢差
 - [ ] 讲故事有声音
 - [ ] 口算语音说答案能进入下一题
+- [ ] 应用题说数字能判对错
+- [ ] 「考我」进入单词测验并点选项
 - [ ] 弱网下查词不进错误页（本地词库）
 
 ## 5. 给后续 AI 的规则

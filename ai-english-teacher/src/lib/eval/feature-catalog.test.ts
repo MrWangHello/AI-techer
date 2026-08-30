@@ -2,9 +2,11 @@ import { describe, expect, it, beforeEach } from "vitest";
 import { FEATURE_CASES, featureStats } from "./feature-catalog";
 import { handleUserMessage } from "@/lib/core/orchestrator";
 import { clearDrill } from "@/lib/math/drill-state";
+import { clearWordProblem } from "@/lib/math/word-problem-state";
 
 beforeEach(() => {
   clearDrill();
+  clearWordProblem();
 });
 
 describe("feature catalog integrity", () => {
@@ -29,6 +31,7 @@ describe("voice phrase → intent (catalog-driven)", () => {
     for (const phrase of feature.voicePhrases) {
       it(`${feature.id}: 「${phrase}」`, async () => {
         clearDrill();
+        clearWordProblem();
         const res = await handleUserMessage({ text: phrase, channel: "web" });
 
         if (feature.expected.intent) {
@@ -45,6 +48,9 @@ describe("voice phrase → intent (catalog-driven)", () => {
         }
         if (feature.expected.minReplyLen) {
           expect(res.reply.length, phrase).toBeGreaterThanOrEqual(feature.expected.minReplyLen);
+        }
+        if (feature.expected.sideEffect) {
+          expect(res.sideEffect, phrase).toBe(feature.expected.sideEffect);
         }
       });
     }

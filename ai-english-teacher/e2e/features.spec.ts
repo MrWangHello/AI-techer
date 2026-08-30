@@ -1,5 +1,8 @@
 import { test, expect } from "@playwright/test";
 import { sendTextCommand, openStudyTab, openTab } from "./helpers";
+import wordProblemsData from "../src/data/word-problems/grade1.json";
+
+const WORD_PROBLEMS = wordProblemsData as { question: string; answer: number }[];
 
 test.describe("全功能意图（文字模拟语音）", () => {
   test("百科：猫是什么（离线兜底）", async ({ page }) => {
@@ -134,6 +137,35 @@ test.describe("Tab 与页面完整性", () => {
     await page.getByRole("button", { name: "英语", exact: true }).click();
     await expect(page.getByRole("button", { name: "朗读" })).toBeVisible({ timeout: 8000 });
     await expect(page.getByRole("button", { name: "换一批" })).toBeVisible();
+  });
+
+  test("应用题 Tab 有数字键盘", async ({ page }) => {
+    await openStudyTab(page);
+    await page.getByRole("button", { name: "数学", exact: true }).click();
+    await page.getByRole("button", { name: "应用题", exact: true }).click();
+    const card = page.locator(".border-green-100").filter({ hasText: "确定" });
+    await expect(card.getByRole("button", { name: "确定" })).toBeVisible({ timeout: 5000 });
+  });
+});
+
+test.describe("P0 语音闭环", () => {
+  test("考我进入单词测验 UI", async ({ page }) => {
+    await page.goto("/");
+    await sendTextCommand(page, "考我");
+    await expect(page.getByText("单词测验")).toBeVisible({ timeout: 8000 });
+    await expect(page.getByText("请选择对应的英文")).toBeVisible();
+  });
+
+  test("应用题出题后文字答对进入下一题", async ({ page }) => {
+    await page.goto("/");
+    await sendTextCommand(page, "应用题");
+    const card = page.locator(".border-green-100").filter({ hasText: "确定" });
+    await expect(card.getByRole("button", { name: "确定" })).toBeVisible({ timeout: 8000 });
+    const text = await card.innerText();
+    const hit = WORD_PROBLEMS.find((p) => text.includes(p.question.slice(0, 8)));
+    expect(hit, `question not found in: ${text}`).toBeTruthy();
+    await sendTextCommand(page, String(hit!.answer));
+    await expect(page.getByText(/对了/).first()).toBeVisible({ timeout: 8000 });
   });
 });
 

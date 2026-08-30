@@ -2,8 +2,10 @@
 
 import type { ContentCard } from "@/lib/core/types";
 import type { Word } from "@/lib/words";
+import type { WordProblemItem } from "@/lib/providers/chinese-content";
 import StudyCards from "@/components/StudyCards";
 import MathDrill from "@/components/MathDrill";
+import WordProblemCard from "@/components/WordProblemCard";
 import SpeakAloudButton from "@/components/SpeakAloudButton";
 import VoiceHintBar from "@/components/VoiceHintBar";
 import { getVoiceHintForSection, SUB_TAB_VOICE_TIPS } from "@/lib/voice-hints";
@@ -28,10 +30,12 @@ interface StudyPanelProps {
   mathQuestion?: MathQuestion | null;
   mathStreak?: number;
   onMathAnswer?: (n: number) => void;
+  onWordProblemAnswer?: (n: number) => void;
   onRefreshContent?: () => void;
   words: Word[];
   onWordLearned: (word: { en: string; zh: string }) => void;
   onQuizResult: (correct: boolean) => void;
+  startQuizToken?: number;
   voiceSpeed?: number;
 }
 
@@ -139,7 +143,7 @@ function ContentCardView({ card, voiceSpeed }: { card: ContentCard; voiceSpeed?:
           <div className="bg-white rounded-2xl p-5 border border-green-100">
             <div className="text-3xl text-center mb-2">{item.emoji}</div>
             <p className="text-sm text-gray-800 leading-relaxed">{item.question}</p>
-            <p className="text-xs text-gray-400 mt-3">语音说出答案，或说「答案是 {item.answer}」</p>
+            <p className="text-xs text-gray-400 mt-3">语音说出答案，或点数字后确定</p>
           </div>
         </CardShell>
       );
@@ -178,10 +182,12 @@ export default function StudyPanel({
   mathQuestion,
   mathStreak,
   onMathAnswer,
+  onWordProblemAnswer,
   onRefreshContent,
   words,
   onWordLearned,
   onQuizResult,
+  startQuizToken = 0,
   voiceSpeed = 1,
 }: StudyPanelProps) {
   const { subject, sub } = parseStudySection(studySection);
@@ -250,7 +256,9 @@ export default function StudyPanel({
       <VoiceHintBar text={voiceHint} />
 
       {/* 内容区 */}
-      {contentCard && <ContentCardView card={contentCard} voiceSpeed={voiceSpeed} />}
+      {contentCard && contentCard.type !== "word-problem" && (
+        <ContentCardView card={contentCard} voiceSpeed={voiceSpeed} />
+      )}
 
       {subject === "english" && sub === "words" && (
         <StudyCards
@@ -258,6 +266,15 @@ export default function StudyPanel({
           voiceSpeed={voiceSpeed}
           onWordLearned={onWordLearned}
           onQuizResult={onQuizResult}
+          startQuizToken={startQuizToken}
+        />
+      )}
+
+      {subject === "math" && sub === "word-problem" && contentCard?.type === "word-problem" && (
+        <WordProblemCard
+          item={contentCard.payload?.item as WordProblemItem}
+          voiceSpeed={voiceSpeed}
+          onAnswer={onWordProblemAnswer}
         />
       )}
 

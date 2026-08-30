@@ -17,6 +17,7 @@ export interface FeatureCase {
     studySection?: string;
     navigate?: "home" | "pet" | "study" | "settings";
     minReplyLen?: number;
+    sideEffect?: string;
   };
   tapFallback: boolean;
   offline: boolean;
@@ -124,11 +125,11 @@ export const FEATURE_CASES: FeatureCase[] = [
     name: "单词测验",
     tab: "study",
     voicePhrases: ["测验", "考我"],
-    expected: { intent: "quiz", navigate: "study" },
+    expected: { intent: "quiz", navigate: "study", studySection: "english.words", sideEffect: "study.quiz.start" },
     tapFallback: true,
     offline: true,
-    status: "partial",
-    notes: "语音只回复文字，不自动进入 StudyCards 测验 UI",
+    status: "ok",
+    notes: "语音进入单词测验 UI；点选项作答",
   },
 
   // —— 语文 ——
@@ -222,8 +223,8 @@ export const FEATURE_CASES: FeatureCase[] = [
     expected: { studySection: "math.word-problem", navigate: "study" },
     tapFallback: true,
     offline: true,
-    status: "broken",
-    notes: "能出题，语音说答案不会判对错",
+    status: "ok",
+    notes: "出题后语音/键盘说数字判对错；错了给讲解，对了出下一题",
   },
 
   // —— 阅读 ——

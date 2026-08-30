@@ -4,7 +4,7 @@ import { parseStudySection, type StudySubject } from "@/lib/study-nav";
 export const SECTION_VOICE_HINTS: Record<string, string> = {
   // 英语
   "english.words":
-    "说「apple什么意思」查英文 ·「书本用英语怎么说」中译英 ·「换一批单词」刷新",
+    "说「测验」或「考我」开始测验 ·「apple什么意思」查英文 ·「书本用英语怎么说」中译英",
   "english.sentence": "说「每日英语」听句子 · 说完可点 🔊 或说「朗读」",
 
   // 语文
@@ -18,7 +18,7 @@ export const SECTION_VOICE_HINTS: Record<string, string> = {
 
   // 数学
   "math.drill": "说「口算」开始 · 直接说数字或「答案是8」· 键盘点确定提交",
-  "math.word-problem": "听题后语音说答案 · 或说「答案是几」",
+  "math.word-problem": "听题后直接说数字或「答案是8」· 也可点数字后确定",
 
   // 阅读
   "reading.story": "说「讲故事」或「故事」· 点 🔊 · 说「朗读」再听一遍",
