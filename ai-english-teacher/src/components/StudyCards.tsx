@@ -249,8 +249,10 @@ export default function StudyCards({ words: wordsProp, onWordLearned, onQuizResu
       )}
 
       <div className="text-center mb-2">
-        <span className="text-[10px] text-gray-300">
-          {speakingWord ? "🔊 正在朗读..." : "点击朗读按钮听取发音 · 说「换一批单词」也可刷新"}
+        <span className="text-[10px] text-pink-600 bg-pink-50 px-2 py-1 rounded-full inline-block leading-relaxed">
+          {speakingWord
+            ? "🔊 正在朗读..."
+            : "🎤 可说「apple什么意思」「书本用英语怎么说」「换一批单词」"}
         </span>
       </div>
 

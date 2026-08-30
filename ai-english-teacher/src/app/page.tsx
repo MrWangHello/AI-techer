@@ -7,6 +7,8 @@ import VoiceChatBar from "@/components/VoiceChatBar";
 import VoiceReplyBar from "@/components/VoiceReplyBar";
 import PetStatus from "@/components/PetStatus";
 import StudyPanel from "@/components/StudyPanel";
+import VoiceHintBar from "@/components/VoiceHintBar";
+import { TAB_VOICE_HINTS } from "@/lib/voice-hints";
 import {
   loadPetData,
   savePetData,
@@ -480,8 +482,10 @@ export default function HomePage() {
             </button>
           ))}
         </div>
-        <p className="text-[10px] text-gray-300 text-center mt-2">点击说话：说「汉字」「口算」也能直达</p>
+        <p className="text-[10px] text-gray-300 text-center mt-2">点击下方也可进入 · 语音见下方提示</p>
       </div>
+
+      <VoiceHintBar text={TAB_VOICE_HINTS.home} />
 
       {/* 快捷操作 */}
       <div className="grid grid-cols-3 gap-3">
@@ -567,6 +571,7 @@ export default function HomePage() {
       <PetStatus pet={pet} />
 
       {/* 互动按钮 */}
+      <VoiceHintBar text={TAB_VOICE_HINTS.pet} className="mb-1" />
       <div className="flex justify-center gap-4">
         <button
           onClick={handleFeed}

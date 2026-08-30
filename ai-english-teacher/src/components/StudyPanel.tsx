@@ -5,6 +5,8 @@ import type { Word } from "@/lib/words";
 import StudyCards from "@/components/StudyCards";
 import MathDrill from "@/components/MathDrill";
 import SpeakAloudButton from "@/components/SpeakAloudButton";
+import VoiceHintBar from "@/components/VoiceHintBar";
+import { getVoiceHintForSection, SUB_TAB_VOICE_TIPS } from "@/lib/voice-hints";
 import { getSpeakableFromCard } from "@/lib/content/speakable";
 import type { MathQuestion } from "@/lib/math/generator";
 import {
@@ -34,23 +36,6 @@ interface StudyPanelProps {
 }
 
 const SUBJECTS: StudySubject[] = ["english", "chinese", "math", "reading", "explore"];
-
-const SECTION_VOICE_HINTS: Record<string, string> = {
-  "reading.story": "💡 说「讲故事」或「朗读」· 点 🔊 也可听",
-  "reading.joke": "💡 说「讲笑话」或点 🔊",
-  "chinese.poetry": "💡 说「背古诗」「读古诗」或点 🔊",
-  "chinese.hanzi": "💡 说「汉字」「换一个」刷新 · 点 🔊 听例句",
-  "chinese.pinyin": "💡 说「拼音」学韵母 · 点 🔊",
-  "chinese.sentence": "💡 说「读句子」· 点 🔊",
-  "chinese.idiom": "💡 说「成语」换一个 · 点 🔊",
-  "english.words": "💡 说「书本用英语怎么说」「apple什么意思」查词",
-  "english.sentence": "💡 说「每日英语」· 点 🔊 听句子",
-  "math.drill": "💡 口算中：直接说数字或「答案是几」· 键盘点确定",
-  "math.word-problem": "💡 语音说出答案数字",
-  "explore.weather": "💡 说「北京天气」",
-  "explore.wiki": "💡 说「猫是什么」查百科",
-  "chinese.quote": "💡 说「美句」来一句 · 点 🔊",
-};
 
 function CardShell({
   children,
@@ -194,7 +179,7 @@ export default function StudyPanel({
   voiceSpeed = 1,
 }: StudyPanelProps) {
   const { subject, sub } = parseStudySection(studySection);
-  const voiceHint = SECTION_VOICE_HINTS[studySection];
+  const voiceHint = getVoiceHintForSection(studySection);
 
   const setSubject = (s: StudySubject) => {
     const defaultSub =
@@ -244,6 +229,7 @@ export default function StudyPanel({
             <button
               key={key}
               type="button"
+              title={SUB_TAB_VOICE_TIPS[key] ? `可说「${SUB_TAB_VOICE_TIPS[key]}」` : undefined}
               onClick={() => setSub(key)}
               className={`shrink-0 px-2.5 py-1 rounded-full text-[11px] ${
                 sub === key ? "bg-pink-100 text-pink-700 font-medium" : "text-gray-400"
@@ -255,9 +241,7 @@ export default function StudyPanel({
         </div>
       )}
 
-      {voiceHint && (
-        <p className="text-[10px] text-center text-pink-400 leading-relaxed px-2">{voiceHint}</p>
-      )}
+      <VoiceHintBar text={voiceHint} />
 
       {/* 内容区 */}
       {contentCard && <ContentCardView card={contentCard} voiceSpeed={voiceSpeed} />}
@@ -297,7 +281,7 @@ export default function StudyPanel({
           </button>
         )}
 
-      <p className="text-[10px] text-center text-gray-300">💡 点击说话或长按 · 说「帮助」查看全部语音指令</p>
+      <p className="text-[10px] text-center text-gray-400">点击 🎤 说话或长按 · 说「帮助」查看全部指令</p>
     </div>
   );
 }
