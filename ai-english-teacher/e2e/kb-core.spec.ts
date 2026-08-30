@@ -24,7 +24,7 @@ test.describe("核心意图（文字=语音）", () => {
 
   test("打开设置看到知识库", async ({ page }) => {
     await sendTextCommand(page, "知识库");
-    await expect(page.getByRole("heading", { name: /设置/ })).toBeVisible({ timeout: 8000 });
+    await expect(page.getByRole("heading", { name: /⚙️ 设置/ })).toBeVisible({ timeout: 8000 });
     await expect(page.getByRole("heading", { name: /知识库/ })).toBeVisible();
   });
 
