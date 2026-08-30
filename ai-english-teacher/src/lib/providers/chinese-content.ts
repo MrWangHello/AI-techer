@@ -4,7 +4,7 @@ import sentencesData from "@/data/sentences/grade1.json";
 import idiomsData from "@/data/idioms.json";
 import wordProblemsData from "@/data/word-problems/grade1.json";
 import englishSentences from "@/data/english-sentences/grade1.json";
-import { getKbProblems } from "@/lib/kb/entries";
+import { getKbHanzi, getKbProblems } from "@/lib/kb/entries";
 import { randomFromSource } from "@/lib/kb/merge";
 
 export interface PinyinItem {
@@ -59,7 +59,23 @@ export function pickRandomPinyin(): PinyinItem {
 }
 
 export function pickRandomHanzi(): HanziItem {
-  return pick(hanziData as HanziItem[]);
+  const bundled = hanziData as HanziItem[];
+  const extra = getKbHanzi().map((h) => ({
+    char: h.char,
+    emoji: h.emoji || "📝",
+    pinyin: h.pinyin,
+    words: h.words,
+    sentence: h.sentence,
+  }));
+  return (
+    randomFromSource(extra, bundled) ?? {
+      char: "字",
+      emoji: "📝",
+      pinyin: "zì",
+      words: [],
+      sentence: "知识库里还没有汉字。去添加，或把内置勾上。",
+    }
+  );
 }
 
 export function pickRandomSentence(): SentenceItem {

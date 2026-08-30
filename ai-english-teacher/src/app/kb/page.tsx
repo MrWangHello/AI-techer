@@ -9,6 +9,7 @@ import { getKbEntries, type KbEntry } from "@/lib/kb/entries";
 
 function label(row: KbEntry): string {
   if (row.kind === "word") return `${row.payload.zh} → ${row.payload.en}`;
+  if (row.kind === "hanzi") return `${row.payload.char} ${row.payload.pinyin}`;
   if (row.kind === "story") return row.payload.title;
   if (row.kind === "word_problem") return row.payload.question;
   return row.payload.text.slice(0, 24);
@@ -16,6 +17,7 @@ function label(row: KbEntry): string {
 
 const KIND_LABEL: Record<KbEntry["kind"], string> = {
   word: "单词",
+  hanzi: "语文",
   story: "故事",
   word_problem: "应用题",
   joke: "笑话",

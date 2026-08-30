@@ -1,14 +1,16 @@
 /** 云库拉下来的行（内存）。没配地址时始终为空，不当本机 JSON 库。 */
 
-export type KbKind = "word" | "story" | "word_problem" | "joke";
+export type KbKind = "word" | "hanzi" | "story" | "word_problem" | "joke";
 
 export type KbWordPayload = { zh: string; en: string; sentence?: string };
+export type KbHanziPayload = { char: string; pinyin: string; words: string[]; sentence: string; emoji?: string };
 export type KbStoryPayload = { title: string; text: string; followup?: string };
 export type KbProblemPayload = { question: string; answer: number; explain?: string; emoji?: string };
 export type KbJokePayload = { text: string };
 
 export type KbEntry =
   | { id: string; kind: "word"; payload: KbWordPayload; enabled: boolean }
+  | { id: string; kind: "hanzi"; payload: KbHanziPayload; enabled: boolean }
   | { id: string; kind: "story"; payload: KbStoryPayload; enabled: boolean }
   | { id: string; kind: "word_problem"; payload: KbProblemPayload; enabled: boolean }
   | { id: string; kind: "joke"; payload: KbJokePayload; enabled: boolean };
@@ -34,6 +36,12 @@ export function getKbStories(): KbStoryPayload[] {
 export function getKbProblems(): KbProblemPayload[] {
   return getKbEntries()
     .filter((r): r is Extract<KbEntry, { kind: "word_problem" }> => r.kind === "word_problem")
+    .map((r) => r.payload);
+}
+
+export function getKbHanzi(): KbHanziPayload[] {
+  return getKbEntries()
+    .filter((r): r is Extract<KbEntry, { kind: "hanzi" }> => r.kind === "hanzi")
     .map((r) => r.payload);
 }
 

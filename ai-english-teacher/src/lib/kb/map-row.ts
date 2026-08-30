@@ -1,20 +1,41 @@
-import type { KbEntry, KbKind } from "./entries";
+import type { KbEntry, KbHanziPayload, KbKind } from "./entries";
 
-const KINDS = new Set<KbKind>(["word", "story", "word_problem", "joke"]);
+const KINDS = new Set<KbKind>(["word", "hanzi", "story", "word_problem", "joke"]);
 
 function isRecord(v: unknown): v is Record<string, unknown> {
   return typeof v === "object" && v !== null && !Array.isArray(v);
 }
 
+function mapHanziPayload(payload: Record<string, unknown>): KbHanziPayload | null {
+  const char = typeof payload.char === "string" ? payload.char.trim() : "";
+  const pinyin = typeof payload.pinyin === "string" ? payload.pinyin.trim() : "";
+  const words = Array.isArray(payload.words)
+    ? payload.words.filter((w): w is string => typeof w === "string" && w.trim().length > 0).map((w) => w.trim())
+    : [];
+  const sentence = typeof payload.sentence === "string" ? payload.sentence : "";
+  if (!char || !pinyin || !words.length) return null;
+  const emoji = typeof payload.emoji === "string" ? payload.emoji : undefined;
+  return { char, pinyin, words, sentence, emoji };
+}
+
 export function mapCloudRow(raw: unknown): KbEntry | null {
   if (!isRecord(raw)) return null;
   const kind = raw.kind;
-  if (typeof kind !== "string" || !KINDS.has(kind as KbKind)) return null;
+  if (typeof kind !== "string") return null;
   const id = typeof raw.id === "string" ? raw.id : "";
   if (!id) return null;
   const enabled = raw.enabled !== false;
   const payload = raw.payload;
   if (!isRecord(payload)) return null;
+
+  // 线上旧表没有 hanzi 这个 kind，语文先以 hint 入库，读的时候仍当汉字。
+  if (kind === "hanzi" || kind === "hint") {
+    const hanzi = mapHanziPayload(payload);
+    if (hanzi) return { id, kind: "hanzi", enabled, payload: hanzi };
+    if (kind === "hanzi") return null;
+  }
+
+  if (!KINDS.has(kind as KbKind)) return null;
 
   if (kind === "word") {
     const zh = typeof payload.zh === "string" ? payload.zh.trim() : "";

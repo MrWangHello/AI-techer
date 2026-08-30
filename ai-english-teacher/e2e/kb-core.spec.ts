@@ -66,12 +66,22 @@ test.describe("知识库设置与粘贴预览", () => {
 
   test("添加页按模板切开预览", async ({ page }) => {
     await page.goto("/kb/new");
+    await expect(page.getByRole("button", { name: "语文" })).toBeVisible();
+    await expect(page.getByRole("button", { name: "清空" })).toBeVisible();
+    await expect(page.getByPlaceholder("填邮箱")).toBeVisible();
+    await expect(page.getByText(/563876951|@qq\.com/)).toHaveCount(0);
     await page.getByPlaceholder(/火箭 rocket/).fill("火箭 rocket\n只有中文");
     await page.getByRole("button", { name: "拆开预览" }).click();
     await expect(page.getByText("火箭 → rocket")).toBeVisible();
     await expect(page.getByText(/要有中文和英文/)).toBeVisible();
-    await page.getByPlaceholder("563876951@qq.com").fill("563876951@qq.com");
+    await page.getByRole("button", { name: "清空" }).click();
+    await expect(page.getByPlaceholder(/火箭 rocket/)).toHaveValue("");
+    await page.getByRole("button", { name: "语文" }).click();
+    await page.getByPlaceholder(/天 tiān/).fill("天 tiān 天空、天气 今天天气真好。");
+    await page.getByRole("button", { name: "拆开预览" }).click();
+    await expect(page.getByText("✓ 天 tiān 天空、天气")).toBeVisible();
+    await page.getByPlaceholder("填邮箱").fill("563870951@qq.com");
     await page.getByRole("button", { name: "确认入库" }).click();
-    await expect(page.getByText(/还没配置知识库地址|已入库|拉库失败|入库失败|库拒绝写入/)).toBeVisible();
+    await expect(page.getByText(/还没配置知识库地址|已入库|拉库失败|入库失败|库拒绝写入|允许语文/)).toBeVisible();
   });
 });

@@ -12,8 +12,35 @@ describe("mapCloudRow", () => {
     expect(row).toMatchObject({ kind: "word", payload: { zh: "火箭", en: "rocket" } });
   });
 
+  it("maps a hanzi row", () => {
+    const row = mapCloudRow({
+      id: "2",
+      kind: "hanzi",
+      enabled: true,
+      payload: { char: "天", pinyin: "tiān", words: ["天空", "天气"], sentence: "今天天气真好。" },
+    });
+    expect(row).toMatchObject({
+      kind: "hanzi",
+      payload: { char: "天", pinyin: "tiān", words: ["天空", "天气"] },
+    });
+  });
+
+  it("maps a hint row with hanzi payload as 语文", () => {
+    const row = mapCloudRow({
+      id: "3",
+      kind: "hint",
+      enabled: true,
+      payload: { char: "西", pinyin: "xī", words: ["西风", "西边"], sentence: "" },
+    });
+    expect(row).toMatchObject({
+      kind: "hanzi",
+      payload: { char: "西", pinyin: "xī", words: ["西风", "西边"] },
+    });
+  });
+
   it("drops incomplete payloads", () => {
     expect(mapCloudRow({ id: "1", kind: "word", payload: { zh: "火箭" } })).toBeNull();
+    expect(mapCloudRow({ id: "1", kind: "hanzi", payload: { char: "天" } })).toBeNull();
     expect(mapCloudRow({ id: "1", kind: "hint", payload: { text: "x" } })).toBeNull();
   });
 });
