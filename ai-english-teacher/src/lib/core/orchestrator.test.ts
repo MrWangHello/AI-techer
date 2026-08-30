@@ -1,6 +1,11 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, beforeEach } from "vitest";
 import { handleUserMessage, processUserInput } from "./orchestrator";
 import { applySttCorrections } from "@/lib/core/normalize";
+import { clearDrill } from "@/lib/math/drill-state";
+
+beforeEach(() => {
+  clearDrill();
+});
 
 describe("processUserInput navigation", () => {
   it("routes 汉字 to chinese section", () => {
@@ -54,9 +59,9 @@ describe("handleUserMessage math", () => {
     expect(res.contentCard?.type).toBe("math-drill");
   });
 
-  it("accepts multi-digit drill answer", async () => {
+  it("accepts 10个 as answer 10", async () => {
     await handleUserMessage({ text: "口算", channel: "web" });
-    const res = await handleUserMessage({ text: "答案是10", channel: "web" });
+    const res = await handleUserMessage({ text: "10个", channel: "web" });
     expect(["math_drill_correct", "math_drill_wrong"]).toContain(res.intent);
   });
 });

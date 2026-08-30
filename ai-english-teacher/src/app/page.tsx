@@ -29,6 +29,7 @@ import { handleUserMessage, AgentResponse } from "@/lib/mock-agent";
 import type { ContentCard } from "@/lib/core/types";
 import type { MathQuestion } from "@/lib/math/generator";
 import { getStreak } from "@/lib/math/drill-state";
+import { submitDrillAnswer } from "@/lib/skills/math-skills";
 import { loadDefaultContentForSection } from "@/lib/study-content-loader";
 import { Word, getAllWords, loadWordBatch, refreshWordBatch } from "@/lib/words";
 
@@ -269,12 +270,11 @@ export default function HomePage() {
 
   const handleMathAnswer = useCallback(
     (n: number) => {
-      void (async () => {
-        const response = await handleUserMessage({ text: String(n), channel: "web" });
-        handleAgentResponse(response);
-        setCatSpeaking(true);
-        speakWithSpeed(response.reply, () => setCatSpeaking(false));
-      })();
+      const response = submitDrillAnswer(n);
+      if (!response) return;
+      handleAgentResponse(response);
+      setCatSpeaking(true);
+      speakWithSpeed(response.reply, () => setCatSpeaking(false));
     },
     [handleAgentResponse, speakWithSpeed]
   );

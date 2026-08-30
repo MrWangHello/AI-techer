@@ -39,6 +39,7 @@ export const CHINESE_SUB_LABELS: Record<string, string> = {
   pinyin: "拼音",
   hanzi: "汉字",
   sentence: "句子",
+  story: "故事",
   poetry: "古诗",
   idiom: "成语",
   quote: "美句",

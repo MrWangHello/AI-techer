@@ -5,7 +5,7 @@ import { lookupWord } from "@/lib/providers/iciba";
 import { fetchRandomPoem } from "@/lib/providers/poetry";
 import { fetchWeather } from "@/lib/providers/weather";
 import { fetchWikiSummary } from "@/lib/providers/wiki";
-import { fetchHitokoto, pickRandomJoke, pickRandomStory } from "@/lib/providers/local-content";
+import { fetchHitokoto, pickRandomJoke, pickRandomChineseStory } from "@/lib/providers/local-content";
 
 function failReply(intent: string, fallback: string): AgentResponse {
   return {
@@ -156,14 +156,15 @@ export const ASYNC_SKILLS: AsyncSkill[] = [
     id: "story.tell",
     keywords: ["故事", "讲故事", "story", "童话", "小故事", "换一篇故事", "换一个故事", "再来一个故事"],
     execute: async () => {
-      const text = pickRandomStory();
+      const s = pickRandomChineseStory();
+      const text = `《${s.title}》${s.text}`;
       return withStudyNav(
         {
           intent: "story",
           emotion: "happy",
           action: "study",
           reply: text,
-          contentCard: { type: "text", payload: { text } },
+          contentCard: { type: "text", payload: { text: s.text, title: `📖 ${s.title}` } },
         },
         "reading.story"
       );

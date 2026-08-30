@@ -12,7 +12,8 @@ import {
   pickRandomWordProblem,
   pickRandomEnglishSentence,
 } from "@/lib/providers/chinese-content";
-import { pickRandomJoke, pickRandomStory, pickRandomQuote } from "@/lib/providers/local-content";
+import { pickRandomJoke, pickRandomQuote, pickRandomChineseStory } from "@/lib/providers/local-content";
+import { pickRandomShortPoem } from "@/lib/providers/poetry";
 import { parseStudySection } from "@/lib/study-nav";
 
 export interface SectionContent {
@@ -41,7 +42,18 @@ export function loadDefaultContentForSection(studySection: string): SectionConte
       return { contentCard: card("idiom", { item: pickRandomIdiom() }), mathQuestion: null };
     }
     if (sub === "poetry") {
-      return { contentCard: null, mathQuestion: null };
+      const poem = pickRandomShortPoem();
+      return {
+        contentCard: card("poetry", { ...poem }),
+        mathQuestion: null,
+      };
+    }
+    if (sub === "story") {
+      const s = pickRandomChineseStory();
+      return {
+        contentCard: card("text", { text: s.text, title: `📖 ${s.title}` }),
+        mathQuestion: null,
+      };
     }
     if (sub === "quote") {
       const text = pickRandomQuote();
@@ -75,8 +87,11 @@ export function loadDefaultContentForSection(studySection: string): SectionConte
       const text = pickRandomJoke();
       return { contentCard: card("text", { text, title: "😄 笑话" }), mathQuestion: null };
     }
-    const text = pickRandomStory();
-    return { contentCard: card("text", { text, title: "📖 故事" }), mathQuestion: null };
+    const s = pickRandomChineseStory();
+    return {
+      contentCard: card("text", { text: s.text, title: `📖 ${s.title}` }),
+      mathQuestion: null,
+    };
   }
 
   if (subject === "explore") {
