@@ -26,6 +26,7 @@ const VOICES = {
 // ============ 语音合成状态管理 ============
 
 let currentAudio: HTMLAudioElement | null = null;
+let nativeUtterance: SpeechSynthesisUtterance | null = null;
 let isSpeaking = false;
 
 type SpeakingStateCallback = (speaking: boolean) => void;
@@ -70,7 +71,98 @@ export async function checkTTSAvailable(): Promise<boolean> {
 }
 
 /**
- * 内部：发送合成请求并播放音频
+ * 内部：通过 Edge-TTS Worker 合成并播放
+ * 返回 true 表示播放完成，false 表示失败（调用方可回退到原生）
+ */
+async function synthesizeViaWorker(
+  text: string,
+  voice: string,
+  lang: string,
+  speed: number | undefined,
+): Promise<boolean> {
+  // 速率映射：speed 1.0 → rate 0，speed 1.5 → +50%，speed 0.8 → -20%
+  const rate = speed ? Math.round((speed - 1) * 100) : 0;
+
+  const resp = await fetch(`${TTS_WORKER_URL}/synthesize`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ text, voice, rate, lang }),
+    signal: AbortSignal.timeout(10000),
+  });
+
+  if (!resp.ok) {
+    const err = await resp.json().catch(() => ({ error: 'Unknown error' }));
+    throw new Error(err.error || `HTTP ${resp.status}`);
+  }
+
+  const audioBlob = await resp.blob();
+  if (audioBlob.size === 0) {
+    throw new Error('Empty audio response');
+  }
+
+  const audioUrl = URL.createObjectURL(audioBlob);
+  const audio = new Audio(audioUrl);
+  currentAudio = audio;
+
+  return new Promise((resolve) => {
+    audio.onended = () => {
+      cleanup(audioUrl);
+      resolve(true);
+    };
+    audio.onerror = () => {
+      console.warn('[TTS] Audio playback error');
+      cleanup(audioUrl);
+      resolve(false);
+    };
+    audio.play().catch((e) => {
+      console.warn('[TTS] Audio play failed:', e);
+      cleanup(audioUrl);
+      resolve(false);
+    });
+  });
+}
+
+/**
+ * 内部：使用浏览器原生 SpeechSynthesis 合成并播放（fallback）
+ * 返回 true 表示播放完成，false 表示不可用或失败
+ */
+function synthesizeViaNative(
+  text: string,
+  lang: string,
+  speed: number | undefined,
+): Promise<boolean> {
+  return new Promise((resolve) => {
+    if (typeof window === 'undefined' || !('speechSynthesis' in window)) {
+      resolve(false);
+      return;
+    }
+    try {
+      const utter = new SpeechSynthesisUtterance(text);
+      utter.lang = lang;
+      utter.rate = speed ?? 1;
+
+      // 尝试选择匹配语言的音色
+      const voices = window.speechSynthesis.getVoices();
+      const matched =
+        voices.find((v) => v.lang === lang) ||
+        voices.find((v) => v.lang.startsWith(lang.split('-')[0]));
+      if (matched) utter.voice = matched;
+
+      utter.onend = () => resolve(true);
+      utter.onerror = () => resolve(false);
+
+      nativeUtterance = utter;
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(utter);
+    } catch (e) {
+      console.warn('[TTS] Native synthesis failed:', e);
+      resolve(false);
+    }
+  });
+}
+
+/**
+ * 内部：合成并播放（优先 Edge-TTS Worker，失败回退原生 SpeechSynthesis）
  */
 async function synthesizeAndPlay(
   text: string,
@@ -82,77 +174,59 @@ async function synthesizeAndPlay(
   // 取消之前的播放
   stopSpeaking();
 
-  try {
-    isSpeaking = true;
-    onSpeakingStateChange?.(true);
+  isSpeaking = true;
+  onSpeakingStateChange?.(true);
 
-    // 速率映射：speed 1.0 → rate 0，speed 1.5 → +50%，speed 0.8 → -20%
-    const rate = speed ? Math.round((speed - 1) * 100) : 0;
+  let success = false;
 
-    const resp = await fetch(`${TTS_WORKER_URL}/synthesize`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ text, voice, rate, lang }),
-      signal: AbortSignal.timeout(15000),
-    });
-
-    if (!resp.ok) {
-      const err = await resp.json().catch(() => ({ error: 'Unknown error' }));
-      throw new Error(err.error || `HTTP ${resp.status}`);
+  // 1. 优先使用 Edge-TTS Worker（已配置时）
+  if (TTS_WORKER_CONFIGURED) {
+    try {
+      success = await synthesizeViaWorker(text, voice, lang, speed);
+    } catch (e) {
+      console.warn('[TTS] Edge-TTS Worker failed, falling back to native:', (e as Error).message);
+      success = false;
     }
-
-    // 获取音频数据
-    const audioBlob = await resp.blob();
-
-    if (audioBlob.size === 0) {
-      throw new Error('Empty audio response');
-    }
-
-    // 创建并播放音频
-    const audioUrl = URL.createObjectURL(audioBlob);
-    const audio = new Audio(audioUrl);
-    currentAudio = audio;
-
-    return new Promise((resolve) => {
-      audio.onended = () => {
-        cleanup(audioUrl);
-        isSpeaking = false;
-        onSpeakingStateChange?.(false);
-        onEnd?.();
-        resolve(true);
-      };
-
-      audio.onerror = (e) => {
-        console.warn('[TTS] Audio playback error:', e);
-        cleanup(audioUrl);
-        isSpeaking = false;
-        onSpeakingStateChange?.(false);
-        onEnd?.();
-        resolve(false);
-      };
-
-      audio.play().catch((e) => {
-        console.warn('[TTS] Audio play failed:', e);
-        cleanup(audioUrl);
-        isSpeaking = false;
-        onSpeakingStateChange?.(false);
-        onEnd?.();
-        resolve(false);
-      });
-    });
-  } catch (e) {
-    console.warn('[TTS] Synthesis failed:', e);
-    isSpeaking = false;
-    onSpeakingStateChange?.(false);
-    onEnd?.();
-    return false;
   }
+
+  // 2. 回退到浏览器原生 SpeechSynthesis
+  if (!success) {
+    success = await synthesizeViaNative(text, lang, speed);
+    if (!success) {
+      console.warn('[TTS] Native SpeechSynthesis unavailable or failed');
+    }
+  }
+
+  isSpeaking = false;
+  onSpeakingStateChange?.(false);
+  onEnd?.();
+  return success;
 }
 
 function cleanup(audioUrl: string) {
   URL.revokeObjectURL(audioUrl);
   if (currentAudio) {
     currentAudio = null;
+  }
+}
+
+/**
+ * 停止播放
+ */
+export function stopSpeaking(): void {
+  // 停止 Edge-TTS 音频
+  if (currentAudio) {
+    currentAudio.pause();
+    currentAudio = null;
+  }
+  // 停止原生 SpeechSynthesis
+  if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
+    window.speechSynthesis.cancel();
+  }
+  nativeUtterance = null;
+  if (isSpeaking) {
+    isSpeaking = false;
+    onSpeakingStateChange?.(false);
   }
 }
 
@@ -164,18 +238,12 @@ function cleanup(audioUrl: string) {
  * @returns 是否成功发起请求
  */
 export function speak(text: string, onEnd?: () => void, speed?: number): boolean {
-  if (!TTS_WORKER_CONFIGURED) {
-    console.warn('[TTS] Worker URL not configured. Set NEXT_PUBLIC_TTS_WORKER_URL');
-    onSpeakingStateChange?.(false);
-    onEnd?.();
-    return false;
-  }
   if (!text.trim()) {
     onSpeakingStateChange?.(false);
     onEnd?.();
     return false;
   }
-  // 异步触发，返回 true 表示已发起请求
+  // 异步触发，返回 true 表示已发起请求（Worker 不可用时自动回退原生）
   synthesizeAndPlay(text, VOICES['zh-CN'], 'zh-CN', onEnd, speed);
   return true;
 }
@@ -186,31 +254,12 @@ export function speak(text: string, onEnd?: () => void, speed?: number): boolean
  * @returns 是否成功发起请求
  */
 export function speakEnglish(text: string): boolean {
-  if (!TTS_WORKER_CONFIGURED) {
-    console.warn('[TTS] Worker URL not configured. Set NEXT_PUBLIC_TTS_WORKER_URL');
-    onSpeakingStateChange?.(false);
-    return false;
-  }
   if (!text.trim()) {
     onSpeakingStateChange?.(false);
     return false;
   }
   synthesizeAndPlay(text, VOICES['en-US'], 'en-US');
   return true;
-}
-
-/**
- * 停止播放
- */
-export function stopSpeaking(): void {
-  if (currentAudio) {
-    currentAudio.pause();
-    currentAudio = null;
-  }
-  if (isSpeaking) {
-    isSpeaking = false;
-    onSpeakingStateChange?.(false);
-  }
 }
 
 // 别名兼容

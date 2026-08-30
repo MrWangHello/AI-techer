@@ -1,8 +1,8 @@
 "use client";
 
-import { useState, useCallback, useRef } from "react";
+import { useState, useCallback, useRef, useEffect } from "react";
 import { Mic, MicOff, Volume2, Volume1 } from "lucide-react";
-import { startListening, stopListening, getIsListening, speak, warmUpSpeech } from "@/lib/speech";
+import { startListening, stopListening, getIsListening, speak, warmUpSpeech, stopSpeaking } from "@/lib/speech";
 import { processUserInput, AgentResponse } from "@/lib/mock-agent";
 
 interface VoiceControllerProps {
@@ -23,6 +23,32 @@ export default function VoiceController({
   const [error, setError] = useState<string | null>(null);
   const [speaking, setSpeaking] = useState(false);
   const warmedUp = useRef(false);
+  // 挂载状态守卫：避免组件卸载后异步回调触发 setState（修复 React #418）
+  const isMounted = useRef(true);
+
+  // 卸载时停止识别与播放，防止回调在卸载后更新状态
+  useEffect(() => {
+    isMounted.current = true;
+    return () => {
+      isMounted.current = false;
+      try { stopListening(); } catch (_) {}
+      stopSpeaking();
+    };
+  }, []);
+
+  // 安全 setState：仅当组件仍挂载时更新
+  const safeSetListening = useCallback((v: boolean) => {
+    if (isMounted.current) setListening(v);
+  }, []);
+  const safeSetStatusText = useCallback((v: string) => {
+    if (isMounted.current) setStatusText(v);
+  }, []);
+  const safeSetSpeaking = useCallback((v: boolean) => {
+    if (isMounted.current) setSpeaking(v);
+  }, []);
+  const safeSetError = useCallback((v: string | null) => {
+    if (isMounted.current) setError(v);
+  }, []);
 
   // 预热语音引擎
   const ensureWarmup = useCallback(() => {
@@ -54,8 +80,9 @@ export default function VoiceController({
     startListening(
       // onResult
       (text) => {
-        setListening(false);
-        setStatusText(`你说: "${text}"`);
+        if (!isMounted.current) return;
+        safeSetListening(false);
+        safeSetStatusText(`你说: "${text}"`);
         onTranscript?.(text);
 
         // 处理 AI Agent 回复
@@ -63,30 +90,32 @@ export default function VoiceController({
         onAgentResponse(response);
 
         // TTS 播报回复
-        setSpeaking(true);
+        safeSetSpeaking(true);
         onSpeakingChange?.(true);
         const success = speak(response.reply, () => {
-          setSpeaking(false);
+          if (!isMounted.current) return;
+          safeSetSpeaking(false);
           onSpeakingChange?.(false);
-          setStatusText("点击麦克风说话");
+          safeSetStatusText("点击麦克风说话");
         });
         if (!success) {
-          setSpeaking(false);
+          safeSetSpeaking(false);
           onSpeakingChange?.(false);
-          setError("语音合成失败，请检查浏览器是否支持");
-          setStatusText("点击麦克风说话");
-          setTimeout(() => setError(null), 3000);
+          safeSetError("语音合成失败，请检查浏览器是否支持");
+          safeSetStatusText("点击麦克风说话");
+          setTimeout(() => safeSetError(null), 3000);
         }
       },
       // onError
       (err) => {
-        setListening(false);
-        setStatusText("点击麦克风说话");
-        setError(err);
-        setTimeout(() => setError(null), 3000);
+        if (!isMounted.current) return;
+        safeSetListening(false);
+        safeSetStatusText("点击麦克风说话");
+        safeSetError(err);
+        setTimeout(() => safeSetError(null), 3000);
       }
     );
-  }, [listening, disabled, onAgentResponse, onTranscript, ensureWarmup]);
+  }, [listening, disabled, onAgentResponse, onTranscript, ensureWarmup, safeSetListening, safeSetStatusText, safeSetSpeaking, safeSetError]);
 
   return (
     <div className="flex flex-col items-center gap-2">
