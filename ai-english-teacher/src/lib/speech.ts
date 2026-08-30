@@ -10,11 +10,6 @@
  *   部署 Worker 后需要修改此地址
  */
 
-// ============ TTS Worker 配置 ============
-
-const TTS_WORKER_URL = process.env.NEXT_PUBLIC_TTS_WORKER_URL || 'https://ai-teacher-tts.你的用户名.workers.dev';
-const TTS_WORKER_CONFIGURED = !TTS_WORKER_URL.includes('你的用户名');
-
 // 默认音色（可通过环境变量覆盖）
 // NEXT_PUBLIC_TTS_VOICE_ZH: 中文朗读音色，默认 晓晓（温柔女声）
 // NEXT_PUBLIC_TTS_VOICE_EN: 英文朗读音色，默认 Aria（美式女声）
@@ -23,73 +18,13 @@ const VOICES = {
   'en-US': process.env.NEXT_PUBLIC_TTS_VOICE_EN || 'en-US-AriaNeural',
 };
 
-// ============ TTS 检测状态 ============
-let ttsAvailable = false;
-let ttsDetectionPromise: Promise<boolean> | null = null;
 
-// 后台检测 TTS 服务是否可用
-export async function detectTTSAvailability(): Promise<boolean> {
-  if (ttsDetectionPromise) {
-    console.log('[TTS] TTS detection already in progress');
-    return ttsDetectionPromise;
-  }
-
-  if (!TTS_WORKER_CONFIGURED) {
-    console.log('[TTS] TTS Worker not configured, using native fallback');
-    ttsAvailable = false;
-    ttsDetectionPromise = Promise.resolve(false);
-    return ttsDetectionPromise;
-  }
-
-  console.log('[TTS] Starting TTS detection...');
-  ttsDetectionPromise = (async () => {
-    try {
-      console.log('[TTS] Testing TTS Worker connection...');
-      console.log('[TTS] TTS Worker URL:', TTS_WORKER_URL);
-      const resp = await fetch(`${TTS_WORKER_URL}/`, {
-        method: 'GET',
-        signal: AbortSignal.timeout(3000),
-      });
-      console.log('[TTS] TTS Worker response status:', resp.status);
-      ttsAvailable = resp.ok;
-      console.log('[TTS] TTS detection result:', ttsAvailable ? 'available' : 'unavailable');
-      return ttsAvailable;
-    } catch (e) {
-      console.warn('[TTS] TTS detection failed:', e);
-      ttsAvailable = false;
-      return false;
-    } finally {
-      ttsDetectionPromise = null;
-    }
-  })();
-
-  return ttsDetectionPromise;
-}
-
-// 获取 TTS 检测结果
-export function isTTSAvailable(): boolean {
-  return ttsAvailable;
-}
-
-// 等待 TTS 检测完成
-export async function waitForTTSDetection(): Promise<void> {
-  if (ttsDetectionPromise) {
-    await ttsDetectionPromise;
-  }
-}
 
 // ============ 语音合成状态管理 ============
 
 let currentAudio: HTMLAudioElement | null = null;
 let nativeUtterance: SpeechSynthesisUtterance | null = null;
 let isSpeaking = false;
-
-// ============ 初始化 ============
-// 在应用启动时自动检测 TTS 服务
-if (typeof window !== 'undefined') {
-  console.log('[TTS] Initializing TTS detection...');
-  detectTTSAvailability();
-}
 
 type SpeakingStateCallback = (speaking: boolean) => void;
 let onSpeakingStateChange: SpeakingStateCallback | null = null;
@@ -98,94 +33,7 @@ export function setSpeakingStateCallback(cb: SpeakingStateCallback): void {
   onSpeakingStateChange = cb;
 }
 
-// ============ TTS 核心函数 ============
 
-/**
- * 获取可用音色列表
- */
-export async function getAvailableVoices(): Promise<Array<{ name: string; locale: string; gender: string; friendlyName: string }>> {
-  // 确保检测完成
-  await waitForTTSDetection();
-
-  try {
-    const resp = await fetch(`${TTS_WORKER_URL}/voices`, {
-      method: 'GET',
-      signal: AbortSignal.timeout(5000),
-    });
-    if (!resp.ok) return [];
-    return await resp.json();
-  } catch (e) {
-    console.warn('[TTS] Failed to fetch voices:', e);
-    return [];
-  }
-}
-
-/**
- * 检查 TTS Worker 是否可用
- */
-export async function checkTTSAvailable(): Promise<boolean> {
-  try {
-    const resp = await fetch(`${TTS_WORKER_URL}/`, {
-      method: 'GET',
-      signal: AbortSignal.timeout(3000),
-    });
-    return resp.ok;
-  } catch {
-    return false;
-  }
-}
-
-/**
- * 内部：通过 Edge-TTS Worker 合成并播放
- * 返回 true 表示播放完成，false 表示失败（调用方可回退到原生）
- */
-async function synthesizeViaWorker(
-  text: string,
-  voice: string,
-  lang: string,
-  speed: number | undefined,
-): Promise<boolean> {
-  // 速率映射：speed 1.0 → rate 0，speed 1.5 → +50%，speed 0.8 → -20%
-  const rate = speed ? Math.round((speed - 1) * 100) : 0;
-
-  const resp = await fetch(`${TTS_WORKER_URL}/synthesize`, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ text, voice, rate, lang }),
-    signal: AbortSignal.timeout(10000),
-  });
-
-  if (!resp.ok) {
-    const err = await resp.json().catch(() => ({ error: 'Unknown error' }));
-    throw new Error(err.error || `HTTP ${resp.status}`);
-  }
-
-  const audioBlob = await resp.blob();
-  if (audioBlob.size === 0) {
-    throw new Error('Empty audio response');
-  }
-
-  const audioUrl = URL.createObjectURL(audioBlob);
-  const audio = new Audio(audioUrl);
-  currentAudio = audio;
-
-  return new Promise((resolve) => {
-    audio.onended = () => {
-      cleanup(audioUrl);
-      resolve(true);
-    };
-    audio.onerror = () => {
-      console.warn('[TTS] Audio playback error');
-      cleanup(audioUrl);
-      resolve(false);
-    };
-    audio.play().catch((e) => {
-      console.warn('[TTS] Audio play failed:', e);
-      cleanup(audioUrl);
-      resolve(false);
-    });
-  });
-}
 
 /**
  * 内部：使用浏览器原生 SpeechSynthesis 合成并播放（fallback）
@@ -227,7 +75,7 @@ function synthesizeViaNative(
 }
 
 /**
- * 内部：合成并播放（根据检测结果选择 TTS 服务）
+ * 内部：合成并播放（只使用浏览器原生 SpeechSynthesis）
  */
 async function synthesizeAndPlay(
   text: string,
@@ -244,25 +92,10 @@ async function synthesizeAndPlay(
 
   let success = false;
 
-  // 1. 检查 TTS 服务是否可用
-  const ttsAvailable = isTTSAvailable();
-  
-  // 2. 根据检测结果选择 TTS 服务
-  if (ttsAvailable && TTS_WORKER_CONFIGURED) {
-    try {
-      success = await synthesizeViaWorker(text, voice, lang, speed);
-    } catch (e) {
-      console.warn('[TTS] Edge-TTS Worker failed:', (e as Error).message);
-      success = false;
-    }
-  }
-
-  // 3. 如果 TTS 不可用或失败，回退到浏览器原生 SpeechSynthesis
+  // 直接使用浏览器原生 SpeechSynthesis
+  success = await synthesizeViaNative(text, lang, speed);
   if (!success) {
-    success = await synthesizeViaNative(text, lang, speed);
-    if (!success) {
-      console.warn('[TTS] Native SpeechSynthesis unavailable or failed');
-    }
+    console.warn('[TTS] Native SpeechSynthesis unavailable or failed');
   }
 
   isSpeaking = false;
@@ -271,12 +104,7 @@ async function synthesizeAndPlay(
   return success;
 }
 
-function cleanup(audioUrl: string) {
-  URL.revokeObjectURL(audioUrl);
-  if (currentAudio) {
-    currentAudio = null;
-  }
-}
+
 
 /**
  * 停止播放
