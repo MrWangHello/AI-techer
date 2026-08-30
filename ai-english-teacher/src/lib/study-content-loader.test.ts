@@ -30,6 +30,12 @@ describe("loadDefaultContentForSection", () => {
     expect((contentCard?.payload as { text?: string }).text).toContain("天气");
   });
 
+  it("loads quote for chinese.quote", () => {
+    const { contentCard } = loadDefaultContentForSection("chinese.quote");
+    expect(contentCard?.type).toBe("text");
+    expect((contentCard?.payload as { title?: string }).title).toBe("✨ 美句");
+  });
+
   it("loads word problem for math.word-problem", () => {
     const { contentCard } = loadDefaultContentForSection("math.word-problem");
     expect(contentCard?.type).toBe("word-problem");

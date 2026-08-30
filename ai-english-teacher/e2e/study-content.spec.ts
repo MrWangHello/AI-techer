@@ -18,7 +18,7 @@ test.describe("Study content loads on tab click", () => {
 
   test("数学 tab shows drill question", async ({ page }) => {
     await page.getByRole("button", { name: "数学", exact: true }).click();
-    await expect(page.getByText(/点数字作答/)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("button", { name: "确定" }).first()).toBeVisible({ timeout: 5000 });
   });
 
   test("阅读 tab shows story or joke text", async ({ page }) => {
@@ -49,6 +49,6 @@ test.describe("Home grid navigation", () => {
   test("数学 shortcut loads drill", async ({ page }) => {
     await page.goto("/");
     await page.getByRole("button", { name: "数学" }).first().click();
-    await expect(page.getByText(/点数字作答/)).toBeVisible({ timeout: 5000 });
+    await expect(page.getByRole("button", { name: "确定" }).first()).toBeVisible({ timeout: 5000 });
   });
 });

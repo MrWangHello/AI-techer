@@ -1,12 +1,25 @@
 import jokes from "@/data/jokes.json";
 import stories from "@/data/stories.json";
+import quotes from "@/data/quotes.json";
+
+export function pickRandomQuote(): string {
+  const list = quotes as { text: string; from: string }[];
+  const q = list[Math.floor(Math.random() * list.length)];
+  return `${q.text} ——${q.from}`;
+}
 
 export async function fetchHitokoto(category = "i"): Promise<string> {
-  const res = await fetch(`https://v1.hitokoto.cn/?c=${category}`, { signal: AbortSignal.timeout(12000) });
-  if (!res.ok) throw new Error(`hitokoto: ${res.status}`);
-  const data = await res.json();
-  const from = data.from ? ` ——${data.from}` : "";
-  return `${data.hitokoto}${from}`;
+  try {
+    const res = await fetch(`https://v1.hitokoto.cn/?c=${category}`, {
+      signal: AbortSignal.timeout(5000),
+    });
+    if (!res.ok) throw new Error(`hitokoto: ${res.status}`);
+    const data = await res.json();
+    const from = data.from ? ` ——${data.from}` : "";
+    return `${data.hitokoto}${from}`;
+  } catch {
+    return pickRandomQuote();
+  }
 }
 
 export function pickRandomJoke(): string {

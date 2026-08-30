@@ -98,25 +98,25 @@ export const ASYNC_SKILLS: AsyncSkill[] = [
         const summary = await fetchWikiSummary(text);
         if (!summary) {
           return failReply("wiki", "百科里没找到相关内容，换个说法试试？");
-        }
-        return withStudyNav(
-          {
-            intent: "wiki",
-            emotion: "thinking",
-            action: "study",
-            reply: summary,
-            contentCard: { type: "text", payload: { text: summary } },
-          },
-          "explore.wiki"
-        );
-      } catch {
-        return failReply("wiki", "百科查询暂时不可用~");
       }
+      return withStudyNav(
+        {
+          intent: "wiki",
+          emotion: "thinking",
+          action: "study",
+          reply: summary,
+          contentCard: { type: "text", payload: { text: summary, title: "📚 百科" } },
+        },
+        "explore.wiki"
+      );
+    } catch {
+      return failReply("wiki", "网络较慢，请换个词试试，比如说「猫是什么」「什么是恐龙」");
+    }
     },
   },
   {
     id: "hitokoto.quote",
-    keywords: ["一言", "美句", "名言", "来句话"],
+    keywords: ["一言", "美句", "名言", "来句话", "美丽的句子", "来句美句"],
     execute: async () => {
       try {
         const line = await fetchHitokoto("i");

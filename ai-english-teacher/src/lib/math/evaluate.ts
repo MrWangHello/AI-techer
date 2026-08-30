@@ -95,10 +95,22 @@ export function tryEvaluateFromText(text: string): { expr: ParsedExpr; result: n
   return { expr, result, reply: formatMathAnswer(expr, result) };
 }
 
-/** 口算进行中：用户只说了数字 */
+/** 口算进行中：用户说了数字或「答案是8」 */
 export function parseAnswerNumber(text: string): number | null {
-  const t = text.trim().replace(/[。！？!?\s]/g, "");
+  let t = text.trim().replace(/[。！？!?\s]/g, "");
+  const answerPrefix = t.match(/(?:答案(?:是|为)?|等于)(.+)/);
+  if (answerPrefix) t = answerPrefix[1];
+
   if (/^\d+$/.test(t)) return parseInt(t, 10);
+
   if (t in CN_DIGIT) return CN_DIGIT[t];
+
+  const m = t.match(/^([一二两三四五六七八九])?十([一二三四五六七八九])?$/);
+  if (m) {
+    const tens = m[1] ? CN_DIGIT[m[1]] : 1;
+    const ones = m[2] ? CN_DIGIT[m[2]] : 0;
+    return tens * 10 + ones;
+  }
+
   return null;
 }

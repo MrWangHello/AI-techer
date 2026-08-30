@@ -12,7 +12,7 @@ import {
   pickRandomWordProblem,
   pickRandomEnglishSentence,
 } from "@/lib/providers/chinese-content";
-import { pickRandomJoke, pickRandomStory } from "@/lib/providers/local-content";
+import { pickRandomJoke, pickRandomStory, pickRandomQuote } from "@/lib/providers/local-content";
 import { parseStudySection } from "@/lib/study-nav";
 
 export interface SectionContent {
@@ -40,8 +40,12 @@ export function loadDefaultContentForSection(studySection: string): SectionConte
     if (sub === "idiom") {
       return { contentCard: card("idiom", { item: pickRandomIdiom() }), mathQuestion: null };
     }
-    if (sub === "poetry" || sub === "quote") {
+    if (sub === "poetry") {
       return { contentCard: null, mathQuestion: null };
+    }
+    if (sub === "quote") {
+      const text = pickRandomQuote();
+      return { contentCard: card("text", { text, title: "✨ 美句" }), mathQuestion: null };
     }
     return { contentCard: card("hanzi", { item: pickRandomHanzi() }), mathQuestion: null };
   }
