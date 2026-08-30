@@ -132,7 +132,7 @@ test.describe("Tab 与页面完整性", () => {
   test("英语单词区有词卡", async ({ page }) => {
     await openStudyTab(page);
     await page.getByRole("button", { name: "英语", exact: true }).click();
-    await expect(page.getByRole("button", { name: "朗读" })).toBeVisible({ timeout: 8000 });
+    await expect(page.getByRole("button", { name: /朗读/ }).first()).toBeVisible({ timeout: 8000 });
     await expect(page.getByRole("button", { name: "换一批" })).toBeVisible();
   });
 });
