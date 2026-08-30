@@ -710,7 +710,7 @@ Supabase 免费档大约一周没人访问会暂停，第一次打开可能失�
 ### 必须正视的洞（不补会重演 TTS 空 URL）
 
 **1. 知识库地址怎么进 GitHub Pages**  
-和现在 `NEXT_PUBLIC_TTS_WORKER_URL` 空字符串导致 `/synthesize` 超时是同一类坑。静态站不会自己知道你的 Supabase。实施时必须二选一写死：GitHub Actions 的 `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY`（anon 本就是公开只读），或设置页填一次「知识库地址」。**不配地址时，「知识库」勾是灰的，只能用内置。** 不要再让请求打到相对路径空等 15 秒。
+家长照 [`KB_SETUP.md`](./KB_SETUP.md) 申请并填 GitHub Secrets。构建时必须注入 `NEXT_PUBLIC_SUPABASE_URL` + `NEXT_PUBLIC_SUPABASE_ANON_KEY`（anon 本就是公开只读）。**不配地址时不能入库，也不要打到空路径干等。** 不要把 `service_role` 写进 Bella。
 
 **2. 谁有权写入（四位口令不够）**  
 站点是公开的，anon key 也会在网页里。若 RLS 允许匿名 `INSERT`，网上任何人都能往你库里灌垃圾。四位口令只防孩子误触，防不了陌生人。  
