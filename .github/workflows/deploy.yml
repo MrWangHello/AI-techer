@@ -54,7 +54,7 @@ jobs:
             "https://api.cloudflare.com/client/v4/accounts/$CLOUDFLARE_ACCOUNT_ID/workers/scripts/ai-teacher-tts" \
             -H "Authorization: Bearer $CLOUDFLARE_API_TOKEN" \
             -F "metadata={\"compatibility_date\":\"2024-12-01\",\"compatibility_flags\":[\"nodejs_compat\"]};type=application/json" \
-            -F "script=@edge-tts.js;type=application/javascript")
+            -F "main_module=@edge-tts.js;type=application/javascript")
           echo "$UPLOAD_RESPONSE" | head -5
           if echo "$UPLOAD_RESPONSE" | grep -q '"success":true'; then
             echo "✅ Worker script uploaded successfully"
