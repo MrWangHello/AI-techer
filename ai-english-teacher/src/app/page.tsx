@@ -3,7 +3,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { Home, PawPrint, BookOpen, Settings, RotateCcw } from "lucide-react";
 import RealisticCat from "@/components/Cat3D";
-import VoiceController from "@/components/VoiceController";
+import VoiceChatBar from "@/components/VoiceChatBar";
+import VoiceReplyBar from "@/components/VoiceReplyBar";
 import PetStatus from "@/components/PetStatus";
 import StudyCards from "@/components/StudyCards";
 import {
@@ -37,6 +38,7 @@ export default function HomePage() {
   const [agentEmotion, setAgentEmotion] = useState<"happy" | "sad" | "surprised" | "neutral" | "thinking">("neutral");
   const [agentAction, setAgentAction] = useState<"feed" | "play" | "study" | "none">("none");
   const [lastReply, setLastReply] = useState<string>("");
+  const [lastUserText, setLastUserText] = useState<string>("");
   const [checkinMsg, setCheckinMsg] = useState<string>("");
   const [achievementMsg, setAchievementMsg] = useState<string>("");
   const [interactionFeed, setInteractionFeed] = useState<{ icon: string; text: string; time: string }[]>([]);
@@ -115,6 +117,10 @@ export default function HomePage() {
       setAgentAction(response.action as "feed" | "play" | "study" | "none");
       setLastReply(response.reply);
 
+      if (response.navigate) {
+        setActiveTab(response.navigate);
+      }
+
       switch (response.intent) {
         case "feed_pet":
           setPet((prev) => {
@@ -131,7 +137,7 @@ export default function HomePage() {
           });
           break;
         case "study":
-          setActiveTab("study");
+        case "nav_study":
           addFeed("📚", "开始学习英语");
           break;
         case "checkin":
@@ -143,16 +149,42 @@ export default function HomePage() {
           });
           break;
         case "quiz":
-          setActiveTab("study");
           addFeed("📝", "开始单词测验");
+          break;
+        case "bathe":
+          setPet((prev) => {
+            const updated = bathePet(prev);
+            addFeed("🛁", "给 Bella 洗澡");
+            return checkAndAwardAchievements(updated);
+          });
+          break;
+        case "sleep":
+          setPet((prev) => {
+            const updated = sleepPet(prev);
+            addFeed("💤", "Bella 睡觉了");
+            return checkAndAwardAchievements(updated);
+          });
           break;
         case "greeting":
           addFeed("👋", "和 Bella 打招呼");
+          break;
+        case "nav_home":
+          addFeed("🏠", "回到首页");
+          break;
+        case "nav_pet":
+          addFeed("🐱", "查看宠物");
+          break;
+        case "nav_settings":
+          addFeed("⚙️", "打开设置");
           break;
       }
     },
     [addFeed, checkAndAwardAchievements]
   );
+
+  const handleVoiceTranscript = useCallback((text: string) => {
+    setLastUserText(text);
+  }, []);
 
   // 按钮互动
   const handleFeed = () => {
@@ -477,12 +509,6 @@ export default function HomePage() {
         </div>
       </div>
 
-      {/* 语音控制 */}
-      <VoiceController
-        onAgentResponse={handleAgentResponse}
-        onSpeakingChange={setCatSpeaking}
-        voiceSpeed={pet.voiceSpeed}
-      />
     </div>
   );
 
@@ -707,28 +733,35 @@ export default function HomePage() {
         </div>
       )}
 
-      {/* 语音回复气泡 */}
-      {lastReply && activeTab === "pet" && (
-        <div className="mx-4 mb-2 bg-white border border-pink-100 rounded-2xl rounded-tl-sm px-4 py-2.5 shadow-sm animate-fadeIn">
-          <div className="flex items-start gap-2">
-            <span className="text-sm">💬</span>
-            <p className="text-sm text-gray-600 flex-1">{lastReply}</p>
-          </div>
-        </div>
-      )}
+      {/* 全局语音回复 */}
+      <VoiceReplyBar
+        userText={lastUserText}
+        reply={lastReply}
+        onDismiss={() => {
+          setLastReply("");
+          setLastUserText("");
+        }}
+      />
 
       {/* 主内容区 */}
-      <main className="flex-1 overflow-y-auto hide-scrollbar px-4 pb-4">
+      <main className="flex-1 overflow-y-auto hide-scrollbar px-4 pb-2">
         <div className={activeTab === "home" ? "" : "hidden"}>{renderHomePage()}</div>
         <div className={activeTab === "pet" ? "" : "hidden"}>{renderPetPage()}</div>
         <div className={activeTab === "study" ? "" : "hidden"}>{renderStudyPage()}</div>
         <div className={activeTab === "settings" ? "" : "hidden"}>{renderSettingsPage()}</div>
       </main>
 
+      {/* 全局语音/文字输入栏（类微信/豆包） */}
+      <VoiceChatBar
+        onAgentResponse={handleAgentResponse}
+        onTranscript={handleVoiceTranscript}
+        onSpeakingChange={setCatSpeaking}
+        voiceSpeed={pet.voiceSpeed}
+      />
+
       {/* 底部导航栏 */}
       <nav
         className="bg-white border-t border-pink-100 flex justify-around items-center py-2 px-2"
-        style={{ paddingBottom: "calc(0.5rem + env(safe-area-inset-bottom, 0px))" }}
       >
         {tabs.map((tab) => {
           const Icon = tab.icon;

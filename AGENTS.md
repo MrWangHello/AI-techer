@@ -14,10 +14,10 @@
 
 ## 待实施（语音 UX 规划）
 
-- 📋 **全局悬浮语音入口** — 详见 [`docs/VOICE_UX_PLAN.md`](docs/VOICE_UX_PLAN.md)
-  - 右下角 FAB，任意 Tab 可说话（类豆包）
-  - 全局 ReplyBar 显示 Bella 回复
-- 📋 **指令词扩展** — 导航（首页/宠物/学习/设置）+ 模糊匹配 + 帮助指令
+- ✅ **全局 VoiceChatBar** — 类微信/豆包，语音+键盘双模式，任意 Tab 可用
+- ✅ **全局 VoiceReplyBar** — 文字回复保底
+- ✅ **导航指令词** — 首页/宠物/学习/设置 + 帮助
+- 📋 Phase 2：StudyCards 子指令（朗读/下一个/测验）
 
 ## 待测试
 
