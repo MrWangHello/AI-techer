@@ -26,7 +26,7 @@ import {
 import { speak } from "@/lib/speech";
 import { isSpeechSupported, isSTTSupported } from "@/lib/speech";
 import { AgentResponse } from "@/lib/mock-agent";
-import { WORDS } from "@/lib/words";
+import { Word, getAllWords, loadWordBatch, refreshWordBatch } from "@/lib/words";
 
 type Tab = "home" | "pet" | "study" | "settings";
 
@@ -51,6 +51,7 @@ export default function HomePage() {
   const [catSpeaking, setCatSpeaking] = useState(false);
   const [speechSupported, setSpeechSupported] = useState<boolean | null>(null);
   const [sttSupported, setSttSupported] = useState<boolean | null>(null);
+  const [studyWords, setStudyWords] = useState<Word[]>([]);
 
   const speakWithSpeed = useCallback(
     (text: string, onEnd?: () => void) => {
@@ -65,6 +66,7 @@ export default function HomePage() {
     setPetLoaded(true);
     setSpeechSupported(isSpeechSupported());
     setSttSupported(isSTTSupported());
+    setStudyWords(loadWordBatch());
   }, []);
 
   // 保存宠物数据（仅在客户端加载后保存）
@@ -119,6 +121,10 @@ export default function HomePage() {
 
       if (response.navigate) {
         setActiveTab(response.navigate);
+      }
+
+      if (response.sideEffect === "word.refresh") {
+        setStudyWords(refreshWordBatch());
       }
 
       switch (response.intent) {
@@ -176,6 +182,9 @@ export default function HomePage() {
           break;
         case "nav_settings":
           addFeed("⚙️", "打开设置");
+          break;
+        case "word_refresh":
+          addFeed("🔄", "换一批单词");
           break;
       }
     },
@@ -516,6 +525,7 @@ export default function HomePage() {
   const renderStudyPage = () => (
     <div className="space-y-4">
       <StudyCards
+        words={studyWords}
         onWordLearned={handleWordLearned}
         onQuizResult={handleQuizResult}
       />
@@ -525,7 +535,7 @@ export default function HomePage() {
         <h3 className="text-sm font-bold text-gray-600 mb-3">📊 学习统计</h3>
         <div className="grid grid-cols-2 gap-3 mb-3">
           <div className="bg-purple-50 rounded-xl p-3 text-center">
-            <div className="text-lg font-bold text-purple-600">{pet.learnedWords.length}/{WORDS.length}</div>
+            <div className="text-lg font-bold text-purple-600">{pet.learnedWords.length}/{getAllWords().length}</div>
             <div className="text-xs text-gray-400">已学单词</div>
           </div>
           <div className="bg-green-50 rounded-xl p-3 text-center">

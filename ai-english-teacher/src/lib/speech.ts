@@ -9,6 +9,8 @@ let recognition: any = null;
 let isListening = false;
 let voicesLoaded = false;
 let voicesPromise: Promise<void> | null = null;
+/** 是否已完成首次 TTS 预热（避免 STT 期间预热与回复抢音频） */
+let ttsPrimed = false;
 /** 按语言缓存选定的音色，避免每次 speak 随机切换 */
 const cachedVoiceByLang: Record<string, SpeechSynthesisVoice | undefined> = {};
 
@@ -157,26 +159,37 @@ function doSpeak(utterance: SpeechSynthesisUtterance): boolean {
 
   try {
     loadVoices().then(() => cachePreferredVoices());
-    synth.cancel();
 
     if (synth.paused) {
       synth.resume();
     }
 
-    const wakeAndSpeak = () => {
-      synth.speak(utterance);
+    const startMain = () => {
+      try {
+        synth.cancel();
+        synth.speak(utterance);
+        ttsPrimed = true;
+      } catch (e) {
+        console.warn("[Speech] startMain failed:", e);
+      }
     };
 
-    if (synth.speaking) {
-      synth.speak(utterance);
-    } else {
-      const wakeUp = new SpeechSynthesisUtterance(" ");
-      wakeUp.volume = 0;
-      wakeUp.rate = 2;
-      wakeUp.onend = wakeAndSpeak;
-      wakeUp.onerror = wakeAndSpeak;
-      synth.speak(wakeUp);
+    // 已预热且空闲：直接播，不再插入 silent utterance（减少被 cancel 打断）
+    if (ttsPrimed && !synth.speaking && !synth.pending) {
+      startMain();
+      return true;
     }
+
+    if (synth.speaking || synth.pending) {
+      synth.cancel();
+    }
+
+    const wakeUp = new SpeechSynthesisUtterance("\u200b");
+    wakeUp.volume = 0.01;
+    wakeUp.rate = 10;
+    wakeUp.onend = startMain;
+    wakeUp.onerror = startMain;
+    synth.speak(wakeUp);
 
     return true;
   } catch (e) {
@@ -268,6 +281,7 @@ export function speakEnglish(text: string, onEnd?: () => void, speed?: number): 
 }
 
 export function warmUpSpeech(): boolean {
+  if (ttsPrimed) return true;
   const synth = getSynth();
   if (!synth) return false;
 
@@ -278,11 +292,17 @@ export function warmUpSpeech(): boolean {
       synth.resume();
     }
 
-    if (synth.speaking) return true;
+    if (synth.speaking || synth.pending) return true;
 
-    const wakeUp = new SpeechSynthesisUtterance(" ");
-    wakeUp.volume = 0;
-    wakeUp.rate = 2;
+    const wakeUp = new SpeechSynthesisUtterance("\u200b");
+    wakeUp.volume = 0.01;
+    wakeUp.rate = 10;
+    wakeUp.onend = () => {
+      ttsPrimed = true;
+    };
+    wakeUp.onerror = () => {
+      ttsPrimed = true;
+    };
     synth.speak(wakeUp);
 
     return true;
@@ -290,6 +310,18 @@ export function warmUpSpeech(): boolean {
     console.warn("[Speech] warmUp failed:", e);
     return false;
   }
+}
+
+/** STT 结束后稍等再 TTS，避免麦克风与扬声器抢资源（首次点击中断的主因） */
+export async function speakAfterMic(
+  text: string,
+  onEnd?: () => void,
+  speed?: number
+): Promise<boolean> {
+  stopListening();
+  stopSpeaking();
+  await new Promise((r) => setTimeout(r, 180));
+  return speak(text, onEnd, speed);
 }
 
 export function stopSpeaking(): void {
@@ -318,6 +350,9 @@ export function startListening(
   }
 
   if (isListening) return;
+
+  // 开麦前停 TTS，避免与 STT 争用音频（尤其页面首次点击）
+  stopSpeaking();
 
   try {
     recognition = new SpeechRecognition();

@@ -1,17 +1,17 @@
 "use client";
 
 import { useState, useCallback, useRef, useEffect } from "react";
-import { Mic, Keyboard, Send, Volume1 } from "lucide-react";
+import { Mic, Keyboard, Send, Volume1, Loader2 } from "lucide-react";
 import {
   startListening,
   stopListening,
   speak,
-  warmUpSpeech,
+  speakAfterMic,
   stopSpeaking,
   isSTTSupported,
   isSpeechSupported,
 } from "@/lib/speech";
-import { processUserInput, AgentResponse } from "@/lib/mock-agent";
+import { handleUserMessage, AgentResponse } from "@/lib/mock-agent";
 
 export type InputMode = "voice" | "text";
 
@@ -31,11 +31,11 @@ export default function VoiceChatBar({
   const [mode, setMode] = useState<InputMode>("voice");
   const [listening, setListening] = useState(false);
   const [speaking, setSpeaking] = useState(false);
+  const [thinking, setThinking] = useState(false);
   const [textInput, setTextInput] = useState("");
   const [hint, setHint] = useState<string | null>(null);
   const [sttAvailable, setSttAvailable] = useState(true);
   const [ttsAvailable, setTtsAvailable] = useState(true);
-  const warmedUp = useRef(false);
   const isMounted = useRef(true);
   const inputRef = useRef<HTMLInputElement>(null);
 
@@ -61,43 +61,57 @@ export default function VoiceChatBar({
     }, ms);
   }, []);
 
-  const ensureWarmup = useCallback(() => {
-    if (!warmedUp.current) warmedUp.current = warmUpSpeech();
-  }, []);
-
-  const handleAgentReply = useCallback(
-    (text: string) => {
-      const response = processUserInput(text);
-      onAgentResponse(response);
-
-      if (!ttsAvailable) return;
+  const playReply = useCallback(
+    async (reply: string, afterMic: boolean) => {
+      if (!ttsAvailable || !reply.trim()) return;
 
       setSpeaking(true);
       onSpeakingChange?.(true);
-      const success = speak(
-        response.reply,
-        () => {
-          if (!isMounted.current) return;
-          setSpeaking(false);
-          onSpeakingChange?.(false);
-        },
-        voiceSpeed
-      );
-      if (!success) {
+
+      const onEnd = () => {
+        if (!isMounted.current) return;
+        setSpeaking(false);
+        onSpeakingChange?.(false);
+      };
+
+      const success = afterMic
+        ? await speakAfterMic(reply, onEnd, voiceSpeed)
+        : speak(reply, onEnd, voiceSpeed);
+
+      if (!success && isMounted.current) {
         setSpeaking(false);
         onSpeakingChange?.(false);
       }
     },
-    [onAgentResponse, onSpeakingChange, ttsAvailable, voiceSpeed]
+    [onSpeakingChange, ttsAvailable, voiceSpeed]
+  );
+
+  const handleAgentReply = useCallback(
+    async (text: string, afterMic: boolean) => {
+      setThinking(true);
+      try {
+        const response = await handleUserMessage({ text, channel: "web" });
+        if (!isMounted.current) return;
+        onAgentResponse(response);
+        await playReply(response.reply, afterMic);
+      } catch {
+        if (isMounted.current) {
+          showHint("处理失败了，请再试一次");
+        }
+      } finally {
+        if (isMounted.current) setThinking(false);
+      }
+    },
+    [onAgentResponse, playReply, showHint]
   );
 
   const submitText = useCallback(() => {
     const text = textInput.trim();
-    if (!text) return;
+    if (!text || thinking) return;
     setTextInput("");
     onTranscript?.(text);
-    handleAgentReply(text);
-  }, [textInput, onTranscript, handleAgentReply]);
+    void handleAgentReply(text, false);
+  }, [textInput, thinking, onTranscript, handleAgentReply]);
 
   const switchToText = useCallback(() => {
     setMode("text");
@@ -118,6 +132,7 @@ export default function VoiceChatBar({
   }, [mode, switchToText, switchToVoice]);
 
   const startVoiceInput = useCallback(() => {
+    if (thinking || speaking) return;
     if (!sttAvailable) {
       switchToText();
       showHint("语音识别不可用，已切换为文字输入");
@@ -129,7 +144,7 @@ export default function VoiceChatBar({
       return;
     }
 
-    ensureWarmup();
+    stopSpeaking();
     setListening(true);
 
     startListening(
@@ -137,7 +152,7 @@ export default function VoiceChatBar({
         if (!isMounted.current) return;
         setListening(false);
         onTranscript?.(text);
-        handleAgentReply(text);
+        void handleAgentReply(text, true);
       },
       (err) => {
         if (!isMounted.current) return;
@@ -149,12 +164,15 @@ export default function VoiceChatBar({
   }, [
     sttAvailable,
     listening,
-    ensureWarmup,
+    thinking,
+    speaking,
     onTranscript,
     handleAgentReply,
     switchToText,
     showHint,
   ]);
+
+  const busy = listening || speaking || thinking;
 
   return (
     <div className="shrink-0 bg-white border-t border-pink-100 px-3 pt-2 pb-2">
@@ -163,32 +181,29 @@ export default function VoiceChatBar({
       )}
 
       <div className="flex items-end gap-2">
-        {/* 模式切换：语音 ↔ 键盘 */}
         <button
           type="button"
           onClick={toggleMode}
-          className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-gray-400 hover:text-pink-500 hover:bg-pink-50 active:scale-95 transition-all"
+          disabled={busy}
+          className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full text-gray-400 hover:text-pink-500 hover:bg-pink-50 active:scale-95 transition-all disabled:opacity-40"
           aria-label={mode === "voice" ? "切换到键盘输入" : "切换到语音输入"}
         >
-          {mode === "voice" ? (
-            <Keyboard className="w-5 h-5" />
-          ) : (
-            <Mic className="w-5 h-5" />
-          )}
+          {mode === "voice" ? <Keyboard className="w-5 h-5" /> : <Mic className="w-5 h-5" />}
         </button>
 
-        {/* 输入区 */}
         {mode === "voice" ? (
           <button
             type="button"
             onClick={startVoiceInput}
-            disabled={speaking}
+            disabled={speaking || thinking}
             className={`
               flex-1 h-10 rounded-full flex items-center justify-center gap-2
               text-sm font-medium transition-all active:scale-[0.98]
               ${
                 listening
                   ? "bg-red-50 text-red-500 border border-red-200 animate-pulse"
+                  : thinking
+                  ? "bg-amber-50 text-amber-600 border border-amber-200"
                   : speaking
                   ? "bg-green-50 text-green-600 border border-green-200"
                   : "bg-pink-50 text-pink-600 border border-pink-100 hover:bg-pink-100"
@@ -199,6 +214,11 @@ export default function VoiceChatBar({
               <>
                 <Mic className="w-4 h-4" />
                 正在听...
+              </>
+            ) : thinking ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Bella 在想...
               </>
             ) : speaking ? (
               <>
@@ -220,20 +240,20 @@ export default function VoiceChatBar({
             onChange={(e) => setTextInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && submitText()}
             placeholder="输入文字与 Bella 对话..."
-            className="flex-1 h-10 px-4 text-sm bg-gray-50 border border-pink-100 rounded-full focus:outline-none focus:border-pink-300 focus:bg-white"
+            disabled={thinking}
+            className="flex-1 h-10 px-4 text-sm bg-gray-50 border border-pink-100 rounded-full focus:outline-none focus:border-pink-300 focus:bg-white disabled:opacity-60"
           />
         )}
 
-        {/* 发送（文字模式） */}
         {mode === "text" && (
           <button
             type="button"
             onClick={submitText}
-            disabled={!textInput.trim()}
+            disabled={!textInput.trim() || thinking}
             className="shrink-0 w-9 h-9 flex items-center justify-center rounded-full bg-pink-500 text-white hover:bg-pink-600 disabled:opacity-40 active:scale-95 transition-all"
             aria-label="发送"
           >
-            <Send className="w-4 h-4" />
+            {thinking ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
           </button>
         )}
       </div>

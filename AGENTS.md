@@ -7,53 +7,41 @@
 - ✅ Cat3D 组件 — CSS mask 羽化 + 背景色 `#f0ebe4` 匹配视频源
 - ✅ 移除 Edge-TTS / Cloudflare Worker，改用 Web Speech API
 - ✅ 语音：Chrome wake-up、音色缓存、STT 文字输入降级、voiceSpeed
-- ✅ 视频压缩 960×480，7.8MB → ~470KB
-- ✅ Cat3D：poster、prefetch 缓存、Tab keep-alive
-- ✅ 修复 mood 切换竞态 bug、睡觉→困倦视频、TTS 音色漂移
-- ✅ 开发文档：[`ai-english-teacher/docs/ARCHITECTURE.md`](ai-english-teacher/docs/ARCHITECTURE.md)
-
-## 待实施（语音 UX 规划）
-
-- ✅ **全局 VoiceChatBar** — 类微信/豆包，语音+键盘双模式，任意 Tab 可用
-- ✅ **全局 VoiceReplyBar** — 文字回复保底
-- ✅ **导航指令词** — 首页/宠物/学习/设置 + 帮助
-- 📋 **系统架构重构** — Skill 分层 + 词库刷新 + 微信通道，见 [`SYSTEM_ARCHITECTURE.md`](ai-english-teacher/docs/SYSTEM_ARCHITECTURE.md)
-- 📋 **开放问答 / 故事机内容** — Tier1 实测见 [`CONTENT_API_RESEARCH.md`](ai-english-teacher/docs/CONTENT_API_RESEARCH.md)
+- ✅ **修复首次语音 TTS 中断** — STT/TTS 抢音频，见 `SYSTEM_ARCHITECTURE.md` §11
+- ✅ **Mock Agent + Skills 分层** — `handleUserMessage`、规则 Skill + Tier1 API Skill
+- ✅ **词库 187 词 + 换一批** — 语音/按钮触发 `word.refresh`
+- ✅ 全局 VoiceChatBar / VoiceReplyBar、导航指令词
+- ✅ 开发文档索引见下表
 
 ## 待测试
 
-- ⏳ **TTS/STT** — Chrome 手机端实测
-- ⏳ **宠物 mood 切换** — 说「学单词」→ thinking，「睡觉」→ 困困，「你好」→ 开心
-- ⏳ **背景融合** — 确认 `#f0ebe4` 背景是否消除视频框感
+- ⏳ **首次语音 TTS** — 手机 Chrome 验证修复是否生效
+- ⏳ **内容 Skill** — 每日英语、古诗、天气、百科在国内网络实测
+- ⏳ **TTS/STT** — 各浏览器手机端
+- ⏳ **宠物 mood 切换** — 语音关键词 → 视频表情
+
+## 架构决策（2026-08-30）
+
+- **不用 ClawBot / 本地 OpenClaw** — 需常开机器 + 默认 LLM，不符合零成本 Web 优先
+- **Mock Agent 现在** — 规则 Router 调各 Skill；**以后只换意图识别层**
+- **微信通道** — 暂缓；若要做用云开发云函数 `/api/chat`，非 ClawBot
 
 ## 已知限制
 
-- MP4 自带实心背景，CSS 无法完全透明化；彻底方案需透明通道视频
-- TTS 音色取决于手机系统语音包 / 浏览器（Chrome、Edge 微软音色等）
-- STT 在 QQ/UC 浏览器不稳定；**荣耀/华为无 GMS 时即装 Chrome 也常失败** → 用文字输入
-- STT 通常需联网（Chrome 常走 Google 云端），非纯离线
-- **不是 Google 专属**：网站用 Web Speech API，Edge 浏览器同样可用；Edge-TTS 云端服务已放弃
+- MP4 自带实心背景，CSS 无法完全透明化
+- STT 在荣耀/华为无 GMS、QQ/UC 浏览器常失败 → 文字输入降级
+- 内容 API Skill 需联网；GitHub Pages 静态部署下由**浏览器直连** API
 - `agentEmotion` 触发后保持，不会自动恢复 neutral
 
 ## 文档索引
 
 | 文档 | 内容 |
 |------|------|
-| [`docs/ARCHITECTURE.md`](ai-english-teacher/docs/ARCHITECTURE.md) | 完整架构：宠物 mood 映射、语音方案、部署、排错 |
-| [`docs/VOICE_UX_PLAN.md`](ai-english-teacher/docs/VOICE_UX_PLAN.md) | **规划稿**：全局悬浮语音入口 + 指令词体系 |
-| [`docs/BROWSER_COMPAT_PLAN.md`](ai-english-teacher/docs/BROWSER_COMPAT_PLAN.md) | 浏览器兼容 + 双通道降级 + **用户 FAQ（§11）** |
-| [`docs/OPEN_QA_PLAN.md`](ai-english-teacher/docs/OPEN_QA_PLAN.md) | 开放问答路由 + 国内搜索实测 §10 |
+| [`docs/SYSTEM_ARCHITECTURE.md`](ai-english-teacher/docs/SYSTEM_ARCHITECTURE.md) | **分层架构** §12 实现状态；§11 语音中断修复 |
 | [`docs/CONTENT_API_RESEARCH.md`](ai-english-teacher/docs/CONTENT_API_RESEARCH.md) | 故事机式内容 API 实测 |
-| [`docs/SYSTEM_ARCHITECTURE.md`](ai-english-teacher/docs/SYSTEM_ARCHITECTURE.md) | **分层架构**：Channel→Router→Skills→Providers；微信通道 |
+| [`docs/BROWSER_COMPAT_PLAN.md`](ai-english-teacher/docs/BROWSER_COMPAT_PLAN.md) | 浏览器兼容 FAQ §11 |
+| [`docs/ARCHITECTURE.md`](ai-english-teacher/docs/ARCHITECTURE.md) | 宠物 mood、部署、排错 |
 | 本文件 | 项目记忆与变更摘要 |
-
-## 语音方案（2026-08-30 确定）
-
-- **TTS**：浏览器原生 `SpeechSynthesis`，预热时缓存中/英音色（Chrome / Edge / Safari 等）
-- **STT**：`SpeechRecognition`，Chromium 系最佳（Chrome、Edge）；**不绑定 Google 账号**
-- **降级**：STT 不可用或失败 → VoiceChatBar 自动切 ⌨️ 文字；TTS 失败 → ReplyBar 仍显示文字
-- **已移除**：Edge-TTS 云端 API（国内 403；与 Edge **浏览器** 无关）
-- **FAQ**：荣耀无 GMS、小米对比、Edge 是否可用 → 见 `BROWSER_COMPAT_PLAN.md` §11
 
 ## 宠物 mood 速查
 

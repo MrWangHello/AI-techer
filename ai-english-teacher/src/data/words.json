@@ -1,0 +1,937 @@
+[
+  {
+    "en": "apple",
+    "zh": "苹果",
+    "sentence": "I eat an apple every day."
+  },
+  {
+    "en": "banana",
+    "zh": "香蕉",
+    "sentence": "Monkeys like bananas."
+  },
+  {
+    "en": "cat",
+    "zh": "猫",
+    "sentence": "The cat is sleeping."
+  },
+  {
+    "en": "dog",
+    "zh": "狗",
+    "sentence": "My dog is very cute."
+  },
+  {
+    "en": "elephant",
+    "zh": "大象",
+    "sentence": "An elephant is very big."
+  },
+  {
+    "en": "flower",
+    "zh": "花",
+    "sentence": "The flower is beautiful."
+  },
+  {
+    "en": "garden",
+    "zh": "花园",
+    "sentence": "There are many flowers in the garden."
+  },
+  {
+    "en": "happy",
+    "zh": "快乐的",
+    "sentence": "I am happy today!"
+  },
+  {
+    "en": "ice",
+    "zh": "冰",
+    "sentence": "Ice is cold."
+  },
+  {
+    "en": "juice",
+    "zh": "果汁",
+    "sentence": "I like orange juice."
+  },
+  {
+    "en": "kite",
+    "zh": "风筝",
+    "sentence": "The kite is flying high."
+  },
+  {
+    "en": "lion",
+    "zh": "狮子",
+    "sentence": "The lion is the king."
+  },
+  {
+    "en": "moon",
+    "zh": "月亮",
+    "sentence": "The moon is bright tonight."
+  },
+  {
+    "en": "nurse",
+    "zh": "护士",
+    "sentence": "The nurse is very kind."
+  },
+  {
+    "en": "orange",
+    "zh": "橙子",
+    "sentence": "This orange is sweet."
+  },
+  {
+    "en": "panda",
+    "zh": "熊猫",
+    "sentence": "Pandas are black and white."
+  },
+  {
+    "en": "queen",
+    "zh": "女王",
+    "sentence": "The queen wears a crown."
+  },
+  {
+    "en": "rabbit",
+    "zh": "兔子",
+    "sentence": "The rabbit is fast."
+  },
+  {
+    "en": "sun",
+    "zh": "太阳",
+    "sentence": "The sun is shining."
+  },
+  {
+    "en": "tiger",
+    "zh": "老虎",
+    "sentence": "The tiger has stripes."
+  },
+  {
+    "en": "book",
+    "zh": "书",
+    "sentence": "I read a book every night."
+  },
+  {
+    "en": "bird",
+    "zh": "鸟",
+    "sentence": "The bird is singing."
+  },
+  {
+    "en": "boat",
+    "zh": "船",
+    "sentence": "We ride a boat on the lake."
+  },
+  {
+    "en": "bread",
+    "zh": "面包",
+    "sentence": "I like fresh bread."
+  },
+  {
+    "en": "bus",
+    "zh": "公交车",
+    "sentence": "The bus is coming."
+  },
+  {
+    "en": "cake",
+    "zh": "蛋糕",
+    "sentence": "Happy birthday cake!"
+  },
+  {
+    "en": "car",
+    "zh": "汽车",
+    "sentence": "My car is red."
+  },
+  {
+    "en": "chair",
+    "zh": "椅子",
+    "sentence": "Sit on the chair."
+  },
+  {
+    "en": "child",
+    "zh": "孩子",
+    "sentence": "The child is playing."
+  },
+  {
+    "en": "city",
+    "zh": "城市",
+    "sentence": "Beijing is a big city."
+  },
+  {
+    "en": "cloud",
+    "zh": "云",
+    "sentence": "White clouds in the sky."
+  },
+  {
+    "en": "coffee",
+    "zh": "咖啡",
+    "sentence": "I drink coffee in the morning."
+  },
+  {
+    "en": "color",
+    "zh": "颜色",
+    "sentence": "What color do you like?"
+  },
+  {
+    "en": "computer",
+    "zh": "电脑",
+    "sentence": "I use a computer to study."
+  },
+  {
+    "en": "dance",
+    "zh": "跳舞",
+    "sentence": "Let us dance together."
+  },
+  {
+    "en": "desk",
+    "zh": "桌子",
+    "sentence": "Books are on the desk."
+  },
+  {
+    "en": "doctor",
+    "zh": "医生",
+    "sentence": "The doctor helps people."
+  },
+  {
+    "en": "door",
+    "zh": "门",
+    "sentence": "Please close the door."
+  },
+  {
+    "en": "dream",
+    "zh": "梦想",
+    "sentence": "Follow your dream."
+  },
+  {
+    "en": "duck",
+    "zh": "鸭子",
+    "sentence": "The duck swims in the pond."
+  },
+  {
+    "en": "egg",
+    "zh": "鸡蛋",
+    "sentence": "I eat an egg for breakfast."
+  },
+  {
+    "en": "eye",
+    "zh": "眼睛",
+    "sentence": "She has beautiful eyes."
+  },
+  {
+    "en": "family",
+    "zh": "家庭",
+    "sentence": "I love my family."
+  },
+  {
+    "en": "fish",
+    "zh": "鱼",
+    "sentence": "Fish live in water."
+  },
+  {
+    "en": "food",
+    "zh": "食物",
+    "sentence": "Healthy food is important."
+  },
+  {
+    "en": "friend",
+    "zh": "朋友",
+    "sentence": "She is my best friend."
+  },
+  {
+    "en": "fruit",
+    "zh": "水果",
+    "sentence": "Eat more fruit."
+  },
+  {
+    "en": "game",
+    "zh": "游戏",
+    "sentence": "Let us play a game."
+  },
+  {
+    "en": "girl",
+    "zh": "女孩",
+    "sentence": "The girl is reading."
+  },
+  {
+    "en": "grass",
+    "zh": "草",
+    "sentence": "Green grass in the park."
+  },
+  {
+    "en": "hand",
+    "zh": "手",
+    "sentence": "Wash your hands."
+  },
+  {
+    "en": "head",
+    "zh": "头",
+    "sentence": "Use your head."
+  },
+  {
+    "en": "heart",
+    "zh": "心",
+    "sentence": "You have a kind heart."
+  },
+  {
+    "en": "house",
+    "zh": "房子",
+    "sentence": "This is my house."
+  },
+  {
+    "en": "idea",
+    "zh": "主意",
+    "sentence": "That is a good idea."
+  },
+  {
+    "en": "island",
+    "zh": "岛",
+    "sentence": "We visit a small island."
+  },
+  {
+    "en": "job",
+    "zh": "工作",
+    "sentence": "She loves her job."
+  },
+  {
+    "en": "key",
+    "zh": "钥匙",
+    "sentence": "Where is the key?"
+  },
+  {
+    "en": "king",
+    "zh": "国王",
+    "sentence": "The king lives in a castle."
+  },
+  {
+    "en": "lake",
+    "zh": "湖",
+    "sentence": "The lake is calm."
+  },
+  {
+    "en": "learn",
+    "zh": "学习",
+    "sentence": "I learn English every day."
+  },
+  {
+    "en": "light",
+    "zh": "光",
+    "sentence": "Turn on the light."
+  },
+  {
+    "en": "love",
+    "zh": "爱",
+    "sentence": "Love makes the world better."
+  },
+  {
+    "en": "milk",
+    "zh": "牛奶",
+    "sentence": "Drink milk every day."
+  },
+  {
+    "en": "money",
+    "zh": "钱",
+    "sentence": "Save your money."
+  },
+  {
+    "en": "mountain",
+    "zh": "山",
+    "sentence": "The mountain is high."
+  },
+  {
+    "en": "music",
+    "zh": "音乐",
+    "sentence": "I love music."
+  },
+  {
+    "en": "name",
+    "zh": "名字",
+    "sentence": "What is your name?"
+  },
+  {
+    "en": "night",
+    "zh": "夜晚",
+    "sentence": "Good night!"
+  },
+  {
+    "en": "ocean",
+    "zh": "海洋",
+    "sentence": "The ocean is deep."
+  },
+  {
+    "en": "paper",
+    "zh": "纸",
+    "sentence": "Write on the paper."
+  },
+  {
+    "en": "park",
+    "zh": "公园",
+    "sentence": "We walk in the park."
+  },
+  {
+    "en": "pen",
+    "zh": "钢笔",
+    "sentence": "Use a pen to write."
+  },
+  {
+    "en": "phone",
+    "zh": "电话",
+    "sentence": "Answer the phone."
+  },
+  {
+    "en": "picture",
+    "zh": "图片",
+    "sentence": "Look at this picture."
+  },
+  {
+    "en": "plant",
+    "zh": "植物",
+    "sentence": "Water the plant."
+  },
+  {
+    "en": "rain",
+    "zh": "雨",
+    "sentence": "It is raining today."
+  },
+  {
+    "en": "read",
+    "zh": "阅读",
+    "sentence": "I read books daily."
+  },
+  {
+    "en": "river",
+    "zh": "河",
+    "sentence": "The river flows fast."
+  },
+  {
+    "en": "road",
+    "zh": "路",
+    "sentence": "Cross the road carefully."
+  },
+  {
+    "en": "room",
+    "zh": "房间",
+    "sentence": "My room is clean."
+  },
+  {
+    "en": "school",
+    "zh": "学校",
+    "sentence": "I go to school."
+  },
+  {
+    "en": "sea",
+    "zh": "海",
+    "sentence": "The sea is blue."
+  },
+  {
+    "en": "sheep",
+    "zh": "羊",
+    "sentence": "Sheep eat grass."
+  },
+  {
+    "en": "ship",
+    "zh": "轮船",
+    "sentence": "The ship sails away."
+  },
+  {
+    "en": "shoe",
+    "zh": "鞋",
+    "sentence": "Put on your shoes."
+  },
+  {
+    "en": "shop",
+    "zh": "商店",
+    "sentence": "Let us go to the shop."
+  },
+  {
+    "en": "sky",
+    "zh": "天空",
+    "sentence": "The sky is clear."
+  },
+  {
+    "en": "smile",
+    "zh": "微笑",
+    "sentence": "Smile every day."
+  },
+  {
+    "en": "snow",
+    "zh": "雪",
+    "sentence": "Snow is white."
+  },
+  {
+    "en": "song",
+    "zh": "歌曲",
+    "sentence": "Sing a song."
+  },
+  {
+    "en": "star",
+    "zh": "星星",
+    "sentence": "Stars shine at night."
+  },
+  {
+    "en": "story",
+    "zh": "故事",
+    "sentence": "Tell me a story."
+  },
+  {
+    "en": "street",
+    "zh": "街道",
+    "sentence": "Walk down the street."
+  },
+  {
+    "en": "student",
+    "zh": "学生",
+    "sentence": "I am a student."
+  },
+  {
+    "en": "sugar",
+    "zh": "糖",
+    "sentence": "Too much sugar is bad."
+  },
+  {
+    "en": "table",
+    "zh": "桌子",
+    "sentence": "The table is round."
+  },
+  {
+    "en": "teacher",
+    "zh": "老师",
+    "sentence": "My teacher is kind."
+  },
+  {
+    "en": "tea",
+    "zh": "茶",
+    "sentence": "Would you like some tea?"
+  },
+  {
+    "en": "time",
+    "zh": "时间",
+    "sentence": "Time flies."
+  },
+  {
+    "en": "today",
+    "zh": "今天",
+    "sentence": "Today is a good day."
+  },
+  {
+    "en": "train",
+    "zh": "火车",
+    "sentence": "The train is fast."
+  },
+  {
+    "en": "tree",
+    "zh": "树",
+    "sentence": "Birds live in the tree."
+  },
+  {
+    "en": "vegetable",
+    "zh": "蔬菜",
+    "sentence": "Eat your vegetables."
+  },
+  {
+    "en": "voice",
+    "zh": "声音",
+    "sentence": "I hear your voice."
+  },
+  {
+    "en": "walk",
+    "zh": "走",
+    "sentence": "Let us walk together."
+  },
+  {
+    "en": "water",
+    "zh": "水",
+    "sentence": "Drink more water."
+  },
+  {
+    "en": "wind",
+    "zh": "风",
+    "sentence": "The wind is strong."
+  },
+  {
+    "en": "window",
+    "zh": "窗户",
+    "sentence": "Open the window."
+  },
+  {
+    "en": "world",
+    "zh": "世界",
+    "sentence": "Travel the world."
+  },
+  {
+    "en": "write",
+    "zh": "写",
+    "sentence": "Write your name."
+  },
+  {
+    "en": "year",
+    "zh": "年",
+    "sentence": "Happy new year!"
+  },
+  {
+    "en": "young",
+    "zh": "年轻的",
+    "sentence": "She is young and brave."
+  },
+  {
+    "en": "zoo",
+    "zh": "动物园",
+    "sentence": "We visit the zoo."
+  },
+  {
+    "en": "baby",
+    "zh": "婴儿",
+    "sentence": "The baby is sleeping."
+  },
+  {
+    "en": "back",
+    "zh": "背",
+    "sentence": "My back hurts."
+  },
+  {
+    "en": "bag",
+    "zh": "包",
+    "sentence": "Pack your bag."
+  },
+  {
+    "en": "ball",
+    "zh": "球",
+    "sentence": "Kick the ball."
+  },
+  {
+    "en": "bank",
+    "zh": "银行",
+    "sentence": "Go to the bank."
+  },
+  {
+    "en": "beach",
+    "zh": "海滩",
+    "sentence": "We play on the beach."
+  },
+  {
+    "en": "bear",
+    "zh": "熊",
+    "sentence": "The bear is big."
+  },
+  {
+    "en": "bed",
+    "zh": "床",
+    "sentence": "Go to bed early."
+  },
+  {
+    "en": "bee",
+    "zh": "蜜蜂",
+    "sentence": "The bee makes honey."
+  },
+  {
+    "en": "bell",
+    "zh": "铃",
+    "sentence": "Ring the bell."
+  },
+  {
+    "en": "bike",
+    "zh": "自行车",
+    "sentence": "Ride a bike."
+  },
+  {
+    "en": "blue",
+    "zh": "蓝色",
+    "sentence": "The sky is blue."
+  },
+  {
+    "en": "body",
+    "zh": "身体",
+    "sentence": "Take care of your body."
+  },
+  {
+    "en": "box",
+    "zh": "盒子",
+    "sentence": "Open the box."
+  },
+  {
+    "en": "boy",
+    "zh": "男孩",
+    "sentence": "The boy runs fast."
+  },
+  {
+    "en": "brain",
+    "zh": "大脑",
+    "sentence": "Use your brain."
+  },
+  {
+    "en": "bridge",
+    "zh": "桥",
+    "sentence": "Cross the bridge."
+  },
+  {
+    "en": "brother",
+    "zh": "兄弟",
+    "sentence": "My brother is tall."
+  },
+  {
+    "en": "building",
+    "zh": "建筑",
+    "sentence": "That building is tall."
+  },
+  {
+    "en": "butter",
+    "zh": "黄油",
+    "sentence": "Bread with butter."
+  },
+  {
+    "en": "camera",
+    "zh": "相机",
+    "sentence": "Take a photo."
+  },
+  {
+    "en": "camp",
+    "zh": "营地",
+    "sentence": "We camp in the forest."
+  },
+  {
+    "en": "cap",
+    "zh": "帽子",
+    "sentence": "Wear a cap."
+  },
+  {
+    "en": "card",
+    "zh": "卡片",
+    "sentence": "Send a card."
+  },
+  {
+    "en": "care",
+    "zh": "关心",
+    "sentence": "Take care of yourself."
+  },
+  {
+    "en": "century",
+    "zh": "世纪",
+    "sentence": "A new century begins."
+  },
+  {
+    "en": "chicken",
+    "zh": "鸡",
+    "sentence": "Chicken is tasty."
+  },
+  {
+    "en": "class",
+    "zh": "班级",
+    "sentence": "Our class is fun."
+  },
+  {
+    "en": "clock",
+    "zh": "时钟",
+    "sentence": "Look at the clock."
+  },
+  {
+    "en": "clothes",
+    "zh": "衣服",
+    "sentence": "New clothes for spring."
+  },
+  {
+    "en": "coat",
+    "zh": "外套",
+    "sentence": "Wear a warm coat."
+  },
+  {
+    "en": "code",
+    "zh": "代码",
+    "sentence": "Write clean code."
+  },
+  {
+    "en": "cold",
+    "zh": "冷",
+    "sentence": "It feels cold today."
+  },
+  {
+    "en": "cookie",
+    "zh": "饼干",
+    "sentence": "I want a cookie."
+  },
+  {
+    "en": "corn",
+    "zh": "玉米",
+    "sentence": "Corn is sweet."
+  },
+  {
+    "en": "country",
+    "zh": "国家",
+    "sentence": "China is a big country."
+  },
+  {
+    "en": "cup",
+    "zh": "杯子",
+    "sentence": "A cup of tea."
+  },
+  {
+    "en": "dad",
+    "zh": "爸爸",
+    "sentence": "My dad cooks well."
+  },
+  {
+    "en": "data",
+    "zh": "数据",
+    "sentence": "Analyze the data."
+  },
+  {
+    "en": "day",
+    "zh": "天",
+    "sentence": "Have a nice day."
+  },
+  {
+    "en": "dear",
+    "zh": "亲爱的",
+    "sentence": "Dear friend."
+  },
+  {
+    "en": "dinner",
+    "zh": "晚餐",
+    "sentence": "Dinner is ready."
+  },
+  {
+    "en": "dollar",
+    "zh": "美元",
+    "sentence": "It costs ten dollars."
+  },
+  {
+    "en": "draw",
+    "zh": "画",
+    "sentence": "Draw a picture."
+  },
+  {
+    "en": "dress",
+    "zh": "连衣裙",
+    "sentence": "She wears a dress."
+  },
+  {
+    "en": "drive",
+    "zh": "驾驶",
+    "sentence": "Drive carefully."
+  },
+  {
+    "en": "ear",
+    "zh": "耳朵",
+    "sentence": "Listen with your ears."
+  },
+  {
+    "en": "earth",
+    "zh": "地球",
+    "sentence": "Protect the earth."
+  },
+  {
+    "en": "east",
+    "zh": "东",
+    "sentence": "The sun rises in the east."
+  },
+  {
+    "en": "email",
+    "zh": "邮件",
+    "sentence": "Check your email."
+  },
+  {
+    "en": "energy",
+    "zh": "能量",
+    "sentence": "Save energy."
+  },
+  {
+    "en": "English",
+    "zh": "英语",
+    "sentence": "I study English."
+  },
+  {
+    "en": "evening",
+    "zh": "傍晚",
+    "sentence": "Good evening."
+  },
+  {
+    "en": "face",
+    "zh": "脸",
+    "sentence": "Wash your face."
+  },
+  {
+    "en": "farm",
+    "zh": "农场",
+    "sentence": "Animals live on the farm."
+  },
+  {
+    "en": "father",
+    "zh": "父亲",
+    "sentence": "My father works hard."
+  },
+  {
+    "en": "field",
+    "zh": "田野",
+    "sentence": "Green fields."
+  },
+  {
+    "en": "fire",
+    "zh": "火",
+    "sentence": "Do not play with fire."
+  },
+  {
+    "en": "flag",
+    "zh": "旗",
+    "sentence": "The flag is red."
+  },
+  {
+    "en": "floor",
+    "zh": "地板",
+    "sentence": "Sweep the floor."
+  },
+  {
+    "en": "foot",
+    "zh": "脚",
+    "sentence": "One foot, two feet."
+  },
+  {
+    "en": "forest",
+    "zh": "森林",
+    "sentence": "Walk in the forest."
+  },
+  {
+    "en": "free",
+    "zh": "免费",
+    "sentence": "This app is free."
+  },
+  {
+    "en": "Friday",
+    "zh": "星期五",
+    "sentence": "See you on Friday."
+  },
+  {
+    "en": "fun",
+    "zh": "乐趣",
+    "sentence": "Learning is fun."
+  },
+  {
+    "en": "future",
+    "zh": "未来",
+    "sentence": "Plan for the future."
+  },
+  {
+    "en": "gift",
+    "zh": "礼物",
+    "sentence": "Thank you for the gift."
+  },
+  {
+    "en": "glass",
+    "zh": "玻璃",
+    "sentence": "A glass of water."
+  },
+  {
+    "en": "goal",
+    "zh": "目标",
+    "sentence": "Set a goal."
+  },
+  {
+    "en": "gold",
+    "zh": "金",
+    "sentence": "Gold is valuable."
+  },
+  {
+    "en": "good",
+    "zh": "好",
+    "sentence": "Good job!"
+  },
+  {
+    "en": "grandma",
+    "zh": "奶奶",
+    "sentence": "Grandma tells stories."
+  },
+  {
+    "en": "grandpa",
+    "zh": "爷爷",
+    "sentence": "Grandpa loves gardening."
+  }
+]

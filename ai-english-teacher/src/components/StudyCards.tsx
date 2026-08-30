@@ -1,16 +1,18 @@
 "use client";
 
-import { useState, useRef, useCallback } from "react";
-import { WORDS, Word } from "@/lib/words";
+import { useState, useRef, useCallback, useEffect } from "react";
+import { Word, loadWordBatch, refreshWordBatch } from "@/lib/words";
 import { speakEnglish, warmUpSpeech } from "@/lib/speech";
-import { Volume2, Volume1, Check, X } from "lucide-react";
+import { Volume2, Volume1, RefreshCw } from "lucide-react";
 
 interface StudyCardsProps {
+  words?: Word[];
   onWordLearned?: (word: Word) => void;
   onQuizResult?: (correct: boolean) => void;
 }
 
-export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsProps) {
+export default function StudyCards({ words: wordsProp, onWordLearned, onQuizResult }: StudyCardsProps) {
+  const [words, setWords] = useState<Word[]>(() => wordsProp ?? loadWordBatch());
   const [mode, setMode] = useState<"learn" | "quiz">("learn");
   const [currentIndex, setCurrentIndex] = useState(0);
   const [showAnswer, setShowAnswer] = useState(false);
@@ -21,20 +23,32 @@ export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsPr
   const [ttsError, setTtsError] = useState<string | null>(null);
   const warmedUp = useRef(false);
 
-  // 首次点击时预热语音引擎
+  useEffect(() => {
+    if (wordsProp) {
+      setWords(wordsProp);
+      setCurrentIndex(0);
+      setShowAnswer(false);
+    }
+  }, [wordsProp]);
+
   const ensureWarmup = useCallback(() => {
     if (!warmedUp.current) {
       warmedUp.current = warmUpSpeech();
-      if (warmedUp.current) {
-        console.log("[StudyCards] Speech warmed up successfully");
-      }
     }
   }, []);
 
-  const currentWord = WORDS[currentIndex];
+  const handleRefreshBatch = () => {
+    const batch = refreshWordBatch();
+    setWords(batch);
+    setCurrentIndex(0);
+    setShowAnswer(false);
+    setMode("learn");
+  };
 
-  // 学习模式：朗读单词 - 带视觉反馈
+  const currentWord = words[currentIndex] ?? words[0];
+
   const speakWord = () => {
+    if (!currentWord) return;
     ensureWarmup();
     setTtsError(null);
     setSpeakingWord(true);
@@ -46,6 +60,7 @@ export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsPr
   };
 
   const speakSentence = () => {
+    if (!currentWord) return;
     ensureWarmup();
     setTtsError(null);
     setSpeakingWord(true);
@@ -58,15 +73,14 @@ export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsPr
 
   const nextWord = () => {
     setShowAnswer(false);
-    setCurrentIndex((prev) => (prev + 1) % WORDS.length);
+    setCurrentIndex((prev) => (prev + 1) % words.length);
   };
 
   const prevWord = () => {
     setShowAnswer(false);
-    setCurrentIndex((prev) => (prev - 1 + WORDS.length) % WORDS.length);
+    setCurrentIndex((prev) => (prev - 1 + words.length) % words.length);
   };
 
-  // 测验模式：随机出题
   const startQuiz = () => {
     ensureWarmup();
     setMode("quiz");
@@ -75,15 +89,10 @@ export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsPr
     setQuizResult(null);
   };
 
-  // 生成一个测验题
   const getQuizQuestion = () => {
-    const correctWord = WORDS[quizIndex % WORDS.length];
-    const wrongWords = WORDS.filter((w) => w.en !== correctWord.en)
-      .sort(() => Math.random() - 0.5)
-      .slice(0, 3);
-    const options = [correctWord, ...wrongWords].sort(
-      () => Math.random() - 0.5
-    );
+    const correctWord = words[quizIndex % words.length];
+    const wrongWords = words.filter((w) => w.en !== correctWord.en).sort(() => Math.random() - 0.5).slice(0, 3);
+    const options = [correctWord, ...wrongWords].sort(() => Math.random() - 0.5);
     return { correctWord, options };
   };
 
@@ -103,11 +112,18 @@ export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsPr
     }, 1500);
   };
 
-  // 回到学习模式
   const backToLearn = () => {
     setMode("learn");
     setShowAnswer(false);
   };
+
+  if (!currentWord) {
+    return (
+      <div className="bg-white/80 rounded-2xl p-5 text-center text-sm text-gray-400">
+        词库加载中…
+      </div>
+    );
+  }
 
   if (mode === "quiz") {
     return (
@@ -120,9 +136,7 @@ export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsPr
         </div>
 
         <div className="text-center mb-4">
-          <div className="text-2xl font-bold text-pink-600 mb-2">
-            {quiz.correctWord.zh}
-          </div>
+          <div className="text-2xl font-bold text-pink-600 mb-2">{quiz.correctWord.zh}</div>
           <div className="text-sm text-gray-400">请选择对应的英文</div>
         </div>
 
@@ -143,8 +157,7 @@ export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsPr
               onClick={() => handleQuizAnswer(word)}
               disabled={quizResult !== null}
               className={`
-                py-3 px-4 rounded-xl font-medium text-sm
-                transition-all duration-200
+                py-3 px-4 rounded-xl font-medium text-sm transition-all duration-200
                 ${
                   quizResult !== null
                     ? word.en === quiz.correctWord.en
@@ -173,107 +186,82 @@ export default function StudyCards({ onWordLearned, onQuizResult }: StudyCardsPr
     <div className="bg-white/80 backdrop-blur-sm rounded-2xl p-5 shadow-sm border border-pink-100">
       <div className="flex items-center justify-between mb-3">
         <h3 className="font-bold text-gray-700">📖 单词学习</h3>
-        <button
-          onClick={startQuiz}
-          className="text-xs bg-pink-100 text-pink-600 px-3 py-1 rounded-full hover:bg-pink-200"
-        >
-          开始测验
-        </button>
-      </div>
-
-      {/* 单词卡片 */}
-      <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-2xl p-6 text-center mb-4">
-        <div className="text-3xl font-bold text-gray-800 mb-1">
-          {currentWord.en}
+        <div className="flex gap-2">
+          <button
+            onClick={handleRefreshBatch}
+            className="text-xs bg-purple-100 text-purple-600 px-3 py-1 rounded-full hover:bg-purple-200 flex items-center gap-1"
+          >
+            <RefreshCw className="w-3 h-3" />
+            换一批
+          </button>
+          <button
+            onClick={startQuiz}
+            className="text-xs bg-pink-100 text-pink-600 px-3 py-1 rounded-full hover:bg-pink-200"
+          >
+            开始测验
+          </button>
         </div>
+      </div>
+
+      <div className="bg-gradient-to-br from-pink-50 to-purple-50 rounded-2xl p-6 text-center mb-4">
+        <div className="text-3xl font-bold text-gray-800 mb-1">{currentWord.en}</div>
         {showAnswer && (
-          <div className="text-lg text-gray-500 mt-2 animate-fadeIn">
-            {currentWord.zh}
-          </div>
+          <div className="text-lg text-gray-500 mt-2 animate-fadeIn">{currentWord.zh}</div>
         )}
         {showAnswer && (
-          <div className="text-sm text-gray-400 mt-2 italic">
-            &ldquo;{currentWord.sentence}&rdquo;
-          </div>
+          <div className="text-sm text-gray-400 mt-2 italic">&ldquo;{currentWord.sentence}&rdquo;</div>
         )}
       </div>
 
-      {/* 操作按钮 */}
       <div className="flex justify-center gap-3 mb-4">
         <button
           onClick={speakWord}
           disabled={speakingWord}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm
-            active:scale-95 transition-all ${
-            speakingWord
-              ? "bg-green-500 text-white"
-              : "bg-pink-500 text-white hover:bg-pink-600"
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm active:scale-95 transition-all ${
+            speakingWord ? "bg-green-500 text-white" : "bg-pink-500 text-white hover:bg-pink-600"
           }`}
         >
-          {speakingWord ? (
-            <Volume1 className="w-4 h-4 animate-pulse" />
-          ) : (
-            <Volume2 className="w-4 h-4" />
-          )}
+          {speakingWord ? <Volume1 className="w-4 h-4 animate-pulse" /> : <Volume2 className="w-4 h-4" />}
           {speakingWord ? "播放中..." : "朗读"}
         </button>
         <button
           onClick={speakSentence}
           disabled={speakingWord}
-          className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm
-            active:scale-95 transition-all ${
-            speakingWord
-              ? "bg-green-500 text-white"
-              : "bg-purple-500 text-white hover:bg-purple-600"
+          className={`flex items-center gap-1.5 px-4 py-2 rounded-full text-sm active:scale-95 transition-all ${
+            speakingWord ? "bg-green-500 text-white" : "bg-purple-500 text-white hover:bg-purple-600"
           }`}
         >
-          {speakingWord ? (
-            <Volume1 className="w-4 h-4 animate-pulse" />
-          ) : (
-            <Volume2 className="w-4 h-4" />
-          )}
+          {speakingWord ? <Volume1 className="w-4 h-4 animate-pulse" /> : <Volume2 className="w-4 h-4" />}
           {speakingWord ? "播放中..." : "例句"}
         </button>
         <button
           onClick={() => setShowAnswer(!showAnswer)}
-          className="flex items-center gap-1.5 bg-gray-500 text-white px-4 py-2 rounded-full text-sm
-            hover:bg-gray-600 active:scale-95 transition-all"
+          className="flex items-center gap-1.5 bg-gray-500 text-white px-4 py-2 rounded-full text-sm hover:bg-gray-600 active:scale-95 transition-all"
         >
           {showAnswer ? "隐藏" : "显示"}
         </button>
       </div>
 
-      {/* TTS 错误提示 */}
       {ttsError && (
         <div className="text-center mb-3">
-          <span className="text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full">
-            {ttsError}
-          </span>
+          <span className="text-xs text-amber-600 bg-amber-50 px-3 py-1 rounded-full">{ttsError}</span>
         </div>
       )}
 
-      {/* 语音提示 */}
       <div className="text-center mb-2">
         <span className="text-[10px] text-gray-300">
-          {speakingWord ? "🔊 正在朗读..." : "点击朗读按钮听取发音"}
+          {speakingWord ? "🔊 正在朗读..." : "点击朗读按钮听取发音 · 说「换一批单词」也可刷新"}
         </span>
       </div>
 
-      {/* 导航 */}
       <div className="flex justify-between items-center">
-        <button
-          onClick={prevWord}
-          className="text-gray-400 hover:text-pink-500 text-sm"
-        >
+        <button onClick={prevWord} className="text-gray-400 hover:text-pink-500 text-sm">
           ← 上一个
         </button>
         <span className="text-xs text-gray-300">
-          {currentIndex + 1} / {WORDS.length}
+          {currentIndex + 1} / {words.length}
         </span>
-        <button
-          onClick={nextWord}
-          className="text-gray-400 hover:text-pink-500 text-sm"
-        >
+        <button onClick={nextWord} className="text-gray-400 hover:text-pink-500 text-sm">
           下一个 →
         </button>
       </div>

@@ -614,5 +614,75 @@ flowchart LR
 | CloudBot 类插件怎么连？ | 当 **Channel 桥** → HTTP 调 Bella `/api/chat`（规则+Skills） |
 | 没有 Agent Skill 能加吗？ | **能**；Skill 与 Agent 解耦，先规则后 LLM |
 | 先写死可以吗？ | **可以**；拆成 `skills/*.ts` 就是「写死但可维护」 |
-| 现在最该做什么？ | **Phase 1 Web + Skill 拆分**，微信等 `/api/chat` 写好再接桥 |
+| 现在最该做什么？ | **Web Skill 已落地**；微信通道暂不采用 ClawBot（需本地 OpenClaw） |
+
+---
+
+## 11. 语音首次点击中断（已修复）
+
+### 11.1 现象
+
+页面**第一次**点「点击说话」→ 识别成功 → Bella 回复 TTS **播一半或立刻中断**；第二次往往正常。
+
+### 11.2 根因（Bug，非浏览器不支持）
+
+| 因素 | 说明 |
+|------|------|
+| **STT 与 TTS 抢音频** | 旧逻辑在点麦克风时 `warmUpSpeech()`（TTS 静音预热）与 `startListening()`（开麦）**同时进行** |
+| **Chrome 移动端** | `SpeechRecognition` 与 `SpeechSynthesis` 共用音频栈；开麦会打断尚未结束的 TTS 预热链 |
+| **`synth.cancel()` 时机** | 回复时 `doSpeak` 先 `cancel()`，若与预热 utterance 重叠，主回复也被取消 |
+
+### 11.3 修复（`speech.ts` + `VoiceChatBar`）
+
+1. **开麦前** `stopSpeaking()`，**不再**在 STT 期间做 TTS 预热  
+2. **STT 结束后** `speakAfterMic()`：停听 → 等 ~180ms 释放麦克风 → 再 TTS  
+3. **`ttsPrimed` 标志**：首次冷启动才走 silent utterance；之后直接播，减少打断链  
+4. VoiceChatBar 异步 Skill 等待期间显示「Bella 在想…」
+
+### 11.4 仍可能偶发的边界
+
+- 用户极快连点、系统 TTS 引擎慢启动 → 可再加大 `speakAfterMic` 延迟  
+- 无 GMS 的荣耀机 STT 本身失败 → 走文字降级，与本次 TTS 中断无关
+
+---
+
+## 12. Phase A 实现状态（Mock Agent + Skills）
+
+> **决策：不采用微信 ClawBot**（需本地常开 OpenClaw + 默认 LLM 路线）。Web 零成本 Skill 优先。
+
+### 12.1 代码结构
+
+```
+src/lib/
+├── core/
+│   ├── types.ts          # AgentResponse、UserMessage
+│   ├── normalize.ts      # 输入归一化
+│   └── orchestrator.ts   # handleUserMessage() 统一入口
+├── skills/
+│   ├── rule-skills.ts    # 导航/宠物/帮助/换词（同步）
+│   ├── content-skills.ts # 每日英语/诗词/天气/百科/笑话/故事（异步 API）
+│   └── fallback.ts
+├── providers/            # iciba、poetry、weather、wiki、local-content
+├── word-pool.ts          # 187 词库 shuffle 批次
+└── mock-agent.ts         # 薄导出（后续 LLM 只换 orchestrator 路由）
+```
+
+### 12.2 Skill 清单
+
+| Skill ID | 触发示例 | 类型 |
+|----------|----------|------|
+| `nav.*` | 去首页、看宠物、打开设置 | 规则 |
+| `pet.*` | 喂食、睡觉、洗澡 | 规则 |
+| `word.refresh` | 换一批单词 | 规则 + sideEffect |
+| `english.daily` | 每日英语、来句英语 | API 词霸 |
+| `poetry.random` | 背古诗、来首诗 | API 诗泉 |
+| `weather.query` | 天气、北京天气 | API Open-Meteo |
+| `wiki.query` | XX是什么、百科 | API 维基 |
+| `english.lookup` | apple 什么意思 / 纯英文输入 | API 词霸 |
+| `joke.tell` / `story.tell` | 讲笑话、讲故事 | 本地 JSON |
+| `hitokoto.quote` | 一言、美句 | API 一言 |
+
+### 12.3 后续换 Agent
+
+只需把 `orchestrator.ts` 里 `matchRuleSkills` / `matchAsyncSkillId` 换成 LLM 返回 `{ skillId, slots }`，**Skill 文件与 Providers 不动**。
 
