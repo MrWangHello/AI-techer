@@ -9,7 +9,7 @@ export async function sendTextCommand(page: Page, text: string) {
   const input = page.getByPlaceholder("输入文字与 Bella 对话...");
   await input.fill(text);
   await page.getByRole("button", { name: "发送" }).click();
-  await expect(page.locator("text=你").first()).toBeVisible({ timeout: 8000 });
+  await expect(page.getByText("你", { exact: true }).first()).toBeVisible({ timeout: 8000 });
 }
 
 export async function openStudyTab(page: Page) {
