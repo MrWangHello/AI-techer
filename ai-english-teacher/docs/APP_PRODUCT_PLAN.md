@@ -187,21 +187,16 @@ mode=content → 主题卡片（古诗卷轴、英语日签、故事页）
 mode=query   → 搜索框 + 结果卡（查词、百科、天气）
 ```
 
-**语音与学习 Tab 联动：**
+**语音与学习 Tab 联动（说句话就到，详见 [VOICE_INTENT_NAV.md](./VOICE_INTENT_NAV.md)）：**
 
-- 说「背古诗」→ `navigate: study` + `studySection: chinese.poetry` + 打开古诗卡片
-- 说「每日英语」→ `studySection: english.daily`
-- 说「口算练习」→ `studySection: math.drill` + MathDrill 出题
-- 说「1加1等于几」→ `math.calc` 内置计算并朗读
-- 说「讲个成语」→ `studySection: chinese.idiom` + 读成语解释
+| 用户说 | 自动导航 |
+|--------|----------|
+| **语文** / **汉字** / **拼音** / **句子** | `study` → `chinese.*` 对应子页 + 出内容 |
+| **英语** / **单词** / **句子** / 每日英语 | `study` → `english.*` |
+| **数学** / **口算** / **1加1等于几** | `study` → `math` / `math.drill` / 当场计算 |
+| 背古诗 / 讲成语 / 讲笑话 / 天气 | `study` → 对应 section + 执行 Skill |
 
-```typescript
-interface AgentResponse {
-  navigate?: TabTarget;
-  studySection?: string; // e.g. "chinese.poetry"
-  contentCard?: ContentCard; // 可选，直接打开对应 mode=content 视图
-}
-```
+Tab 分科栏保留作 **视觉兜底**；主路径是 **VoiceChatBar 意图导航**。
 
 ---
 
@@ -220,21 +215,25 @@ interface AgentResponse {
 
 ## 4. 与 Skill 架构的关系
 
+**语音导航第一：** 用户说「汉字」「1加1等于几」→ 意图识别 **自动切 Tab + 开子模块**，不必手动点卡片。完整映射见 [VOICE_INTENT_NAV.md](./VOICE_INTENT_NAV.md)。
+
 ```
 Voice / 点击
     ↓
-handleUserMessage()
+handleUserMessage()  ← 算式正则 / 关键词 / 上下文「换一个」
     ↓
-Router → Skill（带 domain + mode 元数据）
+Router → Skill（带 domain + mode + studySection）
     ↓
 AgentResponse { reply, navigate, studySection, contentCard, sideEffect }
     ↓
 page.tsx 分发：
-  · navigate → 切 Tab
-  · studySection → 学习 Tab 切学科+子模块
-  · contentCard → 渲染对应模板
+  · navigate → 切 Tab（home/pet/study/settings）
+  · studySection → 学习 Tab 切学科+子模块（如 chinese.hanzi）
+  · contentCard → 直接渲染题面/字卡/诗卷（免再找入口）
   · 写入 history → 首页最近记录
 ```
+
+**原则：一语直达 — 导航 + 开内容 + Bella 回复，三步合成一步。**
 
 **Skill 注册表扩展（规划）：**
 
@@ -334,6 +333,7 @@ recognition.interimResults = true;
 
 | 优先级 | 模块 | 内容 | 解锁入口 |
 |--------|------|------|----------|
+| **P0** | **语音意图导航** | studySection + 学科/子模块/算式路由 | 说「汉字」「1加1」自动到 |
 | **P0** | 语音 V-1 | 按住说话 + 结束即发送 | 体验稳定 |
 | **P1** | 学习 Tab 壳 | **五科全开** Segmented | 全部学科入口 |
 | **P1** | **语文三线** | 拼音 + 汉字 + 句子 JSON & Card | 见 GRADE1_3 §2 |
@@ -341,6 +341,7 @@ recognition.interimResults = true;
 | **P1** | **数学** | 20 以内趣味口算 + 应用题 JSON | 见 GRADE1_3 §4 |
 | **P1** | **成语 + 阅读** | idioms≥50、jokes≥30、stories 中文≥20 | 拓展内容 |
 | **P2** | 卡片 UI | PoetryCard、DailyBanner、IdiomCard | 拓展阅读 |
+| **P2** | 首页 | 六宫格 + 历史记录 | 首页增强 |
 | **P2** | 语音 V-2 | 点按 + 1.5s 静音自动发送 | — |
 | **P3** | 设置 | 年级、语音模式、可选 apihz Key | API 增强 |
 | **P3** | 谜语 | `riddles.json`≥20 | 阅读扩展 |
