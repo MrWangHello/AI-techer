@@ -51,7 +51,8 @@ export async function insertCloudEntries(
     if (/row-level security|RLS|permission denied/i.test(error.message)) {
       return {
         ok: false,
-        message: "库拒绝写入。到 Supabase SQL Editor 再跑 KB_SETUP 里「允许匿名写入」那一段。",
+        message:
+          "库拒绝写入。表已经有了，不要再建表。到 SQL Editor 再跑「允许网页写入」那 4 行（本页可复制）。",
       };
     }
     return { ok: false, message: `入库失败：${error.message}` };

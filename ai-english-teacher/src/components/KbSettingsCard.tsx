@@ -34,7 +34,9 @@ export default function KbSettingsCard() {
   return (
     <div className="bg-white/80 rounded-2xl p-5 shadow-sm border border-pink-50 space-y-4">
       <h3 className="text-lg font-bold text-gray-700">📚 知识库</h3>
-      <p className="text-base text-gray-600 leading-relaxed">把单词、故事、题加进数据库。孩子说话时按下面勾选来读。</p>
+      <p className="text-base text-gray-600 leading-relaxed">
+        把单词、故事、题加进数据库。添加时在那一页填你的邮箱当口令，不用去 GitHub 再填。
+      </p>
 
       <fieldset className="space-y-3">
         <legend className="text-base font-semibold text-gray-700">数据来源（至少勾一个）</legend>

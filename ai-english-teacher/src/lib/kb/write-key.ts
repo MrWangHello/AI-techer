@@ -10,5 +10,5 @@ export function checkWriteKey(input: string): boolean {
 }
 
 export function writeKeyHint(): string {
-  return "家长口令是你的邮箱（防孩子乱点入库）";
+  return "家长口令：就在下面这个框填你的邮箱，不用去 GitHub 再填";
 }

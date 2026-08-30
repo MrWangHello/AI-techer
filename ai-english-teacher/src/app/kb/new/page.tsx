@@ -5,6 +5,7 @@ import KbChrome from "@/components/KbChrome";
 import { insertCloudEntries } from "@/lib/kb/cloud";
 import type { KbKind } from "@/lib/kb/entries";
 import { aiPromptFor, splitPaste, type PreviewRow } from "@/lib/kb/parse-paste";
+import { ANON_WRITE_SQL } from "@/lib/kb/anon-write-sql";
 import { checkWriteKey, writeKeyHint } from "@/lib/kb/write-key";
 
 const KINDS: { id: KbKind; label: string }[] = [
@@ -33,6 +34,7 @@ export default function KbNewPage() {
   const [promptCopied, setPromptCopied] = useState(false);
   const [pin, setPin] = useState("");
   const [saving, setSaving] = useState(false);
+  const [sqlCopied, setSqlCopied] = useState(false);
 
   const placeholder =
     kind === "word"
@@ -177,13 +179,14 @@ export default function KbNewPage() {
       )}
 
       <label className="block mb-3">
-        <span className="block text-base text-gray-600 mb-1">{writeKeyHint()}</span>
+        <span className="block text-base font-semibold text-gray-700 mb-1">{writeKeyHint()}</span>
+        <p className="text-sm text-gray-500 mb-2">例如 563876951@qq.com。只在这一页填，点确认入库时用。</p>
         <input
           type="text"
           autoComplete="username"
           value={pin}
           onChange={(e) => setPin(e.target.value)}
-          placeholder="填你的邮箱"
+          placeholder="563876951@qq.com"
           className="w-full min-h-12 px-3 text-base border border-pink-200 rounded-xl"
         />
       </label>
@@ -196,6 +199,22 @@ export default function KbNewPage() {
         {saving ? "正在入库…" : "确认入库"}
       </button>
       {message && <p className="text-base text-amber-800 bg-amber-50 rounded-xl px-3 py-2">{message}</p>}
+      {/库拒绝写入|允许网页写入/.test(message) && (
+        <button
+          type="button"
+          className="mt-2 w-full min-h-12 rounded-xl bg-white border border-amber-300 text-amber-800 text-base"
+          onClick={async () => {
+            try {
+              await navigator.clipboard.writeText(ANON_WRITE_SQL);
+              setSqlCopied(true);
+            } catch {
+              setMessage(`${message}\n\n${ANON_WRITE_SQL}`);
+            }
+          }}
+        >
+          {sqlCopied ? "已复制补丁 SQL，去 Supabase 粘贴 Run" : "复制「允许网页写入」SQL"}
+        </button>
+      )}
     </KbChrome>
   );
 }
