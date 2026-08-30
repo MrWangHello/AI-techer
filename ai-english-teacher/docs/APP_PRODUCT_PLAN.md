@@ -1,9 +1,13 @@
 # Bella 产品架构与语音交互方案（v2）
 
-> 状态：**规划稿**（评审后分阶段实现）  
-> 关联：[SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md) · [VOICE_UX_PLAN.md](./VOICE_UX_PLAN.md) · [CONTENT_API_RESEARCH.md](./CONTENT_API_RESEARCH.md)  
+> 状态：**规划稿**（调研完成，评审后分阶段实现）  
+> 关联：[GRADE1_3_CURRICULUM.md](./GRADE1_3_CURRICULUM.md) · [MODULE_FEASIBILITY.md](./MODULE_FEASIBILITY.md) · [SYSTEM_ARCHITECTURE.md](./SYSTEM_ARCHITECTURE.md) · [VOICE_UX_PLAN.md](./VOICE_UX_PLAN.md) · [CONTENT_API_RESEARCH.md](./CONTENT_API_RESEARCH.md)  
 > 日期：2026-08-30  
 > 取代/补充：原 [CONTENT_UI_PLAN.md](./CONTENT_UI_PLAN.md) 中「全局浮层卡片」思路，改为 **Tab 内学科分区 + 首页聚合**
+
+**年级定位：** 默认 **小学 1–3 年级**（从一年级起步），详见 [GRADE1_3_CURRICULUM.md](./GRADE1_3_CURRICULUM.md)。
+
+**入口门禁：** 各模块能否上首页/学习 Tab，以 [MODULE_FEASIBILITY.md](./MODULE_FEASIBILITY.md) 总表为准 — **无 API 用内置，内容要丰富**。
 
 ---
 
@@ -35,17 +39,23 @@
 
 | 功能 | Skill ID | domain | mode | 现入口 | 目标 UI |
 |------|----------|--------|------|--------|---------|
-| 单词卡片/测验 | `word.*` `study.quiz` | **english** | drill | 学习 Tab | 英语 › 单词练习 |
-| 每日英语 | `english.daily` | **english** | content | 语音 | 英语 › 每日一句 |
+| 拼音练习 | `pinyin.*` | **chinese** | drill | — | 语文 › 拼音 |
+| 汉字认读 | `hanzi.*` | **chinese** | drill | — | 语文 › 汉字 |
+| 句子跟读 | `sentence.*` | **chinese** | drill | — | 语文 › 句子 |
+| 背古诗/诗词 | `poetry.random` | **chinese** | content | 语音 | 语文 › 拓展 › 古诗 |
+| 一言美句 | `hitokoto.quote` | **chinese** | content | 语音 | 语文 › 拓展 › 美句 |
+| 成语 | `idiom.random` | **chinese** | content | 语音/学习 | 语文 › 拓展 › 成语 |
+| 单词卡片/测验 | `word.*` `study.quiz` | **english** | drill | 学习 Tab | 英语 › 单词 |
+| 英语句子 | `english.sentence` | **english** | drill | — | 英语 › 句子 |
+| 每日英语 | `english.daily` | **english** | content | 语音 | 英语 › 句子横幅 |
 | 查单词 | `english.lookup` | **english** | query | 语音 | 英语 › 查词 |
-| 背古诗/诗词 | `poetry.random` | **chinese** | content | 语音 | 语文 › 古诗词 |
-| 一言美句 | `hitokoto.quote` | **chinese** | content | 语音 | 语文 › 美句 |
-| 成语（待接 API） | `idiom.*` | **chinese** | content | — | 语文 › 成语 |
+| 口算练习 | `math.drill` | **math** | drill | 语音/学习 | 数学 › 口算 |
+| 小计算器 | `math.calc` | **math** | query | 语音 | 数学 › 问 Bella |
+| 应用题 | `word-problem.random` | **math** | content | 语音/学习 | 数学 › 应用题 |
 | 讲故事 | `story.tell` | **reading** | content | 语音 | 阅读 › 短故事 |
 | 讲笑话 | `joke.tell` | **reading** | content | 语音 | 阅读 › 趣味 |
 | 百科 | `wiki.query` | **explore** | query | 语音 | 探索 › 百科 |
 | 天气 | `weather.query` | **explore** | query | 语音 | 探索 › 天气 |
-| 数学练习（规划） | `math.*` | **math** | drill | — | 数学 › 口算/题库 |
 | 导航/帮助 | `nav.*` `help.*` | — | — | 语音 | 不切 Tab，ReplyBar |
 | 宠物动作 | `pet.*` | — | animation | 语音/宠物 Tab | **宠物 Tab** |
 
@@ -68,7 +78,7 @@
 │  ┌──────┬──────┬──────┐             │
 │  │ 英语  │ 语文  │ 阅读  │             │
 │  ├──────┼──────┼──────┤             │
-│  │ 探索  │ 数学  │ 宠物  │  ← 数学灰显「即将开放」│
+│  │ 探索  │ 数学  │ 宠物  │  ← 数学与各科同级，内置算法即可 │
 │  └──────┴──────┴──────┘             │
 ├─────────────────────────────────────┤
 │  📋 最近记录                         │
@@ -117,33 +127,38 @@ interface HistoryItem {
 学习 Tab 顶部 **学科 Segmented Control**（横向滑动）：
 
 ```
-[ 英语 ] [ 语文 ] [ 阅读 ] [ 探索 ] [ 数学·Soon ]
+[ 英语 ] [ 语文 ] [ 阅读 ] [ 探索 ] [ 数学 ]
 ────────────────────────────────────────
          （当前学科的内容区）
 ```
 
 #### 英语
 
-| 子模块 | 内容 | 对应现有 |
-|--------|------|----------|
-| **单词练习** | StudyCards + 换一批 + 测验 | ✅ 已有 |
-| **每日一句** | 扇贝/API + 主题卡片 + 朗读 | Skill + 待做卡片 |
-| **查单词** | 输入/语音查词 | Skill |
+| 子模块 | 内容 | 说明 |
+|--------|------|------|
+| **单词** | StudyCards + emoji 插图 + 趣味例句 | 一年级 60 词起，见 GRADE1_3 |
+| **句子** | 情景短句跟读 + 填空 | 「The apple is red!」 |
+| **每日一句** | 扇贝/API 横幅 | 挂在句子 Tab 顶部 |
+| **查单词** | 语音/输入查词 | 已有 Skill |
 
-#### 语文
+#### 语文（主线：拼音 · 汉字 · 句子）
 
-| 子模块 | 内容 | 对应现有 |
-|--------|------|----------|
-| **古诗词** | 诗泉随机 + 换一首 + 竖排卡片 | Skill + 待做卡片 |
-| **美句摘录** | 一言 | Skill |
-| **成语** | apihz / 内置（Phase 2） | 规划 |
+| 子模块 | 内容 | 说明 |
+|--------|------|------|
+| **拼音** | 单韵母 a o e + 声母 b p m f… | 四线三格 + 跟读 + 拼读 |
+| **汉字** | 天地人、金木水火土… | 象形图 + 组词 + 例句 |
+| **句子** | 我是小学生。等 40 句 | 跟读 + 填空 + 排句 |
+| **拓展** | 古诗 / 成语 / 美句 | 底部小入口，2–3 年级加重 |
+
+> 完整例文与 UI 草图：[GRADE1_3_CURRICULUM.md §2](./GRADE1_3_CURRICULUM.md#2-语文--拼音--汉字--句子)
 
 #### 阅读
 
 | 子模块 | 内容 | 对应现有 |
 |--------|------|----------|
-| **短故事** | 内置 JSON | Skill |
-| **笑话** | 内置 JSON | Skill |
+| **短故事** | 内置 JSON（扩至 ≥20 中文） | Skill ✅；开发时同步扩内容 |
+| **笑话** | 内置 JSON（扩至 ≥30） | Skill ✅ |
+| **谜语** | 内置 `riddles.json`（规划） | Phase 2 |
 
 #### 探索
 
@@ -152,12 +167,17 @@ interface HistoryItem {
 | **百科** | 维基摘要 | 偏查询 |
 | **天气** | Open-Meteo | 偏查询 |
 
-#### 数学（预留）
+#### 数学（必做 — 一二年级以加减为主）
+
+> 完整情境与例文：[GRADE1_3_CURRICULUM.md §4](./GRADE1_3_CURRICULUM.md#4-数学--加减法为主趣味口算)
 
 | 子模块 | 内容 | 说明 |
 |--------|------|------|
-| **口算练习** | 内置生成 / apihz | 显示「即将开放」 |
-| **应用题** | 内置 JSON | Phase 3 |
+| **口算练习** | 20 以内加减（一年级默认） | 🐵摘桃 / 🎲骰子等情境 + emoji 计数图 |
+| **应用题** | 内置 15 道图文题 | 「5 个苹果又给了 3 个…」 |
+| **问 Bella** | 小计算器 | 「1 加 1 等于几」→ 语音答 |
+
+**趣味要素：** 大字算式 + 水果动物插图 + Bella 读题 + 连对宠物 happy + 🪙奖励
 
 **学习 Tab 内 UI 模板（3 种）：**
 
@@ -167,19 +187,16 @@ mode=content → 主题卡片（古诗卷轴、英语日签、故事页）
 mode=query   → 搜索框 + 结果卡（查词、百科、天气）
 ```
 
-**语音与学习 Tab 联动：**
+**语音与学习 Tab 联动（说句话就到，详见 [VOICE_INTENT_NAV.md](./VOICE_INTENT_NAV.md)）：**
 
-- 说「背古诗」→ `navigate: study` + `studySection: chinese.poetry` + 打开古诗卡片
-- 说「每日英语」→ `studySection: english.daily`
-- 说「开始测验」→ `studySection: english.words` + quiz mode
+| 用户说 | 自动导航 |
+|--------|----------|
+| **语文** / **汉字** / **拼音** / **句子** | `study` → `chinese.*` 对应子页 + 出内容 |
+| **英语** / **单词** / **句子** / 每日英语 | `study` → `english.*` |
+| **数学** / **口算** / **1加1等于几** | `study` → `math` / `math.drill` / 当场计算 |
+| 背古诗 / 讲成语 / 讲笑话 / 天气 | `study` → 对应 section + 执行 Skill |
 
-```typescript
-interface AgentResponse {
-  navigate?: TabTarget;
-  studySection?: string; // e.g. "chinese.poetry"
-  contentCard?: ContentCard; // 可选，直接打开对应 mode=content 视图
-}
-```
+Tab 分科栏保留作 **视觉兜底**；主路径是 **VoiceChatBar 意图导航**。
 
 ---
 
@@ -198,21 +215,25 @@ interface AgentResponse {
 
 ## 4. 与 Skill 架构的关系
 
+**语音导航第一：** 用户说「汉字」「1加1等于几」→ 意图识别 **自动切 Tab + 开子模块**，不必手动点卡片。完整映射见 [VOICE_INTENT_NAV.md](./VOICE_INTENT_NAV.md)。
+
 ```
 Voice / 点击
     ↓
-handleUserMessage()
+handleUserMessage()  ← 算式正则 / 关键词 / 上下文「换一个」
     ↓
-Router → Skill（带 domain + mode 元数据）
+Router → Skill（带 domain + mode + studySection）
     ↓
 AgentResponse { reply, navigate, studySection, contentCard, sideEffect }
     ↓
 page.tsx 分发：
-  · navigate → 切 Tab
-  · studySection → 学习 Tab 切学科+子模块
-  · contentCard → 渲染对应模板
+  · navigate → 切 Tab（home/pet/study/settings）
+  · studySection → 学习 Tab 切学科+子模块（如 chinese.hanzi）
+  · contentCard → 直接渲染题面/字卡/诗卷（免再找入口）
   · 写入 history → 首页最近记录
 ```
+
+**原则：一语直达 — 导航 + 开内容 + Bella 回复，三步合成一步。**
 
 **Skill 注册表扩展（规划）：**
 
@@ -308,16 +329,23 @@ recognition.interimResults = true;
 
 ## 6. 实施路线图（汇总）
 
-| 优先级 | 模块 | 内容 |
-|--------|------|------|
-| **P0** | 语音 V-1 | 按住说话 + 结束即发送 |
-| **P1** | 学习 Tab | 顶部分科 Segmented + 英语/语文/阅读/探索子页 |
-| **P1** | 英语/语文 | 单词区保留 + 古诗/每日英语 **content 卡片** |
-| **P2** | 首页 | 快捷入口宫格 + 历史记录 |
-| **P2** | 语音 V-2 | 静音自动发送 |
-| **P3** | 设置 | 年级、默认语音模式 |
-| **P3** | 数学 | 占位 + 口算 Skill |
-| **P4** | 语音 V-3/V-4 | 上滑取消/锁定 |
+> 详细门禁与 API 结论见 [MODULE_FEASIBILITY.md §7](./MODULE_FEASIBILITY.md#7-修订后的实施顺序有内容再开入口)
+
+| 优先级 | 模块 | 内容 | 解锁入口 |
+|--------|------|------|----------|
+| **P0** | **语音意图导航** | studySection + 学科/子模块/算式路由 | 说「汉字」「1加1」自动到 |
+| **P0** | 语音 V-1 | 按住说话 + 结束即发送 | 体验稳定 |
+| **P1** | 学习 Tab 壳 | **五科全开** Segmented | 全部学科入口 |
+| **P1** | **语文三线** | 拼音 + 汉字 + 句子 JSON & Card | 见 GRADE1_3 §2 |
+| **P1** | **英语词/句** | emoji 插图 + 句子 Card | 见 GRADE1_3 §3 |
+| **P1** | **数学** | 20 以内趣味口算 + 应用题 JSON | 见 GRADE1_3 §4 |
+| **P1** | **成语 + 阅读** | idioms≥50、jokes≥30、stories 中文≥20 | 拓展内容 |
+| **P2** | 卡片 UI | PoetryCard、DailyBanner、IdiomCard | 拓展阅读 |
+| **P2** | 首页 | 六宫格 + 历史记录 | 首页增强 |
+| **P2** | 语音 V-2 | 点按 + 1.5s 静音自动发送 | — |
+| **P3** | 设置 | 年级、语音模式、可选 apihz Key | API 增强 |
+| **P3** | 谜语 | `riddles.json`≥20 | 阅读扩展 |
+| **P4** | 语音 V-3/V-4 | 上滑取消/锁定 | — |
 
 ---
 
@@ -326,6 +354,7 @@ recognition.interimResults = true;
 1. **学习 Tab 默认打开哪个学科？** 建议：英语（当前主路径），或记住上次学科。  
 2. **按住说话是否作为默认？** 建议：是（国内习惯）；设置可改点按+静音。  
 3. **探索（天气/百科）算学习还是首页快捷？** 建议：学习 Tab「探索」+ 首页入口镜像。  
-4. **历史记录保留几条？** 建议：20 条，localStorage。
+4. **历史记录保留几条？** 建议：20 条，localStorage。  
+5. **没 API 的模块做不做？** 建议：**都做** — 内置 JSON + 随机抽取；数学用内置算法。
 
-确认后按 **P0 语音 → P1 学习分科** 顺序开发。
+确认后按 **P0 语音 → P1 并行（五科壳 + 数学 + 成语/应用题 JSON + 扩阅读）** 开发。
