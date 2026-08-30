@@ -45,12 +45,13 @@ jobs:
         working-directory: ./ai-english-teacher/workers
         run: |
           echo "::group::Deploying Cloudflare Worker"
-          OUTPUT=$(npx --yes wrangler deploy edge-tts.js --name ai-teacher-tts 2>&1)
+          npm install wrangler@3.90.0 2>&1
+          OUTPUT=$(npx --no-install wrangler deploy edge-tts.js --name ai-teacher-tts 2>&1)
           echo "$OUTPUT"
           echo "::endgroup::"
           # 获取 Workers 子域名
           echo "::group::Getting Workers Subdomain"
-          WHOAMI=$(npx --yes wrangler whoami 2>&1)
+          WHOAMI=$(npx --no-install wrangler whoami 2>&1)
           echo "$WHOAMI"
           echo "::endgroup::"
           # 从 whoami 输出中提取 Workers 子域名（格式: user@example.com's Workers · subdomain.workers.dev）
