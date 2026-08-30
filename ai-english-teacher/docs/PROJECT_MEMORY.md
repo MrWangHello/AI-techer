@@ -37,7 +37,7 @@
 |----|------|
 | 现象 | 麦克风无反应或报错 |
 | 根因 | 无 GMS、Web Speech API 不支持 |
-| 修复 | 文字输入降级；见 `BROWSER_COMPAT_PLAN.md` |
+| 修复 | 文字输入降级；高危机机会后台预取离线包，见 §1.8 |
 | 文件 | `VoiceChatBar.tsx` |
 
 ### 1.4 口算中语音被导航规则抢走
@@ -71,6 +71,15 @@
 | 根因 | 查词主路径依赖词霸外网 API（CORS/超时）；中文查词还会把汉字剥掉再请求 |
 | 修复 | **本地词库优先**：`words.json` + 补充表同步命中，不发起网络请求；未收录立即说明，不卡住 |
 | 文件 | `local-dictionary.ts`, `orchestrator.ts` |
+
+### 1.8 离线语音包（探测后再下） `[preview]`
+
+| 项 | 内容 |
+|----|------|
+| 探测 | `speech-probe.ts`：Chrome+GMS 不下包；无 API / 荣耀华为 QQ Firefox / 设置强制离线 → 后台预取 |
+| 可跑包 | `@huggingface/transformers` + `Xenova/whisper-tiny` 中文短句（约 40MB，缓存后不再下） |
+| 说明 | SenseVoice 同管道可换 MODEL_ID；先保证浏览器里真能转写 |
+| 文件 | `speech-probe.ts`, `speech-local.ts`, `VoiceChatBar.tsx` |
 
 ---
 

@@ -10,9 +10,17 @@ import {
   speak,
   speakAfterMic,
   stopSpeaking,
-  isSTTSupported,
   isSpeechSupported,
 } from "@/lib/speech";
+import { decideSttEngine, hasWebSpeechApi, readSttPref, type SttEngine } from "@/lib/speech-probe";
+import {
+  ensureLocalModel,
+  finishLocalRecording,
+  isLocalMarkedReady,
+  startLocalRecording,
+  stopLocalRecording,
+  subscribeLocalStt,
+} from "@/lib/speech-local";
 import { handleUserMessage, AgentResponse } from "@/lib/mock-agent";
 
 export type InputMode = "voice" | "text";
@@ -42,6 +50,9 @@ export default function VoiceChatBar({
   const [hint, setHint] = useState<string | null>(null);
   const [sttAvailable, setSttAvailable] = useState(true);
   const [ttsAvailable, setTtsAvailable] = useState(true);
+  const [sttEngine, setSttEngine] = useState<SttEngine>("webspeech");
+  const [packHint, setPackHint] = useState<string | null>(null);
+  const localTapTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const isMounted = useRef(true);
   const inputRef = useRef<HTMLInputElement>(null);
   const holdActive = useRef(false);
@@ -56,7 +67,12 @@ export default function VoiceChatBar({
       clearTimeout(pressTimer.current);
       pressTimer.current = null;
     }
+    if (localTapTimer.current) {
+      clearTimeout(localTapTimer.current);
+      localTapTimer.current = null;
+    }
     stopListening();
+    stopLocalRecording();
     if (isMounted.current) {
       setListening(false);
       setHolding(false);
@@ -69,17 +85,57 @@ export default function VoiceChatBar({
 
   useEffect(() => {
     isMounted.current = true;
-    const stt = isSTTSupported();
-    setSttAvailable(stt);
+    const web = hasWebSpeechApi(window);
+    const decision = decideSttEngine({
+      webSpeechApi: web,
+      ua: navigator.userAgent,
+      pref: readSttPref(),
+      localReady: isLocalMarkedReady(),
+    });
+    setSttEngine(decision.engine === "none" && decision.shouldPrefetch ? "local" : decision.engine);
     setTtsAvailable(isSpeechSupported());
-    if (!stt) setMode("text");
+    const canVoice = decision.engine !== "none" || decision.shouldPrefetch;
+    setSttAvailable(canVoice);
+    if (!canVoice) setMode("text");
+
+    if (decision.shouldPrefetch) {
+      setPackHint("正在给 Bella 装耳朵…");
+      void ensureLocalModel().then((ok) => {
+        if (!isMounted.current) return;
+        if (ok) {
+          setSttEngine("local");
+          setSttAvailable(true);
+          setPackHint("离线耳朵准备好了，可以说话");
+          setTimeout(() => {
+            if (isMounted.current) setPackHint(null);
+          }, 2500);
+        } else {
+          setPackHint(null);
+          if (!web) {
+            setSttAvailable(false);
+            setMode("text");
+            setHint("离线语音包装不上，请用文字输入");
+          }
+        }
+      });
+    }
+
     return () => {
       isMounted.current = false;
       try {
         stopListening();
       } catch (_) {}
+      stopLocalRecording();
       stopSpeaking();
     };
+  }, []);
+
+  useEffect(() => {
+    return subscribeLocalStt((s) => {
+      if (s.status === "downloading" && s.progress > 0) {
+        setPackHint(`正在给 Bella 装耳朵… ${s.progress}%`);
+      }
+    });
   }, []);
 
   const showHint = useCallback((msg: string, ms = 3500) => {
@@ -159,6 +215,48 @@ export default function VoiceChatBar({
     else switchToVoice();
   }, [mode, switchToText, switchToVoice]);
 
+  const finishLocalUtterance = useCallback(async () => {
+    if (localTapTimer.current) {
+      clearTimeout(localTapTimer.current);
+      localTapTimer.current = null;
+    }
+    setListening(false);
+    setHolding(false);
+    setInterimText("Bella 在听…");
+    try {
+      const text = await finishLocalRecording();
+      if (!isMounted.current) return;
+      setInterimText("");
+      if (!text) {
+        showHint("没有听清，请再试一次");
+        return;
+      }
+      onTranscript?.(text);
+      void handleAgentReply(text, true);
+    } catch (err) {
+      if (!isMounted.current) return;
+      setInterimText("");
+      showHint(err instanceof Error ? err.message : "离线识别失败，请打字");
+    }
+  }, [handleAgentReply, onTranscript, showHint]);
+
+  const startLocalTap = useCallback(async () => {
+    stopSpeaking();
+    setListening(true);
+    setInterimText("正在听…");
+    try {
+      await startLocalRecording();
+      localTapTimer.current = setTimeout(() => {
+        void finishLocalUtterance();
+      }, 5000);
+    } catch (_) {
+      setListening(false);
+      setInterimText("");
+      showHint("打不开麦克风，请用文字输入");
+      switchToText();
+    }
+  }, [finishLocalUtterance, showHint, switchToText]);
+
   /** 点击说话（更稳定，恢复原有模式） */
   const startTapVoice = useCallback(() => {
     if (thinking || speaking) return;
@@ -173,6 +271,11 @@ export default function VoiceChatBar({
     setListening(true);
     setInterimText("");
 
+    if (sttEngine === "local") {
+      void startLocalTap();
+      return;
+    }
+
     startListening(
       (text) => {
         if (!isMounted.current) return;
@@ -184,8 +287,23 @@ export default function VoiceChatBar({
         if (!isMounted.current) return;
         stopListeningUi();
         const soft = ["没有检测到语音", "被中断", "网络不稳定"].some((s) => err.includes(s));
-        showHint(soft ? `${err}（再点一次试试）` : `${err}，已切换文字输入`);
-        if (!soft) switchToText();
+        if (!soft) {
+          setPackHint("正在给 Bella 装耳朵…");
+          void ensureLocalModel().then((ok) => {
+            if (!isMounted.current) return;
+            if (ok) {
+              setSttEngine("local");
+              setPackHint(null);
+              showHint("已换离线耳朵，请再说一次");
+            } else {
+              setPackHint(null);
+              showHint(`${err}，已切换文字输入`);
+              switchToText();
+            }
+          });
+          return;
+        }
+        showHint(`${err}（再点一次试试）`);
       },
       () => {
         if (!isMounted.current) return;
@@ -194,6 +312,7 @@ export default function VoiceChatBar({
     );
   }, [
     sttAvailable,
+    sttEngine,
     thinking,
     speaking,
     onTranscript,
@@ -201,6 +320,7 @@ export default function VoiceChatBar({
     switchToText,
     showHint,
     stopListeningUi,
+    startLocalTap,
   ]);
 
   const beginHold = useCallback(() => {
@@ -218,6 +338,14 @@ export default function VoiceChatBar({
     setInterimText("");
     interimRef.current = "";
 
+    if (sttEngine === "local") {
+      void startLocalRecording().catch(() => {
+        stopListeningUi();
+        showHint("打不开麦克风，请用文字输入");
+      });
+      return;
+    }
+
     startHoldListening(
       (text) => {
         interimRef.current = text;
@@ -230,13 +358,18 @@ export default function VoiceChatBar({
         showHint(soft ? `${err}（再点一次试试）` : err);
       }
     );
-  }, [thinking, speaking, sttAvailable, switchToText, showHint, stopListeningUi]);
+  }, [thinking, speaking, sttAvailable, sttEngine, switchToText, showHint, stopListeningUi]);
 
   const finishHold = useCallback(() => {
     if (!holdActive.current) return;
     holdActive.current = false;
     setHolding(false);
     setListening(false);
+
+    if (sttEngine === "local") {
+      void finishLocalUtterance();
+      return;
+    }
 
     endHoldListening(
       (text) => {
@@ -252,7 +385,7 @@ export default function VoiceChatBar({
       },
       interimRef.current
     );
-  }, [onTranscript, handleAgentReply, showHint]);
+  }, [onTranscript, handleAgentReply, showHint, sttEngine, finishLocalUtterance]);
 
   const releasePointer = useCallback((e: React.PointerEvent) => {
     pointerIdRef.current = null;
@@ -317,7 +450,9 @@ export default function VoiceChatBar({
 
   return (
     <div className="shrink-0 bg-white border-t border-pink-100 px-3 pt-2 pb-2 max-w-lg mx-auto w-full">
-      {hint && <p className="text-sm text-amber-700 text-center mb-1.5 animate-fadeIn">{hint}</p>}
+      {(hint || packHint) && (
+        <p className="text-sm text-amber-700 text-center mb-1.5 animate-fadeIn">{hint || packHint}</p>
+      )}
 
       {interimText && (holding || listening) && (
         <p className="text-sm text-gray-600 text-center mb-1.5 px-2 break-words whitespace-pre-wrap">{interimText}</p>

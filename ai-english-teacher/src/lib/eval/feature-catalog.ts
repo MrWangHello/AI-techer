@@ -37,6 +37,17 @@ export const FEATURE_CASES: FeatureCase[] = [
     status: "ok",
   },
   {
+    id: "stt.local-pack",
+    name: "离线语音包（探测后再下）",
+    tab: "settings",
+    voicePhrases: ["打开设置"],
+    expected: { intent: "nav_settings", navigate: "settings" },
+    tapFallback: true,
+    offline: true,
+    status: "partial",
+    notes: "进页先探测；高危机或无 Web Speech 才后台下离线包。当前可跑 Whisper tiny 中文短句，管道可换成 SenseVoice",
+  },
+  {
     id: "nav.home",
     name: "回首页",
     tab: "global",

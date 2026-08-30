@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import { RotateCcw } from "lucide-react";
 import KbSettingsCard from "@/components/KbSettingsCard";
 import VoiceHintBar from "@/components/VoiceHintBar";
@@ -8,6 +9,8 @@ import Card from "@/components/ui/Card";
 import SpeakableText from "@/components/ui/SpeakableText";
 import { TAB_VOICE_HINTS } from "@/lib/voice-hints";
 import type { PetData } from "@/lib/pet-data";
+import { readSttPref, writeSttPref, type SttPref } from "@/lib/speech-probe";
+import { ensureLocalModel, getLocalSttSnapshot, subscribeLocalStt } from "@/lib/speech-local";
 
 export default function SettingsTab({
   pet,
@@ -44,6 +47,20 @@ export default function SettingsTab({
   onCancelReset: () => void;
   onResetData: () => void;
 }) {
+  const [sttPref, setSttPref] = useState<SttPref>("auto");
+  const [pack, setPack] = useState(getLocalSttSnapshot());
+
+  useEffect(() => {
+    setSttPref(readSttPref());
+    return subscribeLocalStt((s) => setPack({ ...s, ready: s.status === "ready" }));
+  }, []);
+
+  const setPref = (pref: SttPref) => {
+    setSttPref(pref);
+    writeSttPref(pref);
+    if (pref === "local") void ensureLocalModel();
+  };
+
   return (
     <div className="space-y-4 animate-slideUp">
       <VoiceHintBar text={TAB_VOICE_HINTS.settings} voiceSpeed={voiceSpeed} />
@@ -114,6 +131,46 @@ export default function SettingsTab({
         <div className="mt-3 space-y-1 text-sm text-gray-600">
           <p>语音合成: {speechSupported === null ? "检测中..." : speechSupported ? "支持" : "不支持（建议使用 Chrome）"}</p>
           <p>语音识别: {sttSupported === null ? "检测中..." : sttSupported ? "支持" : "不支持（可使用文字输入）"}</p>
+        </div>
+        <div className="mt-4 space-y-2">
+          <p className="text-base text-gray-600">识别方式</p>
+          <div className="flex flex-wrap gap-2">
+            {(
+              [
+                ["auto", "自动（先探测）"],
+                ["webspeech", "只用浏览器"],
+                ["local", "只用离线包"],
+              ] as const
+            ).map(([value, label]) => (
+              <button
+                key={value}
+                type="button"
+                onClick={() => setPref(value)}
+                className={`min-h-11 px-3 rounded-full text-sm border ${
+                  sttPref === value ? "bg-pink-500 text-white border-pink-500" : "bg-white text-gray-600 border-pink-100"
+                }`}
+              >
+                {label}
+              </button>
+            ))}
+          </div>
+          <p className="text-sm text-gray-500">
+            离线包：
+            {pack.status === "downloading"
+              ? `正在装 ${pack.progress}%`
+              : pack.ready || pack.status === "ready"
+                ? "已在这台浏览器里"
+                : pack.status === "error"
+                  ? `装不上（${pack.error || "请检查网络"}）`
+                  : "还没下载。Chrome 能认就不下。"}
+          </p>
+          <SpeakableText
+            text="进页面会先探测。浏览器耳朵够用就不下包。荣耀、华为、QQ 或探测失败，才会后台给 Bella 装离线耳朵。"
+            lang="zh"
+            voiceSpeed={voiceSpeed}
+            className="items-start"
+            textClassName="text-sm text-gray-500 leading-relaxed"
+          />
         </div>
       </Card>
 
