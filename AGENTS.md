@@ -48,7 +48,7 @@ VoiceChatBar → handleUserMessage → orchestrator → Skills → TTS
 | [`docs/FEATURES.md`](ai-english-teacher/docs/FEATURES.md) | **功能说明书** |
 | [`docs/EVALUATION.md`](ai-english-teacher/docs/EVALUATION.md) | **评测方法与评分（当前 69 分）** |
 | [`docs/TEST_CASES.md`](ai-english-teacher/docs/TEST_CASES.md) | 用例与代码映射 |
-| [`docs/KB_DESIGN.md`](ai-english-teacher/docs/KB_DESIGN.md) | **知识库方案（先设计，未实施）**：模板合同 + 分批粘贴 + 谨慎扩展 |
+| [`docs/KB_DESIGN.md`](ai-english-teacher/docs/KB_DESIGN.md) | **知识库方案（先设计，未实施）**：模板 + 来源勾选 + 谨慎扩展 |
 | [`src/lib/eval/feature-catalog.ts`](ai-english-teacher/src/lib/eval/feature-catalog.ts) | 机器可读功能目录（新功能先改这里） |
 | [`docs/PROJECT_MEMORY.md`](ai-english-teacher/docs/PROJECT_MEMORY.md) | 问题沉淀库（修 bug 先查） |
 | [`docs/SYSTEM_ARCHITECTURE.md`](ai-english-teacher/docs/SYSTEM_ARCHITECTURE.md) | 分层架构 |
