@@ -471,3 +471,148 @@ server/
 | [ARCHITECTURE.md](./ARCHITECTURE.md) | 当前已实现细节（Cat3D、speech、部署） |
 
 确认本架构后，按 **Phase A → B → C** 顺序开发，避免在 `mock-agent.ts` 里继续堆关键词。
+
+---
+
+## 10. 零成本策略 + 微信插件对接（2026-08-30 补充）
+
+> 原则：**现金支出 ≈ 0**；Skill **不依赖** Agent/LLM；微信走「插件/桥接 + 免费额度」，不自建昂贵云服务。
+
+### 10.1 Skill 没有 Agent 也能做 —— 你说得对
+
+| 误解 | 事实 |
+|------|------|
+| 没有 LLM 就加不了 Skill | **错**。Skill = 一个功能函数；Router 用**关键词**选 Skill 即可 |
+| 必须先上 Agent | **不必**。Agent 只替换 Router 的「选哪个 Skill」，Skill 本身不变 |
+
+**演进路径（推荐）：**
+
+```
+现在：mock-agent.ts 一坨关键词          → 能跑，难维护
+Phase A：拆成 skills/*.ts + 规则 Router  → 还是写死，但模块化（维护一半）
+Phase B：加 Tier1 免费 API Skills        → 仍是规则触发
+将来：只把 Router.match() 换成 LLM       → Skill 文件基本不动
+```
+
+**「先写死、后面再换 Agent」完全 OK。** 架构价值在于 **拆文件 + 统一入口**，不是现在就买模型。
+
+---
+
+### 10.2 零成本清单（现金）
+
+| 项目 | 费用 | 说明 |
+|------|------|------|
+| GitHub Pages（Web UI） | **¥0** | 现有部署 |
+| 词霸 / 诗泉 / 一言 / Open-Meteo / 维基 | **¥0** | 前端直连 |
+| 本地 JSON（词库/笑话/故事） | **¥0** | 仓库内置 |
+| 规则 Router + Skills | **¥0** | 纯 TS，无 API Key |
+| 浏览器 TTS | **¥0** | Web Speech |
+| 浏览器 STT | **¥0** | 国内常不可用 → 靠文字或微信通道 |
+
+**需要花钱的常见坑（可避）：**
+
+| 项目 | 费用 | 能否避开 |
+|------|------|----------|
+| 微信**服务号**认证 | ~¥300/年 | 用个人订阅号 / 小程序 / 个人号桥接 |
+| 腾讯云服务器 24h | 月费 | 用云开发免费额 / Vercel 免费层 / **家里电脑** |
+| CowAgent / LinkAI 托管 | 按量 | **不用**其 LLM，只借通道时要自托管 |
+| LLM API | 按 token | **Phase A/B 不用** |
+
+---
+
+### 10.3 微信「免费通道」怎么接 Bella（插件思路）
+
+你说的 **CloudBot / 微信机器人插件** 本质上是 **Channel 桥**：
+
+```
+微信用户（语音/文字）
+    ↓
+【桥接层】开源机器人 / 云开发 / 插件     ← 负责：收消息、语音识别、发回复
+    ↓  HTTP POST（纯文本）
+【Bella 逻辑层】handleUserMessage(text)   ← 规则 Router + Skills（零 LLM）
+    ↓  JSON { reply: "..." }
+【桥接层】把 reply 发回微信
+```
+
+**Bella 不需要自己买微信云服务全套**，只需暴露一个 **HTTP 接口**（或桥接层内嵌同套 TS 逻辑）。
+
+#### 方案对比（按零成本排序）
+
+| 方案 | 现金成本 | 语音谁识别 | 适合 |
+|------|----------|------------|------|
+| **A. 仅 Web（现状）** | ¥0 | 浏览器 STT（差） | 先做完 Skill |
+| **B. 微信云开发云函数** | **免费额度内 ¥0** | 小程序录音 + 云 ASR 插件 | 官方路，小流量够用 |
+| **C. 家里电脑跑开源桥** | **¥0**（电费） | 桥自带（如 CowAgent/Wechaty 通道） | 个人测试、低流量 |
+| **D. Vercel/腾讯云函数免费层** | **¥0**（限额内） | 微信推送语音 → 函数调识别 API | 小 API 服务 |
+| **E. 公众号服务号 + 自建** | ¥300/年+服务器 | 微信官方 | **不推荐**零成本阶段 |
+
+#### 和 CowAgent（原 chatgpt-on-wechat）的关系
+
+[CowAgent](https://github.com/zhayujie/CowAgent) 等框架：
+
+- **强项**：微信 Channel、语音、多平台接入（插件现成）
+- **默认**：后面接 **LLM**（要钱或自备 Key）
+- **零成本用法**：**只当微信桥**，不接它的 Agent 大脑，改为：
+  - 写 **Custom Skill / HTTP 插件**：收到文本 → `POST 你的Bella接口` → 返回 `reply` 字符串
+  - 或把 `skills/` 逻辑打包成云函数，桥只转发文本
+
+```
+CowAgent Channel(微信) ──文本──► Bella /api/chat（规则+Skills，无LLM）
+                                    │
+                                    └── reply 文本 ◄──
+```
+
+**注意：** CowAgent 本身跑起来要有一台 **常在线机器**（旧电脑/Raspberry Pi = 零云费；云主机 = 要钱）。
+
+#### 和「微信云开发」的关系
+
+- 小程序 + **云函数**免费额度：可把 `handleUserMessage` 放云函数里
+- 微信负责登录、录音；云函数调词霸/诗泉（出站 HTTP）
+- **不需要**单独买服务器；超出免费额度才计费
+- 适合：以后做「Bella 小程序版」，Web 版仍放 GitHub Pages
+
+---
+
+### 10.4 推荐零成本路线图（修订）
+
+```mermaid
+flowchart LR
+  subgraph now [现在 ¥0]
+    Web[GitHub Pages Web]
+    Rules[规则 Router]
+    Skills[Skills 写死关键词]
+    APIs[免费 API + 本地 JSON]
+  end
+
+  subgraph later [以后 可选]
+    Bridge[微信桥 CowAgent/云开发]
+    LLM[LLM 只换 Router]
+  end
+
+  Web --> Rules --> Skills --> APIs
+  Bridge -.-> Rules
+  LLM -.-> Rules
+```
+
+| 阶段 | 做什么 | 成本 |
+|------|--------|------|
+| **1** | Web + 拆 Skill + 词库刷新 + Tier1 API | **¥0** |
+| **2** | 内置笑话/故事 JSON | **¥0** |
+| **3** | 云函数 `/api/chat`（Vercel 免费层或云开发） | **¥0** 限额内 |
+| **4** | 微信桥插件指向 `/api/chat` | **¥0** 自托管桥 |
+| **5** | Router 换 LLM（可选） | 以后再说 |
+
+**Phase C（原架构）里的「公众号 + 备案服务器」不是零成本首选**；改为 **云开发免费额** 或 **开源桥 + 免费 Serverless**。
+
+---
+
+### 10.5 决策更新
+
+| 问题 | 结论 |
+|------|------|
+| 微信云服务要收费吗？ | 服务号认证/云主机要钱；**云开发免费额、Serverless 免费层、家里跑桥** 可 ¥0 |
+| CloudBot 类插件怎么连？ | 当 **Channel 桥** → HTTP 调 Bella `/api/chat`（规则+Skills） |
+| 没有 Agent Skill 能加吗？ | **能**；Skill 与 Agent 解耦，先规则后 LLM |
+| 先写死可以吗？ | **可以**；拆成 `skills/*.ts` 就是「写死但可维护」 |
+| 现在最该做什么？ | **Phase 1 Web + Skill 拆分**，微信等 `/api/chat` 写好再接桥 |
+
