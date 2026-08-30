@@ -2,7 +2,7 @@
 
 > 状态：**规划稿**（待评审后实施）
 > 关联：[VOICE_UX_PLAN.md](./VOICE_UX_PLAN.md) · [BROWSER_COMPAT_PLAN.md](./BROWSER_COMPAT_PLAN.md) · [ARCHITECTURE.md](./ARCHITECTURE.md)
-> 撰写日期：2026-08-30
+> 撰写日期：2026-08-30 · **国内实测补充：2026-08-30**
 
 ---
 
@@ -246,14 +246,21 @@ GET https://zh.wikipedia.org/w/api.php?action=query&generator=search
   &gsrsearch=周杰伦&prop=extracts&exintro&explaintext&format=json&origin=*
 ```
 
-#### Phase 3b（可选）— 搜索结果 + LLM 润色
+#### ⚠️ 国内重要限制（实测后修正）
 
-搜索 snippet → 免费 LLM（Groq/Gemini 额度）→ Bella 口吻总结。比硬读摘要自然，比纯 LLM 少幻觉。
+| 服务 | 国内大陆 | 说明 |
+|------|----------|------|
+| `*.workers.dev` | ❌ **被墙** | [GreatFire 全部屏蔽](https://zh.greatfire.org/domain/workers.dev)；先前推荐的 CF Worker **不能**用默认 workers.dev 域名 |
+| DuckDuckGo / Startpage | ❌ **被墙** | GreatFire 确认全部屏蔽；`cloudflare-search` 依赖的引擎在国内不可用 |
+| 公共 SearXNG JSON | ❌ 不可用 | 实测返回反爬验证页 HTML，非 JSON |
+| **Open-Meteo** | ✅ 可用 | 实测 HTTP 200，北京 31.1°C；GreatFire 无屏蔽记录 |
+| **维基中文 API** | ✅ 可用 | 实测可搜「周杰伦」；需带 User-Agent；偶发慢 |
+| **cn.bing.com** | ✅ 可访问 | GreatFire 无屏蔽记录；但 HTML 页，浏览器 CORS 无法直连 |
+| **词霸 iciba 每日一句** | ✅ 可用 | 含英文句 + 中文翻译 + **TTS mp3**（实测 33KB） |
+| **今日诗词 / 一言** | ✅ 可用 | 免费 JSON，活跃气氛 |
+| **酷狗 mobile 搜索** | ✅ 部分可用 | `mobiles.kugou.com` 可搜儿歌；播放 URL 需签名，暂不稳定 |
 
-#### 国内注意
-
-- DuckDuckGo 可能慢/被墙 → Worker 内多引擎 fallback
-- 天气类仍优先 **Open-Meteo**（Phase 1），比搜网页更准
+**结论：国内不能照搬「Worker + DDG/Startpage 全网搜」方案。** 应改为 **纯前端可用的限定 API** 组合；若必须要 Worker，须用 **自定义域名**（非 workers.dev）且后端引擎改 Bing 中国/百度等。
 
 ---
 
@@ -374,3 +381,81 @@ Bella 是 **英语学习宠物**，开放问答是**增强粘性**，不是变�
 4. **设置页可关「智能对话」** — 省流量 / 隐私 / 儿童模式
 
 这样既解决「问天气太生硬」，又不偏离英语教育主线。
+
+---
+
+## 10. 国内可用性实测报告（2026-08-30）
+
+> **测试方法：** 本环境（美国节点）curl/fetch 实测 JSON 可用性 + [GreatFire](https://zh.greatfire.org/) 大陆屏蔽记录交叉验证。  
+> **注意：** 美国节点可达 ≠ 国内一定可达；被 GreatFire 标记屏蔽的，国内用户应视为 **不可用**。
+
+### 10.1 此前方案在国内的结论
+
+| 原方案 | 国内能用？ | 证据 |
+|--------|-----------|------|
+| Cloudflare Worker（`*.workers.dev`） | ❌ | GreatFire：workers.dev **全部被屏蔽** |
+| endday/cloudflare-search（DDG/Startpage） | ❌ | DDG、Startpage 均被墙；Worker 域名也被墙 |
+| 公共 SearXNG `?format=json` | ❌ | 实测 searx.be 返回反爬验证 HTML，非 JSON |
+| DuckDuckGo Instant Answer | ❌ | GreatFire：duckduckgo.com 全部屏蔽 |
+| 自建 SearXNG + 代理 | ⚠️ | 技术上可行，但需境外服务器+代理，超出零成本静态站 |
+
+### 10.2 实测「国内友好」免费 API
+
+| API | 实测 | 用途 | 前端直连 | 备注 |
+|-----|------|------|----------|------|
+| [Open-Meteo](https://open-meteo.com/) | ✅ 200, 北京 31.1°C | 真实天气 | ✅ | Phase 1 首选 |
+| Open-Meteo Geocoding | ✅ 200, 「北京」 | 城市→坐标 | ✅ | 偶发超时，可重试 |
+| 维基中文 API | ✅ 200, 「周杰倫」 | 「XX是谁」百科 | ✅ | `origin=*` + User-Agent |
+| [词霸 iciba 每日一句](https://open.iciba.com/dsapi/) | ✅ JSON + mp3 | 每日英语 + 朗读 | ✅ | **契合英语学习定位** |
+| [今日诗词 jinrishici](https://v1.jinrishici.com/) | ✅ | 背诗/活跃气氛 | ✅ | |
+| [一言 hitokoto](https://v1.hitokoto.cn/) | ✅ | 随机句子 | ✅ | |
+| 酷狗 `mobiles.kugou.com` 搜索 | ✅ 480 条「儿歌」 | 搜歌名 | ✅ | 播放 URL 需签名，未打通 |
+| 酷狗 `complexsearch` v2 | ⚠️ err signature | — | — | 不可用 |
+| 酷我 API | ⚠️ 空结果/illegal | — | — | 不可用 |
+| 百度 / cn.bing HTML | ✅ 200 | 搜索 | ❌ CORS | 需服务端代理 |
+
+### 10.3 国内推荐方案（修正版）
+
+**不做「全网搜索」，做「限定能力 + 有真实响应」：**
+
+```mermaid
+flowchart TB
+  Input[用户提问] --> Rules[P0 关键词]
+  Rules -->|未命中| Router[意图路由]
+  Router -->|天气| Meteo[Open-Meteo ✅]
+  Router -->|是谁/是什么| Wiki[维基中文 ✅]
+  Router -->|英语/句子| Iciba[词霸每日一句 ✅]
+  Router -->|背诗/气氛| Poem[今日诗词/一言 ✅]
+  Router -->|唱歌/音乐| Music[酷狗搜索 ⚠️ 仅搜到列表]
+  Router -->|时间/计算| Local[本地 Date/计算 ✅]
+  Router -->|其他| Fallback[Bella 引导 + 学英语]
+```
+
+#### 示例对话（国内可用）
+
+| 用户说 | Bella 回应来源 |
+|--------|----------------|
+| 「今天天气怎么样」 | Open-Meteo → 「北京现在 31°C…」 |
+| 「周杰伦是谁」 | 维基 API → 读首段摘要 |
+| 「来句英语」 | iciba → 英文句 + 中文 + 播放 mp3 |
+| 「背首诗」 | 今日诗词 → 随机古诗 |
+| 「唱儿歌」 | 酷狗搜索 → 「找到《两只老虎》等儿歌~」（播放待研究） |
+| 「今天新闻」 | ❌ 暂无免费国内 API → 兜底话术 |
+
+### 10.4 若仍想要「搜索感」
+
+| 路径 | 国内可行性 | 成本 |
+|------|-----------|------|
+| 自定义域名 Worker + cn.bing 爬虫 | ⚠️ 需自有域名+Worker 非 workers.dev | 低 |
+| 腾讯云/百度 search API | ✅ | 试用后收费 |
+| 纯前端限定 API（上表） | ✅ | **零** |
+
+### 10.5 决策更新
+
+| 问题 | 结论 |
+|------|------|
+| 之前写的 Worker 搜索国内能用吗？ | **不能**（workers.dev 被墙 + DDG/Startpage 被墙） |
+| 有没有国内免费「搜啥都行」？ | **没有**可靠的零成本全网搜索 |
+| 国内怎么办？ | **限定 API**：天气 + 维基 + 词霸英语 + 诗词/音乐 |
+| 活跃气氛用什么？ | 词霸每日一句（带 TTS）、今日诗词、一言；酷狗搜歌（列表） |
+| 下一步实现？ | **Phase 1 国内版**：Open-Meteo + iciba + 维基 + 诗词，**不上 Worker 搜索** |
