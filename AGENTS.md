@@ -22,4 +22,24 @@
 
 - 视频文件较大（每个约2-3MB），首次加载可能需要时间
 - 部分浏览器可能阻止视频自动播放，需要用户点击页面后激活
-- 语音合成依赖浏览器 SpeechSynthesis API，不同浏览器表现可能有差异
+
+## 语音模块问题记录（2026-08-30）
+
+### 问题1：TTS 输出无声音 — TimeoutError: signal timed out
+
+- **现象**：点击麦克风或朗读按钮后，`/synthesize` 请求在恰好 15 秒后被取消，控制台报 `[TTS] Synthesis failed: TimeoutError: signal timed out`
+- **根因**：`NEXT_PUBLIC_TTS_WORKER_URL` 环境变量未配置。项目无 `.env` 文件，`next.config.ts` 中该变量 fallback 为空字符串 `''`，导致请求发到相对路径 `/synthesize`，必然超时
+- **关键代码**：
+  - [speech.ts#L15-L16](file:///workspace/ai-english-teacher/src/lib/speech.ts#L15-L16)：默认 URL 含占位符 `'你的用户名'`，但 `next.config.ts` 的 env 注入覆盖了它为空字符串
+  - [next.config.ts#L19](file:///workspace/ai-english-teacher/next.config.ts#L19)：`process.env.NEXT_PUBLIC_TTS_WORKER_URL || ''`
+- **之前正常的原因**：之前使用浏览器原生 `SpeechSynthesis` API，不依赖外部服务；切换到 Edge-TTS Worker 后，Worker 未部署/未配置 URL，所以无声音
+- **解决方向**：
+  1. 部署 Edge-TTS Cloudflare Worker 并在 `.env` 中配置 `NEXT_PUBLIC_TTS_WORKER_URL`
+  2. 或者回退到浏览器原生 `SpeechSynthesis` API 作为 fallback
+
+### 问题2：语音识别输入报错 — React error #418
+
+- **现象**：控制台报 `Uncaught Error: Minified React error #418`
+- **根因**：`SpeechRecognition` 的回调（`onresult`/`onerror`）是异步的，可能在组件已卸载（如切换 Tab）后才触发，此时调用 `setState`（`setListening`/`setStatusText`/`setSpeaking`）导致 React 在已卸载组件上更新状态
+- **关键代码**：[VoiceController.tsx#L54-L88](file:///workspace/ai-english-teacher/src/components/VoiceController.tsx#L54-L88)
+- **解决方向**：在组件中加 `useRef` 标记挂载状态，回调中先检查组件是否仍挂载再 setState；或用 `AbortController` 在卸载时取消识别
