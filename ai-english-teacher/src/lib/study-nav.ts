@@ -54,6 +54,16 @@ export const MATH_SUB_LABELS: Record<string, string> = {
   "word-problem": "应用题",
 };
 
+export const READING_SUB_LABELS: Record<string, string> = {
+  story: "故事",
+  joke: "笑话",
+};
+
+export const EXPLORE_SUB_LABELS: Record<string, string> = {
+  weather: "天气",
+  wiki: "百科",
+};
+
 export function contentCardFromResponse(card?: ContentCard): ContentCard | null {
   return card ?? null;
 }

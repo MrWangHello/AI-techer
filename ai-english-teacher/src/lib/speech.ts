@@ -415,6 +415,11 @@ export function startListening(
 
 export function stopListening(): void {
   intentionalStop = true;
+  clearHoldEndTimer();
+  holdEndResolve = null;
+  holdEndReject = null;
+  holdAccumulated = "";
+  holdLastInterim = "";
   if (recognition) {
     try {
       recognition.onresult = null;
@@ -432,7 +437,34 @@ export function getIsListening(): boolean {
 }
 
 let holdAccumulated = "";
-let holdOnResult: ((text: string) => void) | null = null;
+let holdLastInterim = "";
+let holdEndResolve: ((text: string) => void) | null = null;
+let holdEndReject: (() => void) | null = null;
+let holdEndTimer: ReturnType<typeof setTimeout> | null = null;
+
+function clearHoldEndTimer(): void {
+  if (holdEndTimer) {
+    clearTimeout(holdEndTimer);
+    holdEndTimer = null;
+  }
+}
+
+function getHoldTranscript(fallbackInterim = ""): string {
+  return (holdAccumulated + holdLastInterim).trim() || fallbackInterim.trim();
+}
+
+function finishHoldSession(fallbackInterim = ""): void {
+  const text = getHoldTranscript(fallbackInterim);
+  holdAccumulated = "";
+  holdLastInterim = "";
+  clearHoldEndTimer();
+  const resolve = holdEndResolve;
+  const reject = holdEndReject;
+  holdEndResolve = null;
+  holdEndReject = null;
+  if (text) resolve?.(text);
+  else reject?.();
+}
 
 /** 按住说话：按下开始，松开结束并提交 */
 export function startHoldListening(
@@ -454,6 +486,8 @@ export function startHoldListening(
   stopSpeaking();
   intentionalStop = false;
   holdAccumulated = "";
+  holdLastInterim = "";
+  clearHoldEndTimer();
 
   try {
     recognition = new SpeechRecognition();
@@ -467,12 +501,16 @@ export function startHoldListening(
     recognition.onresult = (event: any) => {
       if (current !== recognition) return;
       let interim = "";
-      for (let i = event.resultIndex; i < event.results.length; i++) {
+      for (let i = 0; i < event.results.length; i++) {
         const piece = event.results[i][0]?.transcript ?? "";
-        if (event.results[i].isFinal) holdAccumulated += piece;
-        else interim += piece;
+        if (event.results[i].isFinal) {
+          holdAccumulated += piece;
+        } else {
+          interim += piece;
+        }
       }
-      onInterim?.((holdAccumulated + interim).trim());
+      holdLastInterim = interim;
+      onInterim?.(getHoldTranscript());
     };
 
     recognition.onerror = (event: any) => {
@@ -481,14 +519,21 @@ export function startHoldListening(
         intentionalStop = false;
         return;
       }
+      if (intentionalStop && event.error === "no-speech") {
+        intentionalStop = false;
+        return;
+      }
       isListening = false;
       intentionalStop = false;
+      clearHoldEndTimer();
+      holdEndResolve = null;
+      holdEndReject = null;
       const errorMap: Record<string, string> = {
         "no-speech": "没有检测到语音，请再试一次",
         aborted: "语音识别被中断",
         "audio-capture": "无法访问麦克风",
         network: "网络不稳定，请检查网络后重试",
-        "not-allowed": "麦克风权限被拒绝",
+        "not-allowed": "麦克风权限被拒绝，请在浏览器设置中允许",
         "service-not-allowed": "语音识别服务不可用",
       };
       onError?.(errorMap[event.error] || event.error || "语音识别出错");
@@ -498,35 +543,48 @@ export function startHoldListening(
       if (current !== recognition) return;
       isListening = false;
       intentionalStop = false;
+      if (holdEndResolve || holdEndReject) {
+        finishHoldSession();
+      }
+    };
+
+    recognition.onstart = () => {
+      isListening = true;
     };
 
     recognition.start();
-    isListening = true;
   } catch {
     isListening = false;
     onError?.("语音识别启动失败");
   }
 }
 
-export function endHoldListening(onResult: (text: string) => void, onEmpty?: () => void): void {
-  holdOnResult = onResult;
-  const text = holdAccumulated.trim();
+/** 松开按钮：等待 onend 拿最终结果，最多等 600ms */
+export function endHoldListening(
+  onResult: (text: string) => void,
+  onEmpty?: () => void,
+  fallbackInterim = ""
+): void {
+  holdEndResolve = onResult;
+  holdEndReject = onEmpty ?? null;
   intentionalStop = true;
+
+  const submitNow = () => {
+    if (!holdEndResolve && !holdEndReject) return;
+    finishHoldSession(fallbackInterim);
+  };
+
   if (recognition) {
     try {
       recognition.stop();
-    } catch (_) {}
-  }
-  isListening = false;
-  recognition = null;
-  intentionalStop = false;
-  if (text) {
-    onResult(text);
+    } catch (_) {
+      submitNow();
+    }
+    clearHoldEndTimer();
+    holdEndTimer = setTimeout(submitNow, 600);
   } else {
-    onEmpty?.();
+    submitNow();
   }
-  holdOnResult = null;
-  holdAccumulated = "";
 }
 
 export function isSpeechSupported(): boolean {
