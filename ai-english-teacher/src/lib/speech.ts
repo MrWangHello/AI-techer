@@ -7,6 +7,8 @@
 
 let recognition: any = null;
 let isListening = false;
+/** 主动 stop() 触发的 aborted，不应报错给用户 */
+let intentionalStop = false;
 let voicesLoaded = false;
 let voicesPromise: Promise<void> | null = null;
 /** 是否已完成首次 TTS 预热（避免 STT 期间预热与回复抢音频） */
@@ -350,10 +352,13 @@ export function startListening(
     return;
   }
 
-  if (isListening) return;
+  if (isListening) {
+    stopListening();
+  }
 
   // 开麦前停 TTS，避免与 STT 争用音频（尤其页面首次点击）
   stopSpeaking();
+  intentionalStop = false;
 
   try {
     recognition = new SpeechRecognition();
@@ -362,19 +367,29 @@ export function startListening(
     recognition.interimResults = false;
     recognition.maxAlternatives = 1;
 
+    const current = recognition;
+
     recognition.onresult = (event: any) => {
-      const transcript = event.results[0][0].transcript;
+      if (current !== recognition) return;
+      const transcript = event.results[0]?.[0]?.transcript?.trim();
       isListening = false;
-      onResult(transcript);
+      if (transcript) onResult(transcript);
+      else onError?.("没有检测到语音");
     };
 
     recognition.onerror = (event: any) => {
+      if (current !== recognition) return;
       isListening = false;
+      if (intentionalStop && event.error === "aborted") {
+        intentionalStop = false;
+        return;
+      }
+      intentionalStop = false;
       const errorMap: Record<string, string> = {
-        "no-speech": "没有检测到语音",
-        aborted: "语音识别被中断",
+        "no-speech": "没有检测到语音，请再试一次",
+        aborted: "语音识别被中断，请再点一次",
         "audio-capture": "无法访问麦克风",
-        network: "网络错误",
+        network: "网络不稳定，请检查网络后重试",
         "not-allowed": "麦克风权限被拒绝",
         "service-not-allowed": "语音识别服务不可用",
         "bad-grammar": "语法错误",
@@ -384,7 +399,9 @@ export function startListening(
     };
 
     recognition.onend = () => {
+      if (current !== recognition) return;
       isListening = false;
+      intentionalStop = false;
       onEnd?.();
     };
 
@@ -397,10 +414,15 @@ export function startListening(
 }
 
 export function stopListening(): void {
-  if (recognition && isListening) {
+  intentionalStop = true;
+  if (recognition) {
     try {
+      recognition.onresult = null;
+      recognition.onerror = null;
+      recognition.onend = null;
       recognition.stop();
     } catch (_) {}
+    recognition = null;
   }
   isListening = false;
 }

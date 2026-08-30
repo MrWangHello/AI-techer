@@ -33,8 +33,8 @@
 
 | 分类 | 推荐来源 | 国内 | 免费 | 前端直连 | 实测摘要 |
 |------|----------|------|------|----------|----------|
-| **每日英语** | 词霸 `open.iciba.com/dsapi/` | ✅ | ✅ | ✅ | EN 句 + 中文 + **mp3 朗读** |
-| **每日英语** | 扇贝 `apiv3.shanbay.com/.../quote` | ✅ | ✅ | ✅ | EN + 中文 + 作者；**无 mp3** |
+| **每日英语** | 词霸 `open.iciba.com/dsapi/` | ✅ | ✅ | ⚠️ | EN+中文+mp3；**浏览器缺 CORS Allow-Origin，GitHub Pages 常失败** → 已改扇贝优先 |
+| **每日英语** | 扇贝 `apiv3.shanbay.com/.../quote` | ✅ | ✅ | ✅ | **现主源**；EN + translation + 作者 |
 | **查单词** | 词霸移动词典 | ✅ | ✅ | ✅ | `apple` → 释义/词性 |
 | **古诗 / 诗词** | [诗泉 poetry.palemoky.com](https://poetry.palemoky.com/) | ✅ | ✅ | ✅ | **37 万首**，随机/按朝代；无需 Key |
 | **古诗 / 诗词** | 今日诗词 `v1.jinrishici.com` | ✅ | ✅ | ✅ | 随机一首 + 作者 |

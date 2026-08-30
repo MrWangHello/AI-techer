@@ -10,7 +10,8 @@
 - ✅ **修复首次语音 TTS 中断** — STT/TTS 抢音频，见 `SYSTEM_ARCHITECTURE.md` §11
 - ✅ **Mock Agent + Skills 分层** — `handleUserMessage`、规则 Skill + Tier1 API Skill
 - ✅ **词库 187 词 + 换一批** — 语音/按钮触发 `word.refresh`
-- ✅ 全局 VoiceChatBar / VoiceReplyBar、导航指令词
+- ✅ **每日英语多源降级** — 扇贝优先（CORS 可用）；词霸浏览器常失败
+- ✅ **STT 稳定性** — 忽略主动 stop 的 aborted；软错误不切文字模式
 - ✅ 开发文档索引见下表
 
 ## 待测试
@@ -37,7 +38,8 @@
 
 | 文档 | 内容 |
 |------|------|
-| [`docs/SYSTEM_ARCHITECTURE.md`](ai-english-teacher/docs/SYSTEM_ARCHITECTURE.md) | **分层架构** §12 实现状态；§11 语音中断修复 |
+| [`docs/SYSTEM_ARCHITECTURE.md`](ai-english-teacher/docs/SYSTEM_ARCHITECTURE.md) | 分层架构 §11 语音修复 §12 Skills |
+| [`docs/CONTENT_UI_PLAN.md`](ai-english-teacher/docs/CONTENT_UI_PLAN.md) | **多主题内容卡片 UI 方案**（古诗/英语浮层） |
 | [`docs/CONTENT_API_RESEARCH.md`](ai-english-teacher/docs/CONTENT_API_RESEARCH.md) | 故事机式内容 API 实测 |
 | [`docs/BROWSER_COMPAT_PLAN.md`](ai-english-teacher/docs/BROWSER_COMPAT_PLAN.md) | 浏览器兼容 FAQ §11 |
 | [`docs/ARCHITECTURE.md`](ai-english-teacher/docs/ARCHITECTURE.md) | 宠物 mood、部署、排错 |
