@@ -429,7 +429,14 @@ export default function HomePage() {
           onPlay={handlePlay}
         />
       )}
-      {activeTab === "pet" && (
+      <div
+        className={
+          activeTab === "pet"
+            ? "h-full"
+            : "pointer-events-none fixed top-0 left-[-100vw] h-64 w-64 overflow-hidden opacity-0"
+        }
+        aria-hidden={activeTab !== "pet"}
+      >
         <PetTab
           pet={pet}
           mood={agentEmotion}
@@ -437,6 +444,7 @@ export default function HomePage() {
           speaking={catSpeaking}
           showAchievements={showAchievements}
           voiceSpeed={pet.voiceSpeed}
+          active={activeTab === "pet"}
           onActionEnd={handlePetActionEnd}
           onTapCat={() => {
             setAgentEmotion("happy");
@@ -449,7 +457,7 @@ export default function HomePage() {
           onSleep={handleSleep}
           onToggleAchievements={() => setShowAchievements((v) => !v)}
         />
-      )}
+      </div>
       {activeTab === "study" && (
         <StudyTab
           pet={pet}

@@ -17,6 +17,7 @@ export default function PetTab({
   onBathe,
   onSleep,
   onToggleAchievements,
+  active = true,
 }: {
   pet: PetData;
   mood: "happy" | "sad" | "surprised" | "neutral" | "thinking";
@@ -31,6 +32,7 @@ export default function PetTab({
   onBathe: () => void;
   onSleep: () => void;
   onToggleAchievements: () => void;
+  active?: boolean;
 }) {
   const actions = [
     { label: "喂食", icon: "🍖", onClick: onFeed },
@@ -42,7 +44,14 @@ export default function PetTab({
   return (
     <div className="relative flex h-full flex-col overflow-hidden">
       <div className="relative min-h-0 flex-1 overflow-hidden rounded-2xl border border-pink-50 shadow-sm">
-        <Cat3D mood={mood} action={action} speaking={speaking} onTap={onTapCat} onActionEnd={onActionEnd} />
+        <Cat3D
+          mood={mood}
+          action={action}
+          speaking={speaking}
+          onTap={onTapCat}
+          onActionEnd={onActionEnd}
+          active={active}
+        />
 
         <div className="absolute top-1/2 right-1 z-20 flex -translate-y-1/2 flex-col gap-2">
           {actions.map((item) => (

@@ -3,18 +3,23 @@
 import { useState, useEffect, useRef, useCallback } from "react";
 
 export type PetAction = "idle" | "eat" | "play" | "bathe" | "sleep";
+export type PetMood = "happy" | "sad" | "surprised" | "neutral" | "thinking";
+
+const MOODS: PetMood[] = ["neutral", "happy", "sad", "surprised", "thinking"];
 
 interface Cat3DProps {
-  mood?: "happy" | "sad" | "surprised" | "neutral" | "thinking";
+  mood?: PetMood;
   action?: PetAction;
   onTap?: () => void;
   speaking?: boolean;
   onActionEnd?: () => void;
+  /** 不在宠物页时暂停，图层仍留着，回来不用重新加载 */
+  active?: boolean;
 }
 
 const BASE = process.env.NEXT_PUBLIC_BASE_PATH || "";
 
-const MOOD_VIDEOS: Record<string, string> = {
+const MOOD_VIDEOS: Record<PetMood, string> = {
   neutral: `${BASE}/videos/white-cat-3d.mp4`,
   happy: `${BASE}/videos/white-cat-happy-3d.mp4`,
   sad: `${BASE}/videos/white-cat-sleepy-3d.mp4`,
@@ -22,7 +27,7 @@ const MOOD_VIDEOS: Record<string, string> = {
   thinking: `${BASE}/videos/white-cat-thinking-3d.mp4`,
 };
 
-const ACTION_TO_MOOD: Record<PetAction, "happy" | "sad" | "neutral"> = {
+const ACTION_TO_MOOD: Record<PetAction, PetMood> = {
   idle: "neutral",
   eat: "happy",
   play: "happy",
@@ -30,7 +35,7 @@ const ACTION_TO_MOOD: Record<PetAction, "happy" | "sad" | "neutral"> = {
   sleep: "sad",
 };
 
-const MOOD_GLOWS: Record<string, string> = {
+const MOOD_GLOWS: Record<PetMood, string> = {
   neutral: "rgba(244, 114, 182, 0.08)",
   happy: "rgba(251, 191, 36, 0.1)",
   sad: "rgba(56, 189, 248, 0.08)",
@@ -104,21 +109,34 @@ export default function Cat3D({
   onTap,
   speaking = false,
   onActionEnd,
+  active = true,
 }: Cat3DProps) {
-  const videoRef = useRef<HTMLVideoElement>(null);
+  const videoRefs = useRef<Partial<Record<PetMood, HTMLVideoElement | null>>>({});
+  const [ready, setReady] = useState<Partial<Record<PetMood, boolean>>>({});
   const [bounce, setBounce] = useState(false);
-  const [videoError, setVideoError] = useState(false);
   const bounceTimeoutRef = useRef<number | null>(null);
   const actionEndTimer = useRef<number | null>(null);
+  const pauseTimer = useRef<number | null>(null);
 
-  const displayMood = action !== "idle" ? ACTION_TO_MOOD[action] : mood;
-  const currentVideo = MOOD_VIDEOS[displayMood] || MOOD_VIDEOS.neutral;
-  const glowColor = MOOD_GLOWS[displayMood] || MOOD_GLOWS.neutral;
+  const displayMood: PetMood = action !== "idle" ? ACTION_TO_MOOD[action] : mood;
+  const glowColor = MOOD_GLOWS[displayMood];
+  const currentReady = !!ready[displayMood];
 
   useEffect(() => {
-    setVideoError(false);
-    playSafe(videoRef.current);
-  }, [currentVideo]);
+    if (pauseTimer.current) window.clearTimeout(pauseTimer.current);
+    const current = videoRefs.current[displayMood];
+    if (active) playSafe(current);
+    pauseTimer.current = window.setTimeout(() => {
+      for (const key of MOODS) {
+        const el = videoRefs.current[key];
+        if (!el) continue;
+        if (!active || key !== displayMood) el.pause();
+      }
+    }, 280);
+    return () => {
+      if (pauseTimer.current) window.clearTimeout(pauseTimer.current);
+    };
+  }, [displayMood, active]);
 
   useEffect(() => {
     if (action === "idle") return;
@@ -146,12 +164,6 @@ export default function Cat3D({
       className="relative flex h-full w-full select-none items-center justify-center overflow-hidden"
       style={{ backgroundColor: SCENE_BG }}
     >
-      {Object.values(MOOD_VIDEOS).map((url) =>
-        url === currentVideo ? null : (
-          <link key={url} rel="preload" as="video" href={url} />
-        )
-      )}
-
       <div
         className="pointer-events-none absolute inset-0 transition-all duration-700"
         style={{
@@ -172,25 +184,20 @@ export default function Cat3D({
         onClick={handleTap}
       >
         <div className="relative h-64 w-64 md:h-72 md:w-72 lg:h-80 lg:w-80" style={{ backgroundColor: SCENE_BG }}>
-          {videoError ? (
+          {MOODS.map((key) => (
             <video
-              src={MOOD_VIDEOS.neutral}
-              className="absolute inset-0 h-full w-full object-cover"
-              style={maskStyle}
-              muted
-              loop
-              playsInline
-              autoPlay
-            />
-          ) : (
-            <video
-              ref={videoRef}
-              key={currentVideo}
-              src={currentVideo}
-              className={`absolute inset-0 h-full w-full object-cover ${
-                displayMood === "happy"
+              key={key}
+              ref={(el) => {
+                videoRefs.current[key] = el;
+              }}
+              data-mood={key}
+              src={MOOD_VIDEOS[key]}
+              className={`absolute inset-0 h-full w-full object-cover transition-opacity duration-200 ${
+                key === displayMood && currentReady ? "opacity-100" : "opacity-0"
+              } ${
+                key === "happy"
                   ? "brightness-105 saturate-105"
-                  : displayMood === "sad"
+                  : key === "sad"
                     ? "brightness-95 saturate-90"
                     : ""
               }`}
@@ -198,14 +205,18 @@ export default function Cat3D({
               muted
               loop
               playsInline
-              autoPlay
               preload="auto"
               draggable={false}
-              onCanPlay={(e) => playSafe(e.currentTarget)}
-              onLoadedData={(e) => playSafe(e.currentTarget)}
-              onError={() => setVideoError(true)}
+              onCanPlay={(e) => {
+                setReady((prev) => (prev[key] ? prev : { ...prev, [key]: true }));
+                if (key === displayMood && active) playSafe(e.currentTarget);
+              }}
+              onLoadedData={(e) => {
+                setReady((prev) => (prev[key] ? prev : { ...prev, [key]: true }));
+                if (key === displayMood && active) playSafe(e.currentTarget);
+              }}
             />
-          )}
+          ))}
 
           {speaking && (
             <div className="absolute -bottom-2 left-1/2 z-20 flex h-6 -translate-x-1/2 items-end gap-1">
