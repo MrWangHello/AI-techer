@@ -431,6 +431,104 @@ export function getIsListening(): boolean {
   return isListening;
 }
 
+let holdAccumulated = "";
+let holdOnResult: ((text: string) => void) | null = null;
+
+/** 按住说话：按下开始，松开结束并提交 */
+export function startHoldListening(
+  onInterim?: (text: string) => void,
+  onError?: (error: string) => void
+): void {
+  if (typeof window === "undefined") return;
+
+  const SpeechRecognition =
+    (window as any).SpeechRecognition || (window as any).webkitSpeechRecognition;
+
+  if (!SpeechRecognition) {
+    onError?.("您的浏览器不支持语音识别");
+    return;
+  }
+
+  if (isListening) stopListening();
+
+  stopSpeaking();
+  intentionalStop = false;
+  holdAccumulated = "";
+
+  try {
+    recognition = new SpeechRecognition();
+    recognition.lang = "zh-CN";
+    recognition.continuous = true;
+    recognition.interimResults = true;
+    recognition.maxAlternatives = 1;
+
+    const current = recognition;
+
+    recognition.onresult = (event: any) => {
+      if (current !== recognition) return;
+      let interim = "";
+      for (let i = event.resultIndex; i < event.results.length; i++) {
+        const piece = event.results[i][0]?.transcript ?? "";
+        if (event.results[i].isFinal) holdAccumulated += piece;
+        else interim += piece;
+      }
+      onInterim?.((holdAccumulated + interim).trim());
+    };
+
+    recognition.onerror = (event: any) => {
+      if (current !== recognition) return;
+      if (intentionalStop && event.error === "aborted") {
+        intentionalStop = false;
+        return;
+      }
+      isListening = false;
+      intentionalStop = false;
+      const errorMap: Record<string, string> = {
+        "no-speech": "没有检测到语音，请再试一次",
+        aborted: "语音识别被中断",
+        "audio-capture": "无法访问麦克风",
+        network: "网络不稳定，请检查网络后重试",
+        "not-allowed": "麦克风权限被拒绝",
+        "service-not-allowed": "语音识别服务不可用",
+      };
+      onError?.(errorMap[event.error] || event.error || "语音识别出错");
+    };
+
+    recognition.onend = () => {
+      if (current !== recognition) return;
+      isListening = false;
+      intentionalStop = false;
+    };
+
+    recognition.start();
+    isListening = true;
+  } catch {
+    isListening = false;
+    onError?.("语音识别启动失败");
+  }
+}
+
+export function endHoldListening(onResult: (text: string) => void, onEmpty?: () => void): void {
+  holdOnResult = onResult;
+  const text = holdAccumulated.trim();
+  intentionalStop = true;
+  if (recognition) {
+    try {
+      recognition.stop();
+    } catch (_) {}
+  }
+  isListening = false;
+  recognition = null;
+  intentionalStop = false;
+  if (text) {
+    onResult(text);
+  } else {
+    onEmpty?.();
+  }
+  holdOnResult = null;
+  holdAccumulated = "";
+}
+
 export function isSpeechSupported(): boolean {
   return typeof window !== "undefined" && !!window.speechSynthesis;
 }

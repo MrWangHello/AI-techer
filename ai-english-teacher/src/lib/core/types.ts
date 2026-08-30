@@ -4,13 +4,36 @@ export type AgentEmotion = "happy" | "sad" | "surprised" | "neutral" | "thinking
 
 export type AgentAction = "feed" | "play" | "study" | "quiz" | "greeting" | "checkin" | "none";
 
+export type SideEffect =
+  | "word.refresh"
+  | "math.drill.start"
+  | "math.drill.next"
+  | "chinese.next";
+
+export interface ContentCard {
+  type:
+    | "pinyin"
+    | "hanzi"
+    | "sentence"
+    | "idiom"
+    | "word-problem"
+    | "english-sentence"
+    | "math-drill"
+    | "poetry"
+    | "text";
+  payload?: Record<string, unknown>;
+}
+
 export interface AgentResponse {
   intent: string;
   emotion: AgentEmotion;
   action: AgentAction;
   reply: string;
   navigate?: TabTarget;
-  sideEffect?: "word.refresh";
+  /** e.g. chinese.hanzi, math.drill, english.words */
+  studySection?: string;
+  contentCard?: ContentCard;
+  sideEffect?: SideEffect;
 }
 
 export interface UserMessage {
@@ -20,6 +43,8 @@ export interface UserMessage {
 
 export interface SessionContext {
   channel: UserMessage["channel"];
+  lastStudySection?: string;
+  mathDrillActive?: boolean;
 }
 
 export interface RuleEntry {
@@ -30,7 +55,6 @@ export interface RuleEntry {
 
 export interface AsyncSkill {
   id: string;
-  /** 命中后由 orchestrator 调用 execute */
   keywords: string[];
-  execute: (text: string, normalized: string) => Promise<AgentResponse>;
+  execute: (text: string, normalized: string, ctx: SessionContext) => Promise<AgentResponse>;
 }

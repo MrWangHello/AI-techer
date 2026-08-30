@@ -1,0 +1,22 @@
+[
+  { "word": "守株待兔", "pinyin": "shǒu zhū dài tù", "meaning": "比喻不主动努力，存侥幸心理。", "origin": "《韩非子》", "example": "学习不能守株待兔，要主动练习。" },
+  { "word": "画蛇添足", "pinyin": "huà shé tiān zú", "meaning": "做了多余的事，反而不好。", "origin": "《战国策》", "example": "这句话已经很好了，别画蛇添足。" },
+  { "word": "亡羊补牢", "pinyin": "wáng yáng bǔ láo", "meaning": "出了问题后及时补救还来得及。", "origin": "《战国策》", "example": "虽然错了，亡羊补牢还来得及。" },
+  { "word": "对牛弹琴", "pinyin": "duì niú tán qín", "meaning": "对不懂的人讲深奥道理。", "origin": "汉代寓言", "example": "跟他讲没用，像对牛弹琴。" },
+  { "word": "井底之蛙", "pinyin": "jǐng dǐ zhī wā", "meaning": "见识狭窄的人。", "origin": "《庄子》", "example": "要多看看世界，别当井底之蛙。" },
+  { "word": "狐假虎威", "pinyin": "hú jiǎ hǔ wēi", "meaning": "借别人的势力吓唬人。", "origin": "《战国策》", "example": "他不过是狐假虎威罢了。" },
+  { "word": "掩耳盗铃", "pinyin": "yǎn ěr dào líng", "meaning": "自己欺骗自己。", "origin": "《吕氏春秋》", "example": "做错事不改，只是掩耳盗铃。" },
+  { "word": "滥竽充数", "pinyin": "làn yú chōng shù", "meaning": "没有真本事混在里头。", "origin": "《韩非子》", "example": "不会就要学，别滥竽充数。" },
+  { "word": "自相矛盾", "pinyin": "zì xiāng máo dùn", "meaning": "前后说法不一致。", "origin": "《韩非子》", "example": "你前后矛盾啦！" },
+  { "word": "刻舟求剑", "pinyin": "kè zhōu qiú jiàn", "meaning": "不知变通，拘泥固执。", "origin": "《吕氏春秋》", "example": "时代变了，不能刻舟求剑。" },
+  { "word": "叶公好龙", "pinyin": "yè gōng hào lóng", "meaning": "口头上喜欢，实际上并不真喜欢。", "origin": "汉代寓言", "example": "他说喜欢读书，可别叶公好龙。" },
+  { "word": "杯弓蛇影", "pinyin": "bēi gōng shé yǐng", "meaning": "疑神疑鬼，自己吓自己。", "origin": "《晋书》", "example": "别杯弓蛇影，其实没事的。" },
+  { "word": "鹤立鸡群", "pinyin": "hè lì jī qún", "meaning": "才能出众，超过众人。", "origin": "《世说新语》", "example": "她在班里鹤立鸡群。" },
+  { "word": "盲人摸象", "pinyin": "máng rén mō xiàng", "meaning": "看问题片面，以偏概全。", "origin": "佛经故事", "example": "只看到一个角，就像盲人摸象。" },
+  { "word": "望梅止渴", "pinyin": "wàng méi zhǐ kě", "meaning": "用空想安慰自己。", "origin": "《世说新语》", "example": "光想不做，只是望梅止渴。" },
+  { "word": "胸有成竹", "pinyin": "xiōng yǒu chéng zhú", "meaning": "做事之前已有完整主意。", "origin": "宋代故事", "example": "考试前他胸有成竹。" },
+  { "word": "百发百中", "pinyin": "bǎi fā bǎi zhòng", "meaning": "每次都能成功。", "origin": "《战国策》", "example": "口算练多了，百发百中！" },
+  { "word": "闻鸡起舞", "pinyin": "wén jī qǐ wǔ", "meaning": "勤奋练本领。", "origin": "《晋书》", "example": "早起读书，闻鸡起舞。" },
+  { "word": "程门立雪", "pinyin": "chéng mén lì xuě", "meaning": "尊敬老师，虚心求教。", "origin": "宋代故事", "example": "尊师重道，像程门立雪。" },
+  { "word": "铁杵成针", "pinyin": "tiě chǔ chéng zhēn", "meaning": "只要有恒心，再难也能成功。", "origin": "唐代故事", "example": "每天练一点，铁杵成针！" }
+]

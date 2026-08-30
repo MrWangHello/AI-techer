@@ -1,0 +1,14 @@
+[
+  { "question": "小明有 5 个苹果，妈妈又给他 3 个，一共几个？", "answer": 8, "explain": "5 + 3 = 8 个苹果。", "emoji": "🍎" },
+  { "question": "树上有 8 只鸟，飞走了 3 只，还剩几只？", "answer": 5, "explain": "8 - 3 = 5 只鸟。", "emoji": "🐦" },
+  { "question": "左边 4 朵花，右边 4 朵花，一共几朵？", "answer": 8, "explain": "4 + 4 = 8 朵花。", "emoji": "🌸" },
+  { "question": "Bella 有 10 条鱼，送给朋友 2 条，还剩几条？", "answer": 8, "explain": "10 - 2 = 8 条鱼。", "emoji": "🐟" },
+  { "question": "盘子里有 6 块饼干，吃掉 2 块，还剩几块？", "answer": 4, "explain": "6 - 2 = 4 块。", "emoji": "🍪" },
+  { "question": "小红有 3 支铅笔，又买了 4 支，现在几支？", "answer": 7, "explain": "3 + 4 = 7 支。", "emoji": "✏️" },
+  { "question": "停车场有 9 辆车，开走了 5 辆，还剩几辆？", "answer": 4, "explain": "9 - 5 = 4 辆。", "emoji": "🚗" },
+  { "question": "一年有 12 个月，过了 2 个月，还剩几个月？", "answer": 10, "explain": "12 - 2 = 10 个月。", "emoji": "📅" },
+  { "question": "盒子里有 7 颗糖，又放入 2 颗，一共几颗？", "answer": 9, "explain": "7 + 2 = 9 颗。", "emoji": "🍬" },
+  { "question": "跳绳跳了 10 下，还要跳 5 下，一共几下？", "answer": 15, "explain": "10 + 5 = 15 下。", "emoji": "🏃" },
+  { "question": "农场有 6 只鸭，又来了 3 只，现在几只？", "answer": 9, "explain": "6 + 3 = 9 只。", "emoji": "🦆" },
+  { "question": "书架上有 10 本书，借走 4 本，还剩几本？", "answer": 6, "explain": "10 - 4 = 6 本。", "emoji": "📚" }
+]

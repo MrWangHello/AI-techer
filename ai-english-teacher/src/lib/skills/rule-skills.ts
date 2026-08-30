@@ -38,13 +38,14 @@ export const RULE_SKILLS: RuleEntry[] = [
   },
   {
     skillId: "nav.study",
-    keywords: ["去学习", "学单词", "学英语", "上课", "背单词", "学习页", "study", "learn", "读书", "学习"],
+    keywords: ["开始学习", "上课", "学习", "学习页", "study", "learn", "读书"],
     response: {
       intent: "nav_study",
       emotion: "thinking",
       action: "study",
-      reply: "好的！我们来学英语单词吧！",
+      reply: "好的！想学什么？可以说语文、英语、数学~",
       navigate: "study",
+      studySection: "english.words",
     },
   },
   // help
@@ -56,7 +57,7 @@ export const RULE_SKILLS: RuleEntry[] = [
       emotion: "happy",
       action: "none",
       reply:
-        "你可以说：去首页、看宠物、开始学习、打开设置；也可以说每日英语、背古诗、讲笑话、查天气；还可以喂我、陪我玩、洗澡、睡觉、换一批单词，或者说「帮助」查看全部！",
+        "你可以说：语文、汉字、拼音、英语、数学、口算、1加1等于几、背古诗、讲成语、讲笑话、天气；也可以：回首页、看宠物、打开设置。说出来我就带你去！",
     },
   },
   // study / quiz

@@ -1,0 +1,15 @@
+[
+  { "id": "a", "display": "a", "tip": "张大嘴巴 aaa", "emoji": "👄", "example": "阿姨的ā" },
+  { "id": "o", "display": "o", "tip": "圆圆嘴巴 ooo", "emoji": "🐓", "example": "公鸡喔喔喔" },
+  { "id": "e", "display": "e", "tip": "扁扁嘴巴 eee", "emoji": "🦢", "example": "大白鹅唱歌" },
+  { "id": "i", "display": "i", "tip": "牙齿对齐 iii", "emoji": "👕", "example": "衣服iyi" },
+  { "id": "u", "display": "u", "tip": "嘴巴突出 uuu", "emoji": "🐟", "example": "小鱼uuu" },
+  { "id": "b", "display": "b", "tip": "右下半圆 b b b", "emoji": "⚽", "example": "b-a 爸" },
+  { "id": "p", "display": "p", "tip": "右上半圆 p p p", "emoji": "🎈", "example": "p-a 爬" },
+  { "id": "m", "display": "m", "tip": "两个门洞 m m m", "emoji": "🚪", "example": "m-a 妈" },
+  { "id": "f", "display": "f", "tip": "一根拐杖 f f f", "emoji": "🦯", "example": "f-a 发" },
+  { "id": "d", "display": "d", "tip": "左下半圆 d d d", "emoji": "🥁", "example": "d-a 大" },
+  { "id": "t", "display": "t", "tip": "伞柄 t t t", "emoji": "☂️", "example": "t-a 他" },
+  { "id": "n", "display": "n", "tip": "一扇小门 n n n", "emoji": "🚪", "example": "n-a 那" },
+  { "id": "l", "display": "l", "tip": "一根小棍 l l l", "emoji": "🪵", "example": "l-a 拉" }
+]

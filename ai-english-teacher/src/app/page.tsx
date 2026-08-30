@@ -6,7 +6,7 @@ import RealisticCat from "@/components/Cat3D";
 import VoiceChatBar from "@/components/VoiceChatBar";
 import VoiceReplyBar from "@/components/VoiceReplyBar";
 import PetStatus from "@/components/PetStatus";
-import StudyCards from "@/components/StudyCards";
+import StudyPanel from "@/components/StudyPanel";
 import {
   loadPetData,
   savePetData,
@@ -25,7 +25,10 @@ import {
 } from "@/lib/pet-data";
 import { speak } from "@/lib/speech";
 import { isSpeechSupported, isSTTSupported } from "@/lib/speech";
-import { AgentResponse } from "@/lib/mock-agent";
+import { handleUserMessage, AgentResponse } from "@/lib/mock-agent";
+import type { ContentCard } from "@/lib/core/types";
+import type { MathQuestion } from "@/lib/math/generator";
+import { getStreak } from "@/lib/math/drill-state";
 import { Word, getAllWords, loadWordBatch, refreshWordBatch } from "@/lib/words";
 
 type Tab = "home" | "pet" | "study" | "settings";
@@ -52,6 +55,10 @@ export default function HomePage() {
   const [speechSupported, setSpeechSupported] = useState<boolean | null>(null);
   const [sttSupported, setSttSupported] = useState<boolean | null>(null);
   const [studyWords, setStudyWords] = useState<Word[]>([]);
+  const [studySection, setStudySection] = useState("english.words");
+  const [contentCard, setContentCard] = useState<ContentCard | null>(null);
+  const [mathQuestion, setMathQuestion] = useState<MathQuestion | null>(null);
+  const [mathStreak, setMathStreak] = useState(0);
 
   const speakWithSpeed = useCallback(
     (text: string, onEnd?: () => void) => {
@@ -123,28 +130,80 @@ export default function HomePage() {
         setActiveTab(response.navigate);
       }
 
+      if (response.studySection) {
+        setStudySection(response.studySection);
+      }
+
+      if (response.contentCard) {
+        setContentCard(response.contentCard);
+        if (response.contentCard.type === "math-drill") {
+          const q = (response.contentCard.payload as { question?: MathQuestion })?.question;
+          if (q) setMathQuestion(q);
+        }
+      }
+
       if (response.sideEffect === "word.refresh") {
         setStudyWords(refreshWordBatch());
       }
+
+      if (response.intent.startsWith("math_drill")) {
+        setMathStreak(getStreak());
+      }
+
+      const feedLabel = (icon: string, text: string) => addFeed(icon, text);
 
       switch (response.intent) {
         case "feed_pet":
           setPet((prev) => {
             const updated = feedPet(prev);
-            addFeed("🍖", "喂食了 Bella");
+            feedLabel("🍖", "喂食了 Bella");
             return checkAndAwardAchievements(updated);
           });
           break;
         case "play_pet":
           setPet((prev) => {
             const updated = playWithPet(prev);
-            addFeed("🎮", "和 Bella 一起玩");
+            feedLabel("🎮", "和 Bella 一起玩");
             return checkAndAwardAchievements(updated);
           });
           break;
+        case "hanzi":
+        case "pinyin":
+        case "sentence":
+          feedLabel("📝", "学语文");
+          break;
+        case "math_calc":
+        case "math_drill_start":
+        case "math_drill_correct":
+          feedLabel("🔢", "数学练习");
+          if (response.intent === "math_drill_correct") {
+            setPet((prev) => checkAndAwardAchievements({ ...prev, coins: prev.coins + 1 }));
+          }
+          break;
+        case "idiom":
+          feedLabel("📜", "学成语");
+          break;
+        case "poetry":
+          feedLabel("📜", "背古诗");
+          break;
+        case "english_daily":
+          feedLabel("🇬🇧", "每日英语");
+          break;
+        case "joke":
+          feedLabel("😄", "讲笑话");
+          break;
+        case "story":
+          feedLabel("📖", "讲故事");
+          break;
+        case "weather":
+          feedLabel("🌤️", "查天气");
+          break;
+        case "wiki":
+          feedLabel("🔍", "查百科");
+          break;
         case "study":
         case "nav_study":
-          addFeed("📚", "开始学习英语");
+          feedLabel("📚", "开始学习");
           break;
         case "checkin":
           setPet((prev) => {
@@ -193,6 +252,23 @@ export default function HomePage() {
 
   const handleVoiceTranscript = useCallback((text: string) => {
     setLastUserText(text);
+  }, []);
+
+  const handleMathAnswer = useCallback(
+    (n: number) => {
+      void (async () => {
+        const response = await handleUserMessage({ text: String(n), channel: "web" });
+        handleAgentResponse(response);
+        setCatSpeaking(true);
+        speakWithSpeed(response.reply, () => setCatSpeaking(false));
+      })();
+    },
+    [handleAgentResponse, speakWithSpeed]
+  );
+
+  const goStudy = useCallback((section: string) => {
+    setActiveTab("study");
+    setStudySection(section);
   }, []);
 
   // 按钮互动
@@ -365,6 +441,32 @@ export default function HomePage() {
         </div>
       </div>
 
+      {/* 快捷入口 — 语音也可直达，点击作兜底 */}
+      <div className="bg-white/80 rounded-2xl p-4 shadow-sm border border-pink-50">
+        <h3 className="text-sm font-bold text-gray-600 mb-3">🚀 快捷入口</h3>
+        <div className="grid grid-cols-3 gap-2">
+          {[
+            { icon: "🇬🇧", label: "英语", section: "english.words" },
+            { icon: "📝", label: "语文", section: "chinese.hanzi" },
+            { icon: "🔢", label: "数学", section: "math.drill" },
+            { icon: "📖", label: "阅读", section: "reading.story" },
+            { icon: "🔍", label: "探索", section: "explore.weather" },
+            { icon: "🐱", label: "宠物", section: "" },
+          ].map((item) => (
+            <button
+              key={item.label}
+              type="button"
+              onClick={() => (item.section ? goStudy(item.section) : setActiveTab("pet"))}
+              className="bg-pink-50 rounded-xl p-3 hover:bg-pink-100 active:scale-95 transition-all text-center"
+            >
+              <div className="text-xl mb-0.5">{item.icon}</div>
+              <div className="text-[10px] text-gray-500">{item.label}</div>
+            </button>
+          ))}
+        </div>
+        <p className="text-[10px] text-gray-300 text-center mt-2">按住说话：说「汉字」「口算」也能直达</p>
+      </div>
+
       {/* 快捷操作 */}
       <div className="grid grid-cols-3 gap-3">
         <button
@@ -524,7 +626,13 @@ export default function HomePage() {
   // 学习页内容
   const renderStudyPage = () => (
     <div className="space-y-4">
-      <StudyCards
+      <StudyPanel
+        studySection={studySection}
+        onSectionChange={setStudySection}
+        contentCard={contentCard}
+        mathQuestion={mathQuestion}
+        mathStreak={mathStreak}
+        onMathAnswer={handleMathAnswer}
         words={studyWords}
         onWordLearned={handleWordLearned}
         onQuizResult={handleQuizResult}
@@ -704,7 +812,7 @@ export default function HomePage() {
           <h1 className="text-lg font-bold text-pink-600">
             {activeTab === "home" && "🏠 首页"}
             {activeTab === "pet" && "🐱 我的宠物"}
-            {activeTab === "study" && "📖 英语学习"}
+            {activeTab === "study" && "📖 学习中心"}
             {activeTab === "settings" && "⚙️ 设置"}
           </h1>
         </div>

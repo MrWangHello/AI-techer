@@ -1,0 +1,20 @@
+[
+  { "char": "天", "emoji": "☁️", "pinyin": "tiān", "words": ["天空", "今天", "天气"], "sentence": "今天天气真好！" },
+  { "char": "地", "emoji": "🌍", "pinyin": "dì", "words": ["土地", "大地", "地方"], "sentence": "大地绿油油的。" },
+  { "char": "人", "emoji": "🧍", "pinyin": "rén", "words": ["人们", "大人", "好人"], "sentence": "我是一个小学生。" },
+  { "char": "你", "emoji": "👋", "pinyin": "nǐ", "words": ["你好", "你们"], "sentence": "你好，Bella！" },
+  { "char": "我", "emoji": "👤", "pinyin": "wǒ", "words": ["我们", "我的"], "sentence": "我是 Bella 的好朋友。" },
+  { "char": "他", "emoji": "👦", "pinyin": "tā", "words": ["他们", "他人"], "sentence": "他是我的同学。" },
+  { "char": "一", "emoji": "1️⃣", "pinyin": "yī", "words": ["一个", "第一"], "sentence": "一二三四五。" },
+  { "char": "二", "emoji": "2️⃣", "pinyin": "èr", "words": ["第二", "二月"], "sentence": "我有二个苹果。" },
+  { "char": "三", "emoji": "3️⃣", "pinyin": "sān", "words": ["三个", "三月"], "sentence": "三心二意不对哦。" },
+  { "char": "口", "emoji": "👄", "pinyin": "kǒu", "words": ["口水", "开口"], "sentence": "张大口，说 a——" },
+  { "char": "目", "emoji": "👁️", "pinyin": "mù", "words": ["目光", "目标"], "sentence": "目指眼睛。" },
+  { "char": "日", "emoji": "☀️", "pinyin": "rì", "words": ["日子", "今日"], "sentence": "日出东方。" },
+  { "char": "月", "emoji": "🌙", "pinyin": "yuè", "words": ["月亮", "一月"], "sentence": "月亮弯弯。" },
+  { "char": "水", "emoji": "💧", "pinyin": "shuǐ", "words": ["水果", "喝水"], "sentence": "多喝水身体好。" },
+  { "char": "火", "emoji": "🔥", "pinyin": "huǒ", "words": ["火星", "生火"], "sentence": "火很烫，小心！" },
+  { "char": "木", "emoji": "🌳", "pinyin": "mù", "words": ["木头", "树木"], "sentence": "大树是高高的木。" },
+  { "char": "金", "emoji": "🥇", "pinyin": "jīn", "words": ["金子", "金色"], "sentence": "金木水火土。" },
+  { "char": "土", "emoji": "🏔️", "pinyin": "tǔ", "words": ["土地", "泥土"], "sentence": "小土坡。" }
+]

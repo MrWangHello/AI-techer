@@ -1,0 +1,17 @@
+[
+  { "en": "Hello!", "zh": "你好！", "emoji": "👋" },
+  { "en": "Goodbye!", "zh": "再见！", "emoji": "👋" },
+  { "en": "The apple is red.", "zh": "苹果是红色的。", "emoji": "🍎" },
+  { "en": "I like apples!", "zh": "我喜欢苹果！", "emoji": "😋" },
+  { "en": "The cat is sleeping.", "zh": "猫在睡觉。", "emoji": "🐱" },
+  { "en": "I have a pencil.", "zh": "我有一支铅笔。", "emoji": "✏️" },
+  { "en": "Good morning!", "zh": "早上好！", "emoji": "🌅" },
+  { "en": "Thank you!", "zh": "谢谢！", "emoji": "🙏" },
+  { "en": "I am a student.", "zh": "我是学生。", "emoji": "🎒" },
+  { "en": "The sky is blue.", "zh": "天空是蓝色的。", "emoji": "🌤️" },
+  { "en": "One little cat!", "zh": "一只小猫！", "emoji": "🐱" },
+  { "en": "Two big eyes!", "zh": "两只大眼睛！", "emoji": "👀" },
+  { "en": "Let's run!", "zh": "我们跑吧！", "emoji": "🏃" },
+  { "en": "I love my mom!", "zh": "我爱妈妈！", "emoji": "👩" },
+  { "en": "Nice to meet you!", "zh": "很高兴见到你！", "emoji": "🤝" }
+]
