@@ -42,13 +42,14 @@
 | 查单词 | `english.lookup` | **english** | query | 语音 | 英语 › 查词 |
 | 背古诗/诗词 | `poetry.random` | **chinese** | content | 语音 | 语文 › 古诗词 |
 | 一言美句 | `hitokoto.quote` | **chinese** | content | 语音 | 语文 › 美句 |
-| 成语（待接 API） | `idiom.*` | **chinese** | content | — | 语文 › 成语 |
+| 成语 | `idiom.random` | **chinese** | content | 语音/学习 | 语文 › 成语 |
+| 口算练习 | `math.drill` | **math** | drill | 语音/学习 | 数学 › 口算 |
+| 小计算器 | `math.calc` | **math** | query | 语音 | 数学（全局） |
+| 应用题 | `word-problem.random` | **math** | content | 语音/学习 | 数学 › 应用题 |
 | 讲故事 | `story.tell` | **reading** | content | 语音 | 阅读 › 短故事 |
 | 讲笑话 | `joke.tell` | **reading** | content | 语音 | 阅读 › 趣味 |
 | 百科 | `wiki.query` | **explore** | query | 语音 | 探索 › 百科 |
 | 天气 | `weather.query` | **explore** | query | 语音 | 探索 › 天气 |
-| 数学练习（规划） | `math.*` | **math** | drill | — | 数学 › 口算/题库 |
-| 导航/帮助 | `nav.*` `help.*` | — | — | 语音 | 不切 Tab，ReplyBar |
 | 宠物动作 | `pet.*` | — | animation | 语音/宠物 Tab | **宠物 Tab** |
 
 **不属于「学习」的：** 导航、宠物喂食/玩耍、签到（放首页）、设置。
@@ -70,7 +71,7 @@
 │  ┌──────┬──────┬──────┐             │
 │  │ 英语  │ 语文  │ 阅读  │             │
 │  ├──────┼──────┼──────┤             │
-│  │ 探索  │ 数学  │ 宠物  │  ← 数学灰显「即将开放」│
+│  │ 探索  │ 数学  │ 宠物  │  ← 数学与各科同级，内置算法即可 │
 │  └──────┴──────┴──────┘             │
 ├─────────────────────────────────────┤
 │  📋 最近记录                         │
@@ -119,7 +120,7 @@ interface HistoryItem {
 学习 Tab 顶部 **学科 Segmented Control**（横向滑动）：
 
 ```
-[ 英语 ] [ 语文 ] [ 阅读 ] [ 探索 ] [ 数学·Soon ]
+[ 英语 ] [ 语文 ] [ 阅读 ] [ 探索 ] [ 数学 ]
 ────────────────────────────────────────
          （当前学科的内容区）
 ```
@@ -138,14 +139,15 @@ interface HistoryItem {
 |--------|------|----------|
 | **古诗词** | 诗泉随机 + 换一首 + 竖排卡片 | Skill + 待做卡片 |
 | **美句摘录** | 一言 | Skill |
-| **成语** | apihz / 内置 | 🔴 **暂不做 Tab**（API 有、代码无；需 `idioms.json`≥30 或 Key） |
+| **成语** | 内置 `idioms.json` 随机 + 可选 apihz | **必做** — 与笑话同模式 |
 
 #### 阅读
 
 | 子模块 | 内容 | 对应现有 |
 |--------|------|----------|
-| **短故事** | 内置 JSON（现 3 篇英文） | Skill；🟡 **UI 暂缓**至中文≥20 篇 |
-| **笑话** | 内置 JSON（现 5 条） | Skill；🟡 **宫格暂缓**至≥30 条 |
+| **短故事** | 内置 JSON（扩至 ≥20 中文） | Skill ✅；开发时同步扩内容 |
+| **笑话** | 内置 JSON（扩至 ≥30） | Skill ✅ |
+| **谜语** | 内置 `riddles.json`（规划） | Phase 2 |
 
 #### 探索
 
@@ -154,12 +156,33 @@ interface HistoryItem {
 | **百科** | 维基摘要 | 偏查询 |
 | **天气** | Open-Meteo | 偏查询 |
 
-#### 数学（预留）
+#### 数学（必做 — 内置算法，不依赖 API）
 
-| 子模块 | 内容 | 说明 |
-|--------|------|------|
-| **口算练习** | 客户端生成（推荐自写或 npm 库） | 🔴 **M1 做完前整栏不显示** |
-| **应用题** | apihz `shuxuex.php`（CORS ✅，需 Key） | 🟡 M1 后可选子入口 |
+> 详见 [MODULE_FEASIBILITY.md §3.5.1](./MODULE_FEASIBILITY.md#351-口算产品定义回答是不是-112-那种)
+
+| 子模块 | 内容 | 交互说明 |
+|--------|------|----------|
+| **口算练习** | `math/generator.ts` 按年级出题 | **主模式**：Bella 问「3加5等于几？」→ 用户语音「8」或点数字 → 判对错 |
+| **小计算器** | `math/evaluate.ts` 解析算式 | **辅模式**：用户问「1加1等于几」→ Bella 答「等于2」 |
+| **应用题** | 内置 `word-problems.json` ≥15 道 | 读题 → 用户答 → 揭晓答案；apihz 可选增强 |
+
+**口算 UI 草图：**
+
+```
+┌─────────────────────────┐
+│      3  +  5  =  ?      │  ← 大字题面
+│                         │
+│   [4] [5] [6] [7] [8]    │  ← 数字键盘（也可纯语音）
+│                         │
+│   连对 3 题  🪙+1        │
+└─────────────────────────┘
+```
+
+**语音联动：**
+
+- 「口算练习」→ `studySection: math.drill` + 出第一题
+- 「1加1等于几」→ `math.calc` 直接回复
+- 「应用题」→ 随机抽内置题或 apihz
 
 **学习 Tab 内 UI 模板（3 种）：**
 
@@ -173,7 +196,9 @@ mode=query   → 搜索框 + 结果卡（查词、百科、天气）
 
 - 说「背古诗」→ `navigate: study` + `studySection: chinese.poetry` + 打开古诗卡片
 - 说「每日英语」→ `studySection: english.daily`
-- 说「开始测验」→ `studySection: english.words` + quiz mode
+- 说「口算练习」→ `studySection: math.drill` + MathDrill 出题
+- 说「1加1等于几」→ `math.calc` 内置计算并朗读
+- 说「讲个成语」→ `studySection: chinese.idiom` + 读成语解释
 
 ```typescript
 interface AgentResponse {
@@ -315,16 +340,16 @@ recognition.interimResults = true;
 | 优先级 | 模块 | 内容 | 解锁入口 |
 |--------|------|------|----------|
 | **P0** | 语音 V-1 | 按住说话 + 结束即发送 | 体验稳定 |
-| **P1** | 学习 Tab 壳 | 分科 Segmented：**英语 / 语文 / 探索**（三栏先上） | 见 MODULE_FEASIBILITY §4.2 |
-| **P1** | 英语/语文卡片 | 单词区保留 + PoetryCard + DailyEnglishCard | 古诗、每日一句 |
-| **P2** | 首页 | 宫格（按门禁）+ 历史记录 | 英语/语文/探索 🟢；数学/阅读 🟡🔴 |
+| **P1** | 学习 Tab 壳 | **五科全开** Segmented | 全部学科入口 |
+| **P1** | **数学** | generator + evaluate + MathDrill + Skill | 口算 + 小计算器 |
+| **P1** | **成语 + 应用题** | `idioms.json`≥50、`word-problems.json`≥15 + Skill | 语文成语、数学应用题 |
+| **P1** | 扩阅读 JSON | jokes≥30、stories 中文≥20 | 阅读内容丰富 |
+| **P1** | 英语/语文卡片 | 单词 + PoetryCard + DailyCard + IdiomCard | 卡片 UI |
+| **P2** | 首页 | 六宫格 + 历史记录 | 首页增强 |
 | **P2** | 语音 V-2 | 点按 + 1.5s 静音自动发送 | — |
-| **P2** | 内置扩容 | `jokes.json`≥30、`stories.json` 中文≥20 | 阅读 Tab / 宫格 |
-| **P3** | MathDrill | 口算生成器（自写或 npm） | **数学 Tab + 首页数学** |
-| **P3** | 成语 | `idioms.json`≥30 或 apihz Key 设置项 | 语文 › 成语 |
-| **P3** | 设置 | 年级、默认语音模式、可选 apihz Key | 应用题/成语增强 |
+| **P3** | 设置 | 年级、语音模式、可选 apihz Key | API 增强 |
+| **P3** | 谜语 | `riddles.json`≥20 | 阅读扩展 |
 | **P4** | 语音 V-3/V-4 | 上滑取消/锁定 | — |
-| **P4** | 数学应用题 | apihz `shuxuex` Skill（可选 Key） | 数学 › 应用题 |
 
 ---
 
@@ -333,6 +358,7 @@ recognition.interimResults = true;
 1. **学习 Tab 默认打开哪个学科？** 建议：英语（当前主路径），或记住上次学科。  
 2. **按住说话是否作为默认？** 建议：是（国内习惯）；设置可改点按+静音。  
 3. **探索（天气/百科）算学习还是首页快捷？** 建议：学习 Tab「探索」+ 首页入口镜像。  
-4. **历史记录保留几条？** 建议：20 条，localStorage。
+4. **历史记录保留几条？** 建议：20 条，localStorage。  
+5. **没 API 的模块做不做？** 建议：**都做** — 内置 JSON + 随机抽取；数学用内置算法。
 
-确认后按 **P0 语音 → P1 学习分科** 顺序开发。
+确认后按 **P0 语音 → P1 并行（五科壳 + 数学 + 成语/应用题 JSON + 扩阅读）** 开发。
