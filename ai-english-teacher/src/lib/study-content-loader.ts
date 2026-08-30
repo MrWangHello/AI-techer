@@ -3,7 +3,7 @@
  */
 import type { ContentCard } from "@/lib/core/types";
 import type { MathQuestion } from "@/lib/math/generator";
-import { startDrill } from "@/lib/math/drill-state";
+import { clearDrill, startDrill } from "@/lib/math/drill-state";
 import {
   pickRandomPinyin,
   pickRandomHanzi,
@@ -31,6 +31,9 @@ export function loadDefaultContentForSection(studySection: string): SectionConte
 
   if (!(subject === "math" && sub === "word-problem")) {
     clearWordProblem();
+  }
+  if (!(subject === "math" && sub === "drill")) {
+    clearDrill();
   }
 
   if (subject === "chinese") {

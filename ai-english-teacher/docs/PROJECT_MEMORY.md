@@ -188,6 +188,15 @@
 | 修复 | `sideEffect: study.quiz.start` + `StudyCards.startQuizToken` |
 | 文件 | `rule-skills.ts`, `StudyCards.tsx`, `page.tsx` |
 
+### 4.6 口算守卫挡住应用题/测验
+
+| 项 | 内容 |
+|----|------|
+| 现象 | 先点数学/口算后，说「应用题」或「考我」只回「口算中哦」 |
+| 根因 | `handleDrillMode` 拦截除答题/退出/帮助外的一切 |
+| 修复 | `DRILL_YIELD` 对应用题/测验放行并 `clearDrill`；切走口算分区时清 drill 状态 |
+| 文件 | `orchestrator.ts`, `study-content-loader.ts` |
+
 ---
 
 ## 5. UI / UX

@@ -15,7 +15,7 @@ import { matchWordProblemAnswer } from "@/lib/skills/word-problem-skills";
 import { lookupDictionaryLocal, looksLikeChineseLookup } from "@/lib/providers/local-dictionary";
 import { fallbackSkill } from "@/lib/skills/fallback";
 import { getSession, updateSession } from "@/lib/session-store";
-import { isDrillActive } from "@/lib/math/drill-state";
+import { clearDrill, isDrillActive } from "@/lib/math/drill-state";
 import { clearWordProblem } from "@/lib/math/word-problem-state";
 
 const ALL_RULES = [...NAV_SKILLS, ...CHINESE_CONTENT_SKILLS, ...RULE_SKILLS];
@@ -43,6 +43,8 @@ const RESOLVABLE_NAV = new Set([
 ]);
 
 const DRILL_EXIT = /^(停止|退出|结束|暂停|不要了)(口算|练习)?$|^不做了$|^停止口算$/;
+/** 口算中仍允许切到这些明确模块，避免「应用题/测验」被守卫吃掉 */
+const DRILL_YIELD = /应用题|文字题|测验|考我|考试|开始测验/;
 
 function trackResponse(response: AgentResponse): AgentResponse {
   if (response.contentCard && response.reply) {
@@ -52,6 +54,9 @@ function trackResponse(response: AgentResponse): AgentResponse {
     updateSession({ lastStudySection: response.studySection });
     if (response.studySection !== "math.word-problem") {
       clearWordProblem();
+    }
+    if (response.studySection !== "math.drill") {
+      clearDrill();
     }
   }
   if (response.navigate && response.navigate !== "study") {
@@ -149,6 +154,11 @@ function handleDrillMode(normalized: string): AgentResponse | null {
 
   if (DRILL_EXIT.test(normalized)) {
     return buildDrillExitResponse();
+  }
+
+  if (DRILL_YIELD.test(normalized)) {
+    clearDrill();
+    return null;
   }
 
   if (/帮助|help|指令|功能|怎么用/.test(normalized)) {

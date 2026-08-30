@@ -81,6 +81,20 @@ describe("handleUserMessage math", () => {
     const res = await handleUserMessage({ text: "停止口算", channel: "web" });
     expect(res.intent).toBe("math_drill_exit");
   });
+
+  it("yields drill for 应用题", async () => {
+    await handleUserMessage({ text: "口算", channel: "web" });
+    const res = await handleUserMessage({ text: "应用题", channel: "web" });
+    expect(res.intent).toBe("word_problem");
+    expect(res.studySection).toBe("math.word-problem");
+  });
+
+  it("yields drill for 考我", async () => {
+    await handleUserMessage({ text: "口算", channel: "web" });
+    const res = await handleUserMessage({ text: "考我", channel: "web" });
+    expect(res.intent).toBe("quiz");
+    expect(res.sideEffect).toBe("study.quiz.start");
+  });
 });
 
 describe("handleUserMessage word problem", () => {

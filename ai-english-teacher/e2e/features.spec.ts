@@ -152,7 +152,7 @@ test.describe("P0 语音闭环", () => {
   test("考我进入单词测验 UI", async ({ page }) => {
     await page.goto("/");
     await sendTextCommand(page, "考我");
-    await expect(page.getByText("单词测验")).toBeVisible({ timeout: 8000 });
+    await expect(page.getByRole("heading", { name: /单词测验/ })).toBeVisible({ timeout: 8000 });
     await expect(page.getByText("请选择对应的英文")).toBeVisible();
   });
 
