@@ -1,6 +1,23 @@
 "use client";
 
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, Component } from "react";
+
+class Cat3DErrorBoundary extends Component<{ children: React.ReactNode }, { hasError: boolean }> {
+  state = { hasError: false };
+  static getDerivedStateFromError() {
+    return { hasError: true };
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="flex h-full w-full items-center justify-center bg-[#f0ebe4]">
+          <span className="text-4xl"></span>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
 
 export type PetAction = "idle" | "eat" | "play" | "bathe" | "sleep";
 export type PetMood = "happy" | "sad" | "surprised" | "neutral" | "thinking";
@@ -103,7 +120,7 @@ function Stickers({ action, mood }: { action: PetAction; mood: string }) {
   );
 }
 
-export default function Cat3D({
+function Cat3DInner({
   mood = "neutral",
   action = "idle",
   onTap,
@@ -205,7 +222,7 @@ export default function Cat3D({
               muted
               loop
               playsInline
-              preload="auto"
+              preload={key === displayMood ? "auto" : "none"}
               draggable={false}
               onCanPlay={(e) => {
                 setReady((prev) => (prev[key] ? prev : { ...prev, [key]: true }));
@@ -214,6 +231,9 @@ export default function Cat3D({
               onLoadedData={(e) => {
                 setReady((prev) => (prev[key] ? prev : { ...prev, [key]: true }));
                 if (key === displayMood && active) playSafe(e.currentTarget);
+              }}
+              onError={(e) => {
+                console.warn(`[Cat3D] Video ${key} failed to load:`, e.currentTarget.src);
               }}
             />
           ))}
@@ -260,5 +280,13 @@ export default function Cat3D({
         </span>
       </div>
     </div>
+  );
+}
+
+export default function Cat3D(props: Cat3DProps) {
+  return (
+    <Cat3DErrorBoundary>
+      <Cat3DInner {...props} />
+    </Cat3DErrorBoundary>
   );
 }

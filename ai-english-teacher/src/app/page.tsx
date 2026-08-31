@@ -429,35 +429,30 @@ export default function HomePage() {
           onPlay={handlePlay}
         />
       )}
-      <div
-        className={
-          activeTab === "pet"
-            ? "h-full"
-            : "pointer-events-none fixed top-0 left-[-100vw] h-64 w-64 overflow-hidden opacity-0"
-        }
-        aria-hidden={activeTab !== "pet"}
-      >
-        <PetTab
-          pet={pet}
-          mood={agentEmotion}
-          action={petAction}
-          speaking={catSpeaking}
-          showAchievements={showAchievements}
-          voiceSpeed={pet.voiceSpeed}
-          active={activeTab === "pet"}
-          onActionEnd={handlePetActionEnd}
-          onTapCat={() => {
-            setAgentEmotion("happy");
-            setCatSpeaking(true);
-            speakWithSpeed("嘿嘿，别戳我！", () => setCatSpeaking(false));
-          }}
-          onFeed={handleFeed}
-          onPlay={handlePlay}
-          onBathe={handleBathe}
-          onSleep={handleSleep}
-          onToggleAchievements={() => setShowAchievements((v) => !v)}
-        />
-      </div>
+      {activeTab === "pet" && (
+        <div className="h-full">
+          <PetTab
+            pet={pet}
+            mood={agentEmotion}
+            action={petAction}
+            speaking={catSpeaking}
+            showAchievements={showAchievements}
+            voiceSpeed={pet.voiceSpeed}
+            active={true}
+            onActionEnd={handlePetActionEnd}
+            onTapCat={() => {
+              setAgentEmotion("happy");
+              setCatSpeaking(true);
+              speakWithSpeed("嘿嘿，别戳我！", () => setCatSpeaking(false));
+            }}
+            onFeed={handleFeed}
+            onPlay={handlePlay}
+            onBathe={handleBathe}
+            onSleep={handleSleep}
+            onToggleAchievements={() => setShowAchievements((v) => !v)}
+          />
+        </div>
+      )}
       {activeTab === "study" && (
         <StudyTab
           pet={pet}
