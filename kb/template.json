@@ -1,0 +1,12 @@
+{
+  "version": 1,
+  "dict": [{ "zh": "例子", "en": "example", "sentence": "This is an example." }],
+  "words": [{ "en": "example", "zh": "例子", "sentence": "This is an example." }],
+  "stories": [{ "title": "小故事标题", "text": "这里写给孩子听的短故事，一两百字即可。" }],
+  "jokes": [{ "q": "什么瓜不能吃？", "a": "傻瓜。" }],
+  "poems": [{ "title": "静夜思", "author": "李白", "content": "床前明月光，疑是地上霜。" }],
+  "wordProblems": [
+    { "question": "小明有 2 个苹果，又拿到 1 个，一共几个？", "answer": 3, "explain": "2 + 1 = 3。", "emoji": "🍎" }
+  ],
+  "hints": { "english.words": "说「例子用英语怎么说」查刚加的词" }
+}

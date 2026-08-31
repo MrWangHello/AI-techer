@@ -1,0 +1,27 @@
+{
+  "version": 1,
+  "dict": [
+    { "zh": "熊猫", "en": "panda", "sentence": "I like the panda." },
+    { "zh": "火箭", "en": "rocket", "sentence": "The rocket flies high." }
+  ],
+  "words": [
+    { "en": "panda", "zh": "熊猫", "sentence": "I like the panda." }
+  ],
+  "stories": [
+    {
+      "title": "小熊猫找妈妈",
+      "text": "森林里有一只小熊猫，它走丢了。它问小鸟：你看见我妈妈了吗？小鸟说：往前面的竹林走。小熊猫找到了妈妈，开心地吃竹子。"
+    }
+  ],
+  "wordProblems": [
+    {
+      "question": "竹林里有 4 只熊猫，又来了 2 只，一共几只？",
+      "answer": 6,
+      "explain": "4 + 2 = 6 只熊猫。",
+      "emoji": "🐼"
+    }
+  ],
+  "hints": {
+    "english.words": "说「熊猫用英语怎么说」可查知识库新词 · 也可说「测验」"
+  }
+}
