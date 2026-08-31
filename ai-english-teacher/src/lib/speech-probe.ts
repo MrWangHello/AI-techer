@@ -5,14 +5,22 @@ export type SttPref = "auto" | "webspeech" | "local";
 
 export function readSttPref(): SttPref {
   if (typeof window === "undefined") return "auto";
-  const raw = window.localStorage.getItem(STT_PREF_KEY);
-  if (raw === "webspeech" || raw === "local" || raw === "auto") return raw;
+  try {
+    const raw = window.localStorage.getItem(STT_PREF_KEY);
+    if (raw === "webspeech" || raw === "local" || raw === "auto") return raw;
+  } catch {
+    // localStorage 不可用时（如无痕模式），默认 auto
+  }
   return "auto";
 }
 
 export function writeSttPref(pref: SttPref): void {
   if (typeof window === "undefined") return;
-  window.localStorage.setItem(STT_PREF_KEY, pref);
+  try {
+    window.localStorage.setItem(STT_PREF_KEY, pref);
+  } catch {
+    // localStorage 不可用时静默忽略
+  }
 }
 
 /** 荣耀/华为/QQ/微信/Firefox：API 在也不稳，或根本没有 STT */

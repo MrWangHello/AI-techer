@@ -246,8 +246,34 @@ export function speak(text: string, onEnd?: () => void, speed?: number): boolean
     return false;
   }
 
-  const decision = pickTtsEngine();
+  // Web Speech 可用时优先使用（Chrome 等主流浏览器）
   const synth = getSynth();
+  if (synth) {
+    try {
+      cachePreferredVoices();
+      onSpeakingStateChange?.(true);
+
+      const utterance = createUtterance(
+        text,
+        "zh-CN",
+        speed ?? 1.0,
+        1.1,
+        () => {
+          onSpeakingStateChange?.(false);
+          onEnd?.();
+        }
+      );
+
+      const success = doSpeak(utterance);
+      if (success) return true;
+    } catch (e) {
+      console.warn("[Speech] speak Web Speech failed:", e);
+    }
+  }
+
+  // Web Speech 不可用，走引擎决策（Youdao / Piper）
+  const decision = pickTtsEngine();
+  onSpeakingStateChange?.(false);
 
   if (decision.engine === "youdao") {
     onSpeakingStateChange?.(true);
@@ -258,34 +284,7 @@ export function speak(text: string, onEnd?: () => void, speed?: number): boolean
     return true;
   }
 
-  if (decision.engine !== "webspeech" || !synth) {
-    return speakWithLocal(text, onEnd, speed);
-  }
-
-  try {
-    cachePreferredVoices();
-    onSpeakingStateChange?.(true);
-
-    const utterance = createUtterance(
-      text,
-      "zh-CN",
-      speed ?? 1.0,
-      1.1,
-      () => {
-        onSpeakingStateChange?.(false);
-        onEnd?.();
-      }
-    );
-
-    const success = doSpeak(utterance);
-    if (!success) {
-      return speakWithLocal(text, onEnd, speed);
-    }
-    return success;
-  } catch (e) {
-    console.warn("[Speech] speak failed:", e);
-    return speakWithLocal(text, onEnd, speed);
-  }
+  return speakWithLocal(text, onEnd, speed);
 }
 
 export function speakAuto(text: string, onEnd?: () => void, speed?: number): boolean {
@@ -299,8 +298,34 @@ export function speakEnglish(text: string, onEnd?: () => void, speed?: number): 
     return false;
   }
 
-  const decision = pickTtsEngine();
+  // Web Speech 可用时优先使用（Chrome 等主流浏览器）
   const synth = getSynth();
+  if (synth) {
+    try {
+      cachePreferredVoices();
+      onSpeakingStateChange?.(true);
+
+      const utterance = createUtterance(
+        text,
+        "en-US",
+        speed ?? 0.9,
+        1.0,
+        () => {
+          onSpeakingStateChange?.(false);
+          onEnd?.();
+        }
+      );
+
+      const success = doSpeak(utterance);
+      if (success) return true;
+    } catch (e) {
+      console.warn("[Speech] speakEnglish Web Speech failed:", e);
+    }
+  }
+
+  // Web Speech 不可用，走引擎决策（Youdao / Piper）
+  const decision = pickTtsEngine();
+  onSpeakingStateChange?.(false);
 
   if (decision.engine === "youdao") {
     onSpeakingStateChange?.(true);
@@ -311,34 +336,7 @@ export function speakEnglish(text: string, onEnd?: () => void, speed?: number): 
     return true;
   }
 
-  if (decision.engine !== "webspeech" || !synth) {
-    return speakWithLocal(text, onEnd, speed ?? 0.9);
-  }
-
-  try {
-    cachePreferredVoices();
-    onSpeakingStateChange?.(true);
-
-    const utterance = createUtterance(
-      text,
-      "en-US",
-      speed ?? 0.9,
-      1.0,
-      () => {
-        onSpeakingStateChange?.(false);
-        onEnd?.();
-      }
-    );
-
-    const success = doSpeak(utterance);
-    if (!success) {
-      return speakWithLocal(text, onEnd, speed ?? 0.9);
-    }
-    return success;
-  } catch (e) {
-    console.warn("[Speech] speakEnglish failed:", e);
-    return speakWithLocal(text, onEnd, speed ?? 0.9);
-  }
+  return speakWithLocal(text, onEnd, speed ?? 0.9);
 }
 
 export function warmUpSpeech(): boolean {
@@ -684,8 +682,12 @@ export function isSpeechSupported(): boolean {
 /** 浏览器能播，或本站嘴巴包能装/已装 */
 export function isTtsOutputAvailable(): boolean {
   if (typeof window === "undefined") return false;
-  const d = pickTtsEngine();
-  return d.engine !== "none" || d.shouldPrefetch;
+  try {
+    const d = pickTtsEngine();
+    return d.engine !== "none" || d.shouldPrefetch;
+  } catch {
+    return !!window.speechSynthesis;
+  }
 }
 
 export function isSTTSupported(): boolean {

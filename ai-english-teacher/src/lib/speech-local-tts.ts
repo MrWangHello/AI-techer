@@ -67,7 +67,11 @@ export function getLocalTtsSnapshot(): { status: LocalTtsStatus; progress: numbe
 
 export function isLocalTtsMarkedReady(): boolean {
   if (typeof window === "undefined") return false;
-  return window.localStorage.getItem(READY_KEY) === "1";
+  try {
+    return window.localStorage.getItem(READY_KEY) === "1";
+  } catch {
+    return false;
+  }
 }
 
 export function isLocalTtsReady(): boolean {
