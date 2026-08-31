@@ -1,2 +1,2 @@
-:HL["/AI-techer/_next/static/chunks/0a_i_5-ec8yw0.css","style"]
-0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":4192,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"cxYvkGdxAchIFekSYcyw7"}
+:HL["/AI-techer/_next/static/chunks/0zyp4h78gn4k2.css","style"]
+0:{"tree":{"name":"","param":null,"prefetchHints":4176,"slots":{"children":{"name":"/_not-found","param":null,"prefetchHints":4192,"slots":{"children":{"name":"__PAGE__","param":null,"prefetchHints":4256,"slots":null}}}}},"staleTime":300,"buildId":"0YK36QPQJ5p5_UGGrIJBw"}
