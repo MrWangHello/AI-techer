@@ -95,32 +95,49 @@ async function loadOrt(): Promise<OrtModule> {
   return ort;
 }
 
-async function fetchWithProgress(url: string): Promise<ArrayBuffer> {
-  const res = await fetch(url);
-  if (!res.ok) throw new Error(`嘴巴包 HTTP ${res.status}`);
-  const total = Number(res.headers.get("content-length") || 0);
-  if (!res.body || !total) return res.arrayBuffer();
+/**
+ * 带重试的流式下载，最多重试 2 次。
+ * 手机端 GitHub Pages 大文件下载容易中途断流，重试能显著提高成功率。
+ */
+async function fetchWithProgress(url: string, retries = 2): Promise<ArrayBuffer> {
+  for (let attempt = 0; attempt <= retries; attempt++) {
+    try {
+      const res = await fetch(url);
+      if (!res.ok) throw new Error(`嘴巴包 HTTP ${res.status}`);
+      const total = Number(res.headers.get("content-length") || 0);
+      if (!res.body || !total) return res.arrayBuffer();
 
-  const reader = res.body.getReader();
-  const chunks: Uint8Array[] = [];
-  let received = 0;
-  while (true) {
-    const { done, value } = await reader.read();
-    if (done) break;
-    if (value) {
-      chunks.push(value);
-      received += value.length;
-      progress = Math.max(1, Math.min(99, Math.round((received / total) * 100)));
-      emit();
+      const reader = res.body.getReader();
+      const chunks: Uint8Array[] = [];
+      let received = 0;
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        if (value) {
+          chunks.push(value);
+          received += value.length;
+          progress = Math.max(1, Math.min(99, Math.round((received / total) * 100)));
+          emit();
+        }
+      }
+      const out = new Uint8Array(received);
+      let offset = 0;
+      for (const chunk of chunks) {
+        out.set(chunk, offset);
+        offset += chunk.length;
+      }
+      return out.buffer;
+    } catch (err) {
+      if (attempt < retries) {
+        progress = 1;
+        emit();
+        await new Promise((r) => setTimeout(r, 1000 * (attempt + 1)));
+      } else {
+        throw err;
+      }
     }
   }
-  const out = new Uint8Array(received);
-  let offset = 0;
-  for (const chunk of chunks) {
-    out.set(chunk, offset);
-    offset += chunk.length;
-  }
-  return out.buffer;
+  throw new Error("下载失败，请重试");
 }
 
 async function loadSitePack(): Promise<void> {
@@ -148,7 +165,16 @@ async function loadSitePack(): Promise<void> {
   progress = 8;
   emit();
   const onnx = await fetchWithProgress(`${dir}${ONNX_NAME}`);
-  session = await ort.InferenceSession.create(new Uint8Array(onnx));
+  try {
+    session = await ort.InferenceSession.create(new Uint8Array(onnx));
+  } catch (err) {
+    const msg = err instanceof Error ? err.message : String(err);
+    // WASM 引擎下载失败或模型加载失败
+    if (/wasm|webassembly|module|compil|memory|allocation|oom/i.test(msg)) {
+      throw new Error(`嘴巴包引擎加载失败: ${msg.slice(0, 60)}`);
+    }
+    throw new Error(`嘴巴包模型加载失败: ${msg.slice(0, 60)}`);
+  }
 }
 
 export async function ensureLocalTts(): Promise<boolean> {
