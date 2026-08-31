@@ -78,7 +78,7 @@ export function decideSttEngine(input: {
   };
 }
 
-export type TtsEngine = "webspeech" | "local" | "none";
+export type TtsEngine = "webspeech" | "local" | "youdao" | "none";
 export type TtsPref = SttPref;
 
 export function decideTtsEngine(input: {
@@ -117,7 +117,7 @@ export function decideTtsEngine(input: {
 
   if (highRisk) {
     return {
-      engine: input.localReady ? "local" : "webspeech",
+      engine: "youdao",
       shouldPrefetch: true,
       reason: "high-risk-ua",
     };

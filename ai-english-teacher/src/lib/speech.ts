@@ -13,6 +13,7 @@ import {
   speakLocal,
   stopLocalTts,
 } from "./speech-local-tts";
+import { speakWithYoudao, stopYoudao } from "./speech-youdao";
 
 let recognition: any = null;
 let isListening = false;
@@ -247,6 +248,16 @@ export function speak(text: string, onEnd?: () => void, speed?: number): boolean
 
   const decision = pickTtsEngine();
   const synth = getSynth();
+
+  if (decision.engine === "youdao") {
+    onSpeakingStateChange?.(true);
+    void speakWithYoudao(text, () => {
+      onSpeakingStateChange?.(false);
+      onEnd?.();
+    }, speed);
+    return true;
+  }
+
   if (decision.engine !== "webspeech" || !synth) {
     return speakWithLocal(text, onEnd, speed);
   }
@@ -290,6 +301,16 @@ export function speakEnglish(text: string, onEnd?: () => void, speed?: number): 
 
   const decision = pickTtsEngine();
   const synth = getSynth();
+
+  if (decision.engine === "youdao") {
+    onSpeakingStateChange?.(true);
+    void speakWithYoudao(text, () => {
+      onSpeakingStateChange?.(false);
+      onEnd?.();
+    }, speed ?? 0.9);
+    return true;
+  }
+
   if (decision.engine !== "webspeech" || !synth) {
     return speakWithLocal(text, onEnd, speed ?? 0.9);
   }
@@ -370,6 +391,7 @@ export function stopSpeaking(): void {
     synth.cancel();
   }
   stopLocalTts();
+  stopYoudao();
   onSpeakingStateChange?.(false);
 }
 
